@@ -6,9 +6,9 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "Dashboard": {
+    "frontend": {
       "projectType": "application",
-      "schematics": {
+            "schematics": {
         "@schematics/angular:component": {
           "type": "component"
         },
@@ -34,7 +34,9 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": [
+              "src/styles.css"
+            ]
           },
           "configurations": {
             "production": {
@@ -64,10 +66,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "Dashboard:build:production"
+              "buildTarget": "frontend:build:production"
             },
             "development": {
-              "buildTarget": "Dashboard:build:development"
+              "buildTarget": "frontend:build:development"
             }
           },
           "defaultConfiguration": "development"
