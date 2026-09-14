@@ -2,7 +2,7 @@ name: Mirror repository
  
 on:
   push:
-    branches: [main, docker/front, docker/back]
+    branches: [main, docker/front]
  
 jobs:
   mirror:
