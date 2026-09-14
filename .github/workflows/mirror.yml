@@ -1,15 +1,15 @@
 name: Mirror repository
- 
+
 on:
   push:
-    branches: [main, docker/front]
- 
+    branches: [main, docker/front, docker/back]
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
       - name: Push mirror
         run: |
-          git clone --mirror https://github.com/pierre54200/Dashboard.git repo-mirror
+          git clone --mirror https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/pierre54200/Dashboard.git repo-mirror
           cd repo-mirror
-          git push https://${{ secrets.MIRROR_TOKEN }}@github.com/EpitechPGE3-2026/G-WEB-500-NCY-5-1-dashboard-2.git
+          git push --mirror https://${{ secrets.MIRROR_TOKEN }}@github.com/EpitechPGE3-2026/G-WEB-500-NCY-5-1-dashboard-2.git
