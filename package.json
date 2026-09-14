@@ -1,7 +1,6 @@
 {
     "scripts": {
-        "start": "docker compose up",
-        "install": "docker compose build",
-        "debug": "docker compose up -d" 
+        "start": "docker compose up --build",
+        "debug": "docker compose up -d"
     }
 }
