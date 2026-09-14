@@ -6,11 +6,10 @@ on:
  
 jobs:
   mirror:
-    if: false # desactive le workflow
     runs-on: ubuntu-latest
     steps:
       - name: Push mirror
         run: |
           git clone --mirror https://git@github.com:pierre54200/Dashboard.git repo-mirror
           cd repo-mirror
-          git push https://${{ secrets.MIRROR_TOKEN }}
+          git push https://${{ secrets.MIRROR_TOKEN }}git@github.com:EpitechPGE3-2026/G-WEB-500-NCY-5-1-dashboard-2.git
