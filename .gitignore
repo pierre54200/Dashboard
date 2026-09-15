@@ -1,1 +1,8 @@
-/**/node_modules
+node_modules
+.venv
+__pycache__
+.angular
+.vscode
+
+# Database
+db.sqlite3
