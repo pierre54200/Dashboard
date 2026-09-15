@@ -1,24 +1,26 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { AuthService } from '../../../Service/Auth/auth.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  imports: [],
+  imports: [FormsModule],
   selector: 'app-login',
   styleUrl: './login.component.css',
   templateUrl: './login.component.html',
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent {
+  
+  email: string = ''
+  password: string = ''
+  remember: boolean = false
 
   constructor(
     private authService: AuthService,
   ) {}
 
-  ngOnInit(): void {
-    console.log("caca")
-    this.authService.getTest().subscribe({
-      next: data => {
-        console.log(data)
-      }
-    })
+
+  onSubmit(): void {
+    //TODO submit login
+    console.log(this.email, this.password, this.remember)
   }
 }

@@ -1,2 +1,51 @@
-<p>login works!</p>
-caca
+<div class="login-page">
+  <div class="login-card">
+    <h1 class="login-title">Content de te revoir !</h1>
+    <p class="login-subtitle">On est content de te retrouver, connecte-toi.</p>
+
+    <form class="login-form" (ngSubmit)="onSubmit()" #loginForm="ngForm">
+      <div class="login-field">
+        <label for="email" class="login-label">E-mail ou nom d'utilisateur</label>
+        <input
+          id="email"
+          name="email"
+          type="text"
+          class="input"
+          autocomplete="username"
+          [(ngModel)]="email"
+        />
+      </div>
+
+      <div class="login-field">
+        <label for="password" class="login-label">Mot de passe</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          class="input"
+          autocomplete="current-password"
+          [(ngModel)]="password"
+        />
+      </div>
+
+      <!-- <div class="login-row">
+        <label class="login-remember">
+          <input
+            type="checkbox"
+            id="remember"
+            name="remember"
+            [(ngModel)]="remember"
+          />
+          Se souvenir de moi
+        </label>
+        <a href="#" class="link">Mot de passe oublié ?</a>
+      </div> -->
+
+      <button type="submit" class="btn btn-primary">Connexion</button>
+
+      <p class="login-footer">
+        Besoin d'un compte ? <a href="#" class="link">Inscris-toi</a>
+      </p>
+    </form>
+  </div>
+</div>
