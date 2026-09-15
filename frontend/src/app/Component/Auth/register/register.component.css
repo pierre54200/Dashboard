@@ -1,0 +1,70 @@
+.register-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: var(--bg);
+  box-sizing: border-box;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 8px;
+  padding: 32px 40px 20px;
+  background-color: var(--bg-elevated);
+  box-sizing: border-box;
+}
+
+.register-title {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+
+.register-subtitle {
+  font-size: 16px;
+  text-align: center;
+  margin: 0 0 20px;
+  color: var(--text-muted);
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.register-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.register-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+.register-terms {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  color: var(--text-input);
+}
+
+.register-footer {
+  font-size: 14px;
+  margin: 12px 0 0;
+  color: var(--text-muted);
+}

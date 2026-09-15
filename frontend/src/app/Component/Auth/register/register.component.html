@@ -1,0 +1,71 @@
+<div class="register-page">
+  <div class="register-card">
+    <h1 class="register-title">Créer un compte</h1>
+
+    <form class="register-form" (ngSubmit)="onSubmit()" #registerForm="ngForm">
+      <div class="register-field">
+        <label for="username" class="register-label">Nom d'utilisateur</label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          class="input"
+          autocomplete="username"
+          [(ngModel)]="username"
+        />
+      </div>
+
+      <div class="register-field">
+        <label for="email" class="register-label">E-mail</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          class="input"
+          autocomplete="email"
+          [(ngModel)]="email"
+        />
+      </div>
+
+      <div class="register-field">
+        <label for="password" class="register-label">Mot de passe</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          class="input"
+          autocomplete="new-password"
+          [(ngModel)]="password"
+        />
+      </div>
+
+      <div class="register-field">
+        <label for="confirmPassword" class="register-label">Confirmer le mot de passe</label>
+        <input
+          id="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          class="input"
+          autocomplete="new-password"
+          [(ngModel)]="confirmPassword"
+        />
+      </div>
+
+      <label class="register-terms">
+        <input
+          type="checkbox"
+          id="terms"
+          name="terms"
+          [(ngModel)]="acceptTerms"
+        />
+        J'accepte les conditions d'utilisation
+      </label>
+
+      <button type="submit" class="btn btn-primary">S'inscrire</button>
+
+      <p class="register-footer">
+        Déjà un compte ? <a href="/login" class="link">Connecte-toi</a>
+      </p>
+    </form>
+  </div>
+</div>
