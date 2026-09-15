@@ -6,7 +6,9 @@ import { HttpClient } from "@angular/common/http";
 export class AuthService {
     private apiUrl = `${environment.apiUrl}/test`
 
-    constructor(private http: HttpClient) {}
+    constructor(
+        private http: HttpClient
+    ) {}
 
     getTest() {
         return this.http.get(this.apiUrl)
