@@ -66,3 +66,13 @@
 .link:hover {
   text-decoration: underline;
 }
+
+.input-error {
+  border-color: var(--red) !important;
+}
+
+.field-error {
+  color: var(--red);
+  font-size: 12px;
+  margin: 4px 0 0;
+}

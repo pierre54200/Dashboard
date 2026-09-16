@@ -1,26 +1,44 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../Service/Auth/auth.service';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ILogin } from '../../../Interface/Auth/auth.interface';
 
 @Component({
-  imports: [FormsModule],
+  imports: [ReactiveFormsModule],
   selector: 'app-login',
   styleUrl: './login.component.css',
   templateUrl: './login.component.html',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   
-  email: string = ''
-  password: string = ''
-  remember: boolean = false
+  loginForm!: FormGroup
 
   constructor(
     private authService: AuthService,
+    private fb: FormBuilder,
   ) {}
 
+  ngOnInit(): void {
+    this.initForm()
+  }
+
+  initForm(): void {
+    this.loginForm = this.fb.group(
+      {
+        username: ['', Validators.required],
+        password: ['', Validators.required],
+        remember: [false]
+      }
+    )
+  }
 
   onSubmit(): void {
     //TODO submit login
-    console.log(this.email, this.password, this.remember)
+    const user: ILogin = {
+      username: this.loginForm.value.username,
+      password: this.loginForm.value.password,
+      remember: this.loginForm.value.remember,
+    }
+    console.log(user)
   }
 }
