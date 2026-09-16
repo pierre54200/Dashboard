@@ -5,7 +5,9 @@
 
     <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <div class="login-field">
-        <label for="email" class="login-label">E-mail ou nom d'utilisateur</label>
+        <label for="email" class="login-label"
+          >E-mail ou nom d'utilisateur</label
+        >
         <input
           id="email"
           name="email"
@@ -41,7 +43,13 @@
         <a href="#" class="link">Mot de passe oublié ?</a>
       </div> -->
 
-      <button type="submit" class="btn btn-primary" [disabled]="loginForm.invalid">Connexion</button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="loginForm.invalid"
+      >
+        Connexion
+      </button>
 
       <p class="login-footer">
         Besoin d'un compte ? <a href="/register" class="link">Inscris-toi</a>

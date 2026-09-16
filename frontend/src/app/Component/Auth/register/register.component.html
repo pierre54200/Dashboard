@@ -2,7 +2,11 @@
   <div class="register-card">
     <h1 class="register-title">Créer un compte</h1>
 
-    <form class="register-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <form
+      class="register-form"
+      [formGroup]="registerForm"
+      (ngSubmit)="onSubmit()"
+    >
       <div class="register-field">
         <label for="username" class="register-label">Nom d'utilisateur</label>
         <input
@@ -14,7 +18,7 @@
           formControlName="username"
         />
         <p class="field-error" *ngIf="isFieldInvalid('username')">
-            {{ getErrorMessage('username') }}
+          {{ getErrorMessage("username") }}
         </p>
       </div>
 
@@ -29,7 +33,7 @@
           formControlName="email"
         />
         <p class="field-error" *ngIf="isFieldInvalid('email')">
-            {{ getErrorMessage('email') }}
+          {{ getErrorMessage("email") }}
         </p>
       </div>
 
@@ -44,12 +48,14 @@
           formControlName="password"
         />
         <p class="field-error" *ngIf="isFieldInvalid('password')">
-            {{ getErrorMessage('password') }}
+          {{ getErrorMessage("password") }}
         </p>
       </div>
 
       <div class="register-field">
-        <label for="confirmPassword" class="register-label">Confirmer le mot de passe</label>
+        <label for="confirmPassword" class="register-label"
+          >Confirmer le mot de passe</label
+        >
         <input
           id="confirmPassword"
           name="confirmPassword"
@@ -59,13 +65,17 @@
           formControlName="confirmPassword"
         />
         <p class="field-error" *ngIf="isFieldInvalid('confirmPassword')">
-            {{ getErrorMessage('confirmPassword') }}
+          {{ getErrorMessage("confirmPassword") }}
         </p>
         <p
-            class="field-error"
-            *ngIf="!isFieldInvalid('confirmPassword') && registerForm.errors?.['passwordMismatch'] && registerForm.get('confirmPassword')?.touched"
+          class="field-error"
+          *ngIf="
+            !isFieldInvalid('confirmPassword') &&
+            registerForm.errors?.['passwordMismatch'] &&
+            registerForm.get('confirmPassword')?.touched
+          "
         >
-        Les mots de passe ne correspondent pas
+          Les mots de passe ne correspondent pas
         </p>
       </div>
 
@@ -79,7 +89,13 @@
         J'accepte les conditions d'utilisation
       </label>
 
-      <button type="submit" class="btn btn-primary" [disabled]="registerForm.invalid || !registerForm.value.terms">S'inscrire</button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="registerForm.invalid || !registerForm.value.terms"
+      >
+        S'inscrire
+      </button>
 
       <p class="register-footer">
         Déjà un compte ? <a href="/login" class="link">Connecte-toi</a>
