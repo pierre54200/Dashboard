@@ -1,17 +1,21 @@
-import { Component, OnInit } from '@angular/core';
-import { AuthService } from '../../../Service/Auth/auth.service';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ILogin } from '../../../Interface/Auth/auth.interface';
+import { Component, OnInit } from "@angular/core";
+import { AuthService } from "../../../Service/Auth/auth.service";
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
+import { ILogin } from "../../../Interface/Auth/auth.interface";
 
 @Component({
   imports: [ReactiveFormsModule],
-  selector: 'app-login',
-  styleUrl: './login.component.css',
-  templateUrl: './login.component.html',
+  selector: "app-login",
+  styleUrl: "./login.component.css",
+  templateUrl: "./login.component.html",
 })
 export class LoginComponent implements OnInit {
-  
-  loginForm!: FormGroup
+  loginForm!: FormGroup;
 
   constructor(
     private authService: AuthService,
@@ -19,17 +23,15 @@ export class LoginComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.initForm()
+    this.initForm();
   }
 
   initForm(): void {
-    this.loginForm = this.fb.group(
-      {
-        username: ['', Validators.required],
-        password: ['', Validators.required],
-        remember: [false]
-      }
-    )
+    this.loginForm = this.fb.group({
+      username: ["", Validators.required],
+      password: ["", Validators.required],
+      remember: [false],
+    });
   }
 
   onSubmit(): void {
@@ -38,7 +40,7 @@ export class LoginComponent implements OnInit {
       username: this.loginForm.value.username,
       password: this.loginForm.value.password,
       remember: this.loginForm.value.remember,
-    }
-    console.log(user)
+    };
+    console.log(user);
   }
 }
