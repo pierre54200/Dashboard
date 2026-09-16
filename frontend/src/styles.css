@@ -1,3 +1,78 @@
 /* You can add global styles to this file, and also import other style files */
 
-@import 'tailwindcss';
+@import "tailwindcss";
+
+:root {
+  --bg: #313338;
+  --bg-elevated: #2b2d31;
+  --bg-input: #1e1f22;
+  --blue: #5865f2;
+  --blue-hover: #4752c4;
+  --red: #da373c;
+  --red-hover: #a12828;
+  --green: #23a55a;
+  --text: #f2f3f5;
+  --text-muted: #b5bac1;
+  --text-input: #dbdee1;
+  --link: #00a8fc;
+}
+
+.input {
+  background-color: var(--bg-input);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--text-input);
+  font-size: 16px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--blue);
+}
+
+.btn {
+  border: none;
+  border-radius: 3px;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  color: #ffffff;
+}
+
+.btn-primary {
+  background-color: var(--blue);
+}
+
+.btn-primary:hover {
+  background-color: var(--blue-hover);
+}
+
+.btn-danger {
+  background-color: var(--red);
+}
+
+.btn-danger:hover {
+  background-color: var(--red-hover);
+}
+
+.link {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.input-error {
+  border-color: var(--red) !important;
+}
+
+.field-error {
+  color: var(--red);
+  font-size: 12px;
+  margin: 4px 0 0;
+}
