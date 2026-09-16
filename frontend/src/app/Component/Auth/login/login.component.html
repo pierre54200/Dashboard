@@ -3,7 +3,7 @@
     <h1 class="login-title">Content de te revoir !</h1>
     <p class="login-subtitle">On est content de te retrouver, connecte-toi.</p>
 
-    <form class="login-form" (ngSubmit)="onSubmit()" #loginForm="ngForm">
+    <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <div class="login-field">
         <label for="email" class="login-label">E-mail ou nom d'utilisateur</label>
         <input
@@ -12,7 +12,7 @@
           type="text"
           class="input"
           autocomplete="username"
-          [(ngModel)]="email"
+          formControlName="username"
         />
       </div>
 
@@ -24,7 +24,7 @@
           type="password"
           class="input"
           autocomplete="current-password"
-          [(ngModel)]="password"
+          formControlName="password"
         />
       </div>
 
@@ -34,14 +34,14 @@
             type="checkbox"
             id="remember"
             name="remember"
-            [(ngModel)]="remember"
+            formControlName="remember"
           />
           Se souvenir de moi
         </label>
         <a href="#" class="link">Mot de passe oublié ?</a>
       </div> -->
 
-      <button type="submit" class="btn btn-primary">Connexion</button>
+      <button type="submit" class="btn btn-primary" [disabled]="loginForm.invalid">Connexion</button>
 
       <p class="login-footer">
         Besoin d'un compte ? <a href="/register" class="link">Inscris-toi</a>
