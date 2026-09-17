@@ -4,6 +4,7 @@ __pycache__
 .angular
 .vscode
 staticfiles
+.env
 
 # Database
 db.sqlite3
