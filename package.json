@@ -4,6 +4,8 @@
         "shell-back": "docker exec -it Dashboard-Back sh",
         "shell-front": "docker exec -it Dashboard-Front sh",
         "kill": "docker kill Dashboard-Front Dashboard-Back",
-        "debug": "docker compose up -d"
+        "debug": "docker compose up -d",
+        "lint": "ruff check backend",
+        "lint-fix": "ruff check --fix backend"
     }
 }
