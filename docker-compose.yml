@@ -1,5 +1,6 @@
 services:
   backend:
+    container_name: Dashboard-Back
     build: ./backend
     ports:
       - "8080:8080"
@@ -7,6 +8,7 @@ services:
       - ./backend:/app
 
   frontend:
+    container_name: Dashboard-Front
     build: ./frontend
     ports:
       - "4200:4200"
