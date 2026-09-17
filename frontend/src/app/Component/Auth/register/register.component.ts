@@ -10,6 +10,7 @@ import {
 import { AuthService } from "../../../Service/Auth/auth.service";
 import { IRegister } from "../../../Interface/Auth/auth.interface";
 import { CommonModule } from "@angular/common";
+import { Title } from "@angular/platform-browser";
 
 @Component({
   imports: [CommonModule, ReactiveFormsModule],
@@ -23,10 +24,13 @@ export class RegisterComponent {
   constructor(
     private authService: AuthService,
     private fb: FormBuilder,
+    private ts: Title,
   ) {}
 
   ngOnInit(): void {
     this.initForm();
+
+    this.ts.setTitle("Register - Dashboard");
   }
 
   getErrorMessage(field: string): string {
