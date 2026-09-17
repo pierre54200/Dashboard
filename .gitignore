@@ -3,6 +3,7 @@ node_modules
 __pycache__
 .angular
 .vscode
+staticfiles
 
 # Database
 db.sqlite3
