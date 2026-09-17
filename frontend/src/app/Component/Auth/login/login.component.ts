@@ -7,6 +7,7 @@ import {
   Validators,
 } from "@angular/forms";
 import { ILogin } from "../../../Interface/Auth/auth.interface";
+import { Title } from "@angular/platform-browser";
 
 @Component({
   imports: [ReactiveFormsModule],
@@ -20,10 +21,13 @@ export class LoginComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private fb: FormBuilder,
+    private ts: Title,
   ) {}
 
   ngOnInit(): void {
     this.initForm();
+
+    this.ts.setTitle("Login - Dashboard");
   }
 
   initForm(): void {
