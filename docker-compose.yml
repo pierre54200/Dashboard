@@ -6,6 +6,8 @@ services:
       - "8080:8080"
     volumes:
       - ./backend:/app
+    env_file:
+      - .env
 
   frontend:
     container_name: Dashboard-Front
@@ -15,3 +17,5 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    env_file:
+      - .env
