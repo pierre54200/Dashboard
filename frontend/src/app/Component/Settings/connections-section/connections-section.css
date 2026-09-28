@@ -1,0 +1,127 @@
+.add-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: var(--bg-input);
+}
+
+.add-bar-text {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.add-bar-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.provider-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 4px;
+  background-color: #4e5058;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.provider-btn:hover {
+  background-color: var(--blue);
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.linked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linked {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: var(--bg-elevated);
+}
+
+.provider-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background-color: var(--blue);
+  color: #fff;
+  font-weight: 700;
+}
+
+.linked-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.linked-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.linked-provider {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background-color: rgba(218, 55, 60, 0.15);
+  color: var(--red);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
