@@ -1,0 +1,42 @@
+<article class="card">
+  <header class="card-header">
+    <button type="button" class="handle" cdkDragHandle aria-label="Déplacer">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <circle cx="8" cy="5" r="2" /><circle cx="16" cy="5" r="2" />
+        <circle cx="8" cy="12" r="2" /><circle cx="16" cy="12" r="2" />
+        <circle cx="8" cy="19" r="2" /><circle cx="16" cy="19" r="2" />
+      </svg>
+    </button>
+
+    <span class="service-icon">{{ service().charAt(0).toUpperCase() }}</span>
+
+    <div class="titles">
+      <h2 class="title">{{ title() }}</h2>
+      <p class="subtitle">{{ service() }}@if (subtitle()) { · {{ subtitle() }} }</p>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="icon-btn" (click)="refresh.emit()" aria-label="Actualiser">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" />
+        </svg>
+      </button>
+      <button type="button" class="icon-btn danger" (click)="remove.emit()" aria-label="Supprimer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="body">
+    <ng-content />
+  </div>
+
+  <footer class="footer">
+    <span>Toutes les {{ refreshRate() }} s</span>
+    @if (lastUpdate()) {
+      <span>Mis à jour à {{ lastUpdate()!.toLocaleTimeString('fr-FR') }}</span>
+    }
+  </footer>
+</article>
