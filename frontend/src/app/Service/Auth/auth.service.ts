@@ -4,13 +4,12 @@ import { HttpClient } from "@angular/common/http";
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-    private apiUrl = `${environment.apiUrl}/test`
+    private apiUrl = `${environment.apiUrl}`
     private Authenticated = false;
 
     constructor(
         private http: HttpClient
     ) {}
-
 
     login() {
         this.Authenticated = true;

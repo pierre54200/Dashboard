@@ -46,5 +46,6 @@ export class LoginComponent implements OnInit {
       remember: this.loginForm.value.remember,
     };
     console.log(user);
+    this.authService.login();
   }
 }
