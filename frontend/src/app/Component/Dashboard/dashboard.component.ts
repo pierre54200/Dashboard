@@ -8,6 +8,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { WidgetCard } from './Widgets/widget-card/widget-card';
 import { WeatherWidget } from './Widgets/weather-widget/weather-widget';
+import { Router } from '@angular/router';
 
 export type WidgetType = 'weather';
 
@@ -36,6 +37,9 @@ export interface WidgetConfig {
   styleUrl: './dashboard.component.css',
 })
 export class DashboardComponent {
+
+  constructor(private router: Router) {}
+
   widgets = signal<WidgetConfig[]>([
     { id: 1, type: 'weather', title: 'Météo', cols: 1, rows: 1, refreshRate: 300, params: { city: 'Nancy' } },
     { id: 2, type: 'weather', title: 'Météo', cols: 1, rows: 1, refreshRate: 300, params: { city: 'Paris' } },
@@ -136,5 +140,9 @@ export class DashboardComponent {
   /** Texte affiché sous le titre de la carte, ex : "Nancy". */
   subtitleOf(w: WidgetConfig): string {
     return String(Object.values(w.params)[0] ?? '');
+  }
+
+  settings(): void {
+    this.router.navigate(['dashboard/settings']); 
   }
 }

@@ -1,0 +1,49 @@
+<div class="settings">
+  <!-- Menu de gauche -->
+  <aside class="sidebar">
+    <nav class="sidebar-inner" aria-label="Paramètres">
+      <h2 class="nav-heading">Paramètres utilisateur</h2>
+      @for (item of nav; track item.id) {
+        <button
+          type="button"
+          class="nav-item"
+          [class.active]="section() === item.id"
+          [attr.aria-current]="section() === item.id ? 'page' : null"
+          (click)="section.set(item.id)"
+        >
+          {{ item.label }}
+        </button>
+      }
+
+      <div class="nav-separator"></div>
+
+      <button type="button" class="nav-item logout" (click)="logout()">
+        Déconnexion
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" />
+        </svg>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Contenu -->
+  <main class="content">
+    <div class="content-inner">
+      @switch (section()) {
+        @case ('account') { <app-account-section /> }
+        @case ('services') { <app-services-section /> }
+        @case ('connections') { <app-connections-section /> }
+      }
+    </div>
+
+    <!-- Bouton fermer -->
+    <div class="close">
+      <button type="button" class="close-btn" (click)="close()" aria-label="Fermer les paramètres">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+      <span class="close-hint">ÉCHAP</span>
+    </div>
+  </main>
+</div>

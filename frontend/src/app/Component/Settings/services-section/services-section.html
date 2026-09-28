@@ -1,0 +1,91 @@
+<h1 class="page-title">Services</h1>
+<p class="page-intro">
+  Abonne-toi aux services pour débloquer leurs widgets.
+  {{ subscribedCount() }} sur {{ services().length }} actifs.
+</p>
+
+<!-- Filtres -->
+<div class="tabs" role="tablist">
+  <button type="button" role="tab" class="tab" [class.active]="filter() === 'all'" [attr.aria-selected]="filter() === 'all'" (click)="filter.set('all')">Tous</button>
+  <button type="button" role="tab" class="tab" [class.active]="filter() === 'subscribed'" [attr.aria-selected]="filter() === 'subscribed'" (click)="filter.set('subscribed')">Abonnés</button>
+  <button type="button" role="tab" class="tab" [class.active]="filter() === 'available'" [attr.aria-selected]="filter() === 'available'" (click)="filter.set('available')">Disponibles</button>
+</div>
+
+<ul class="service-list">
+  @for (s of filtered(); track s.id) {
+    <li class="service" [class.is-on]="s.subscribed">
+      <div class="service-main">
+        <span class="service-icon">{{ s.name.charAt(0) }}</span>
+
+        <div class="service-info">
+          <div class="service-name">
+            {{ s.name }}
+            @if (s.auth === 'none') {
+              <span class="pill pill-default">Par défaut</span>
+            } @else if (s.subscribed) {
+              <span class="pill pill-on">Connecté</span>
+            } @else {
+              <span class="pill pill-off">Non connecté</span>
+            }
+          </div>
+          <p class="service-desc">{{ s.description }}</p>
+          <p class="service-meta">
+            {{ s.widgets }} widget{{ s.widgets > 1 ? 's' : '' }}
+            @if (s.account) { · {{ s.account }} }
+          </p>
+        </div>
+
+        <div class="service-action">
+          @if (s.auth === 'none') {
+            <span class="hint">Aucun compte requis</span>
+          } @else if (s.subscribed) {
+            <button type="button" class="btn-sm btn-outline-danger" (click)="confirmUnsub.set(s.id)">Se déconnecter</button>
+          } @else if (s.auth === 'oauth') {
+            <button type="button" class="btn btn-primary btn-sm" (click)="connectOAuth(s)">Connecter avec {{ s.name }}</button>
+          } @else {
+            <button type="button" class="btn btn-primary btn-sm" [attr.aria-expanded]="openForm() === s.id" (click)="toggleForm(s)">
+              {{ openForm() === s.id ? 'Annuler' : 'S’abonner' }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Formulaire d'identifiants -->
+      @if (openForm() === s.id) {
+        <form class="service-panel" (ngSubmit)="submitCredentials(s)" novalidate>
+          <div class="field">
+            <label class="label" [for]="'key-' + s.id">Clé d’API {{ s.name }}</label>
+            <input
+              class="input"
+              type="password"
+              name="apiKey"
+              autocomplete="off"
+              [id]="'key-' + s.id"
+              [(ngModel)]="apiKey"
+              [attr.aria-invalid]="!!formError()"
+            />
+            @if (formError()) {
+              <p class="error" role="alert">{{ formError() }}</p>
+            }
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary btn-sm">Valider</button>
+          </div>
+        </form>
+      }
+
+      <!-- Confirmation de désinscription -->
+      @if (confirmUnsub() === s.id) {
+        <div class="service-panel danger" role="alertdialog" [attr.aria-label]="'Se déconnecter de ' + s.name">
+          <p>Les widgets {{ s.name }} de ton dashboard seront supprimés.</p>
+          <div class="actions">
+            <button type="button" class="btn-link" (click)="confirmUnsub.set(null)">Annuler</button>
+            <button type="button" class="btn btn-danger btn-sm" (click)="unsubscribe(s)">Se déconnecter</button>
+          </div>
+        </div>
+      }
+    </li>
+  } @empty {
+    <li class="empty">Aucun service dans cette catégorie.</li>
+  }
+</ul>

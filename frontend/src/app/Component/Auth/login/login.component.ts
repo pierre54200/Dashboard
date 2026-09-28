@@ -8,6 +8,7 @@ import {
 } from "@angular/forms";
 import { ILogin } from "../../../Interface/Auth/auth.interface";
 import { Title } from "@angular/platform-browser";
+import { Router } from "@angular/router";
 
 @Component({
   imports: [ReactiveFormsModule],
@@ -22,6 +23,7 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private fb: FormBuilder,
     private ts: Title,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -47,5 +49,7 @@ export class LoginComponent implements OnInit {
     };
     console.log(user);
     this.authService.login();
+    this.router.navigate(['/dashboard']); 
+    
   }
 }
