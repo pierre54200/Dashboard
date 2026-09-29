@@ -1,7 +1,9 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema
+
 from .serializers import TestSerializer
+
 
 @extend_schema(
     request=TestSerializer,

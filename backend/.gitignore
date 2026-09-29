@@ -1,0 +1,8 @@
+.env
+
+#Spity's Ruff and PyRight stuff
+pyproject.toml
+pyrightconfig.json
+**/.ruff_cache
+
+**/__pycache__

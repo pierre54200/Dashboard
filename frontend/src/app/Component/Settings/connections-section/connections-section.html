@@ -1,0 +1,55 @@
+<h1 class="page-title">Connexions</h1>
+<p class="page-intro">
+  Lie un compte tiers pour te connecter au dashboard sans mot de passe.
+</p>
+
+<!-- Boutons d'ajout rapide, comme la barre de Discord -->
+<div class="add-bar">
+  <span class="add-bar-text">Ajouter une connexion</span>
+  <div class="add-bar-buttons">
+    @for (p of providers(); track p.id) {
+      @if (!p.linked) {
+        <button type="button" class="provider-btn" (click)="link(p)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          {{ p.name }}
+        </button>
+      }
+    }
+    @if (linkedCount() === providers().length) {
+      <span class="hint">Tout est déjà lié</span>
+    }
+  </div>
+</div>
+
+<!-- Comptes liés -->
+<ul class="linked-list">
+  @for (p of providers(); track p.id) {
+    @if (p.linked) {
+      <li class="linked">
+        <span class="provider-icon">{{ p.name.charAt(0) }}</span>
+        <div class="linked-info">
+          <span class="linked-name">{{ p.account }}</span>
+          <span class="linked-provider">{{ p.name }}</span>
+        </div>
+        <button
+          type="button"
+          class="icon-btn"
+          (click)="unlink(p)"
+          [disabled]="!canUnlink()"
+          [attr.aria-label]="'Dissocier ' + p.name"
+          [title]="canUnlink() ? 'Dissocier' : 'Garde au moins une méthode de connexion'"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </li>
+    }
+  }
+</ul>
+
+@if (linkedCount() === 0) {
+  <p class="empty">Aucun compte lié pour l’instant.</p>
+}
