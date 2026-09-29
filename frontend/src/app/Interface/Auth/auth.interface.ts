@@ -9,3 +9,8 @@ export interface IRegister {
   email: string;
   password: string;
 }
+
+export interface IUser {
+  id: number;
+  username: string;
+}

@@ -23,7 +23,6 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private fb: FormBuilder,
     private ts: Title,
-    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -41,15 +40,12 @@ export class LoginComponent implements OnInit {
   }
 
   onSubmit(): void {
-    //TODO submit login
     const user: ILogin = {
       username: this.loginForm.value.username,
       password: this.loginForm.value.password,
       remember: this.loginForm.value.remember,
     };
-    console.log(user);
-    this.authService.login();
-    this.router.navigate(['/dashboard']); 
-    
+
+    this.authService.login(user);
   }
 }

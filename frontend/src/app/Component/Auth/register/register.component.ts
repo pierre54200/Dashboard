@@ -71,13 +71,12 @@ export class RegisterComponent {
   }
 
   onSubmit(): void {
-    //TODO submit login
-
     const user: IRegister = {
       username: this.registerForm.value.username,
       email: this.registerForm.value.email,
       password: this.registerForm.value.password,
     };
-    console.log(user);
+
+    this.authService.register(user);
   }
 }
