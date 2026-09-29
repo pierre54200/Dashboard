@@ -4,8 +4,9 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 
 from .serializer import (
     ErrorSerializer,
@@ -86,10 +87,12 @@ AUTH
     responses={201: UserSerializer, 400: RegisterSerializer},
 )
 @api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
 @login_not_required
 def register_user(request):
     serializer = RegisterSerializer(data=request.data)
-    assert isinstance(serializer, LoginSerializer)
+    # assert isinstance(serializer, LoginSerializer)
     serializer.is_valid(raise_exception=True)
 
     try:
@@ -100,7 +103,7 @@ def register_user(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    login(request, serializer.user)
+    login(request, user)
     return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
@@ -112,6 +115,8 @@ def register_user(request):
     responses={202: UserSerializer, 400: LoginSerializer},
 )
 @api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
 @login_not_required
 def login_user(request):
     serializer = LoginSerializer(data=request.data, context={"request": request})
