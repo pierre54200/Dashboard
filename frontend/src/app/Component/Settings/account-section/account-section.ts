@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { UserService } from '../../../Service/User/user.service';
 
 type EditableField = 'username' | 'email';
 
@@ -10,7 +11,15 @@ type EditableField = 'username' | 'email';
   styleUrls: ['../settings-shared.css', './account-section.css'],
 })
 export class AccountSection {
-  // Données d'exemple, à remplacer par l'utilisateur connecté (GET /api/me/)
+
+  constructor(
+    private userService: UserService,
+  ) {}
+
+
+
+
+
   user = signal({
     username: 'pierre',
     email: 'pierre@exemple.fr',
@@ -54,24 +63,9 @@ export class AccountSection {
   revealEmail = signal(false);
 
   changePassword(): void {
-    this.passwordSuccess.set(false);
-    if (!this.currentPassword || !this.newPassword) {
-      this.passwordError.set('Remplis tous les champs.');
-    } else if (this.newPassword.length < 8) {
-      this.passwordError.set('Le nouveau mot de passe doit faire au moins 8 caractères.');
-    } else if (this.newPassword !== this.confirmPassword) {
-      this.passwordError.set('Les deux mots de passe ne correspondent pas.');
-    } else {
-      this.passwordError.set(null);
-      this.passwordSuccess.set(true);
-      this.showPassword.set(false);
-      this.currentPassword = this.newPassword = this.confirmPassword = '';
-      // A brancher : POST /api/me/password/
-    }
   }
 
   deleteAccount(): void {
-    this.confirmDelete.set(false);
-    // A brancher : DELETE /api/me/ puis redirection vers /login
+    this.userService.deleteUser();
   }
 }

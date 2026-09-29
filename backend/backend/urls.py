@@ -1,3 +1,4 @@
+from django import views
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
@@ -6,7 +7,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-from .views import test_view
+from .views import csrf
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -14,6 +15,6 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
-    path('api/test/', test_view, name='test'),
     path('api/', include('api.urls')),
+    path("csrf", csrf),
 ]

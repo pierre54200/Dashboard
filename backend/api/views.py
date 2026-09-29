@@ -6,7 +6,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .serializer import (
     ErrorSerializer,
@@ -29,6 +29,8 @@ GETTERS
     responses={200: None},
 )
 @api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
 @login_not_required
 def get_user(request):
     return Response(status=status.HTTP_200_OK)
@@ -41,6 +43,8 @@ def get_user(request):
     responses={200: UserSerializer, 404: ErrorSerializer},
 )
 @api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
 @login_not_required
 def get_user_from_id(request, userId):
     try:
@@ -135,6 +139,8 @@ def login_user(request):
     responses={200: None},
 )
 @api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def logout_user(request):
     logout(request)
     return Response(status=status.HTTP_200_OK)

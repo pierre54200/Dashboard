@@ -13,13 +13,28 @@ export class AuthService {
     private http: HttpClient,
     private userService: UserService,
     private router: Router,
-  ) {}
+  ) {
+    this.http.get(`${environment.apiUrl}csrf`).subscribe({
+      error: (err) => console.error("CSRF", err),
+    });
+  }
 
   isAuthenticated(): boolean {
-      if (this.userService.me() === null) {
-          return false;
-        }
-    return true
+    if (this.userService.me() === null) {
+      return false;
+    }
+    return true;
+  }
+
+  register(user: IRegister): void {
+    this.http.post<IUser>(this.apiUrl + "register", user).subscribe({
+      next: (data: IUser) => {
+        this.router.navigate(["/dashboard"]);
+      },
+      error: (err) => {
+        console.error(err);
+      },
+    });
   }
 
   login(user: ILogin): void {
@@ -37,17 +52,6 @@ export class AuthService {
     this.http.post(this.apiUrl + "logout", null).subscribe({
       next: (data) => {
         this.router.navigate(["/login"]);
-      },
-      error: (err) => {
-        console.error(err);
-      },
-    });
-  }
-
-  register(user: IRegister): void {
-    this.http.post<IUser>(this.apiUrl + "register", user).subscribe({
-      next: (data: IUser) => {
-        this.router.navigate(["/dashboard"]);
       },
       error: (err) => {
         console.error(err);
