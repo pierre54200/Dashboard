@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AccountSection } from './account-section/account-section';
 import { ServicesSection } from './services-section/services-section';
 import { ConnectionsSection } from './connections-section/connections-section';
+import { AuthService } from '../../Service/Auth/auth.service';
 
 type Section = 'account' | 'services' | 'connections';
 
@@ -21,15 +22,17 @@ export class SettingsComponent {
     { id: 'connections', label: 'Connexions' },
   ];
 
-  constructor(private router: Router) {}
-
-  /** Echap ferme les paramètres, comme sur Discord. */
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+  ) {}
+  
   @HostListener('document:keydown.escape')
   close(): void {
     this.router.navigate(['/dashboard']);
   }
 
   logout(): void {
-    this.router.navigate(['/login']);
+    this.authService.logout();
   }
 }
