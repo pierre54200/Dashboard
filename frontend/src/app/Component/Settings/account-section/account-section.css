@@ -27,7 +27,7 @@
   flex-shrink: 0;
   border: 7px solid var(--bg-input);
   border-radius: 50%;
-  background-color: #4e5058;
+  background-color: var(--btn-grey);
   color: #fff;
   font-size: 32px;
   font-weight: 700;
@@ -48,7 +48,9 @@
   margin: 16px;
   padding: 16px;
   border-radius: 8px;
-  background-color: var(--bg-elevated);
+  background-color: var(--surface);
+  -webkit-backdrop-filter: var(--surface-filter);
+  backdrop-filter: var(--surface-filter);
 }
 
 .row {

@@ -14,16 +14,8 @@ export class UserService {
     private router: Router,
   ) {}
 
-  async me(): Promise<IUser | null> {
-    try {
-      const user = await firstValueFrom(
-        this.http.get<IUser>(this.apiUrl + "me"),
-      );
-      return user;
-    } catch (err) {
-      console.error(err);
-      return null;
-    }
+  me(): Observable<IUser> {
+    return this.http.get<IUser>(this.apiUrl + "me");
   }
 
   deleteUser(): void {

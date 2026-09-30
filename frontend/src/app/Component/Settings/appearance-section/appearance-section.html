@@ -1,0 +1,60 @@
+<h1 class="page-title">Apparence</h1>
+<p class="page-intro">Choisis le thème de ton dashboard.</p>
+
+<section>
+  <h2 class="block-title" id="theme-title">Thème</h2>
+
+  <div class="themes" role="radiogroup" aria-labelledby="theme-title">
+    @for (choice of choices; track choice.value) {
+      <button
+        type="button"
+        role="radio"
+        class="theme"
+        [attr.aria-checked]="theme.preference() === choice.value"
+        (click)="select(choice.value)"
+      >
+        <span class="preview" [style.background]="choice.preview[0]" aria-hidden="true">
+          <span [style.background]="choice.preview[1]"></span>
+          <span [style.background]="choice.preview[2]"></span>
+        </span>
+        <span class="theme-label">{{ choice.label }}</span>
+        <span class="theme-desc">{{ choice.description }}</span>
+      </button>
+    }
+  </div>
+
+  @if (theme.preference() === 'system') {
+    <p class="block-text hint">
+      Thème appliqué actuellement : {{ theme.applied() === 'dark' ? 'sombre' : 'clair' }}.
+    </p>
+  }
+</section>
+
+<hr class="divider" />
+
+<section>
+  <h2 class="block-title" id="glass-title">Effet verre</h2>
+  <p class="block-text" id="glass-desc">
+    Widgets transparents et flous sur un fond coloré, dans le style de la dernière mise à jour d'Apple.
+    Fonctionne avec le thème sombre comme avec le clair.
+  </p>
+
+  <div class="toggle-row">
+    <span class="glass-preview" [class.is-light]="theme.applied() === 'light'" aria-hidden="true">
+      <span class="glass-card"></span>
+      <span class="glass-card"></span>
+    </span>
+
+    <button
+      type="button"
+      role="switch"
+      class="switch"
+      [attr.aria-checked]="theme.glass()"
+      aria-labelledby="glass-title"
+      aria-describedby="glass-desc"
+      (click)="theme.setGlass(!theme.glass())"
+    >
+      <span class="switch-thumb"></span>
+    </button>
+  </div>
+</section>

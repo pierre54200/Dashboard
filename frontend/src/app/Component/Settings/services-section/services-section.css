@@ -4,7 +4,7 @@
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
-  border-bottom: 1px solid #3f4147;
+  border-bottom: 1px solid var(--border);
 }
 
 .tab {
@@ -43,7 +43,9 @@
   overflow: hidden;
   border-radius: 8px;
   border: 1px solid transparent;
-  background-color: var(--bg-elevated);
+  background-color: var(--surface);
+  -webkit-backdrop-filter: var(--surface-filter);
+  backdrop-filter: var(--surface-filter);
 }
 
 .service.is-on {
@@ -64,7 +66,7 @@
   height: 44px;
   flex-shrink: 0;
   border-radius: 12px;
-  background-color: #4e5058;
+  background-color: var(--btn-grey);
   color: #fff;
   font-size: 18px;
   font-weight: 700;

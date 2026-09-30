@@ -5,7 +5,7 @@
 .settings {
   display: flex;
   min-height: 100vh;
-  background-color: var(--bg);
+  background-color: var(--app-bg);
   color: var(--text);
   font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
@@ -16,7 +16,10 @@
   flex: 1 0 218px;
   display: flex;
   justify-content: flex-end;
-  background-color: var(--bg-elevated);
+  background-color: var(--surface);
+  border-right: 1px solid var(--surface-divider);
+  -webkit-backdrop-filter: var(--surface-filter);
+  backdrop-filter: var(--surface-filter);
 }
 
 .sidebar-inner {
@@ -55,12 +58,12 @@
 }
 
 .nav-item:hover {
-  background-color: #35373c;
+  background-color: var(--bg-hover);
   color: var(--text-input);
 }
 
 .nav-item.active {
-  background-color: #404249;
+  background-color: var(--bg-active);
   color: var(--text);
 }
 
@@ -71,7 +74,7 @@
 .nav-separator {
   height: 1px;
   margin: 8px 10px;
-  background-color: #3f4147;
+  background-color: var(--border);
 }
 
 /* ---------- Contenu ---------- */
@@ -113,7 +116,7 @@
 }
 
 .close-btn:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-subtle);
   color: var(--text);
   border-color: var(--text);
 }

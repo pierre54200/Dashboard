@@ -4,6 +4,7 @@ import { HttpClient } from "@angular/common/http";
 import { Router } from "@angular/router";
 import { ILogin, IRegister, IUser } from "../../Interface/Auth/auth.interface";
 import { UserService } from "../User/user.service";
+import { ThemeService } from "../Theme/theme.service";
 
 @Injectable({ providedIn: "root" })
 export class AuthService {
@@ -13,6 +14,7 @@ export class AuthService {
     private http: HttpClient,
     private userService: UserService,
     private router: Router,
+    private themeService: ThemeService,
   ) {
     this.http.get(`${environment.apiUrl}csrf`).subscribe({
       error: (err) => console.error("CSRF", err),
@@ -29,6 +31,7 @@ export class AuthService {
   register(user: IRegister): void {
     this.http.post<IUser>(this.apiUrl + "register", user).subscribe({
       next: (data: IUser) => {
+        this.themeService.loadFromServer();
         this.router.navigate(["/dashboard"]);
       },
       error: (err) => {
@@ -40,6 +43,7 @@ export class AuthService {
   login(user: ILogin): void {
     this.http.post<IUser>(this.apiUrl + "login", user).subscribe({
       next: (data: IUser) => {
+        this.themeService.loadFromServer();
         this.router.navigate(["/dashboard"]);
       },
       error: (err) => {
