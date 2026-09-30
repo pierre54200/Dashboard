@@ -47,17 +47,74 @@
 }
 
 .theme-label {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
 .theme-desc {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
 .hint {
   margin-top: 12px;
+}
+
+/* ---------- Taille du texte ---------- */
+
+.scales {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.scale {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-height: 72px;
+  padding: 8px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.scale:hover {
+  border-color: var(--text-muted);
+}
+
+.scale[aria-checked="true"] {
+  border-color: var(--blue);
+}
+
+.scale:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* Taille fixe en px : l'aperçu "Aa" ne doit pas bouger quand on change le réglage */
+.scale-sample {
+  font-weight: 700;
+  line-height: 1;
+}
+
+.scale-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.scale-preview {
+  margin: 12px 0 0;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: var(--bg-input);
+  font-size: 1rem;
+  color: var(--text);
 }
 
 /* ---------- Effet verre ---------- */
@@ -153,8 +210,83 @@
   }
 }
 
+/* ---------- Arrière-plan ---------- */
+
+.bg-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.bg-thumb {
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 90px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background-color: var(--bg-input);
+}
+
+.bg-thumb.is-empty {
+  border-style: dashed;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.bg-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bg-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bg-hint {
+  width: 100%;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.btn-sm:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.dim-field {
+  margin-top: 16px;
+  max-width: 360px;
+}
+
+.range {
+  width: 100%;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 @media (max-width: 767px) {
   .themes {
     grid-template-columns: 1fr;
+  }
+
+  .scales {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

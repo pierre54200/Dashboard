@@ -33,6 +33,32 @@
 <hr class="divider" />
 
 <section>
+  <h2 class="block-title" id="text-title">Taille du texte</h2>
+  <p class="block-text">S'applique à tout le site : dashboard, widgets et paramètres.</p>
+
+  <div class="scales" role="radiogroup" aria-labelledby="text-title">
+    @for (s of textScales; track s.value) {
+      <button
+        type="button"
+        role="radio"
+        class="scale"
+        [attr.aria-checked]="theme.textScale() === s.value"
+        (click)="theme.setTextScale(s.value)"
+      >
+        <span class="scale-sample" [style.font-size.px]="s.value * 0.18" aria-hidden="true">Aa</span>
+        <span class="scale-label">{{ s.label }}</span>
+      </button>
+    }
+  </div>
+
+  <p class="scale-preview">
+    Aperçu : voici à quoi ressemble le texte de ton dashboard avec cette taille.
+  </p>
+</section>
+
+<hr class="divider" />
+
+<section>
   <h2 class="block-title" id="glass-title">Effet verre</h2>
   <p class="block-text" id="glass-desc">
     Widgets transparents et flous sur un fond coloré, dans le style de la dernière mise à jour d'Apple.
@@ -57,4 +83,65 @@
       <span class="switch-thumb"></span>
     </button>
   </div>
+</section>
+
+<hr class="divider" />
+
+<section>
+  <h2 class="block-title" id="bg-title">Arrière-plan</h2>
+  <p class="block-text">
+    Mets une image en fond de ton dashboard. Elle est redimensionnée et compressée automatiquement.
+    Combine-la avec l'effet verre pour voir l'image à travers les widgets.
+  </p>
+
+  <div class="bg-row">
+    <div class="bg-thumb" [class.is-empty]="!theme.background()">
+      @if (theme.background()) {
+        <img [src]="theme.background()" alt="Aperçu de l'arrière-plan actuel" />
+      } @else {
+        <span>Aucune image</span>
+      }
+    </div>
+
+    <div class="bg-actions">
+      <input
+        #fileInput
+        id="bg-file"
+        class="visually-hidden"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        (change)="onFileSelected($event)"
+      />
+      <button type="button" class="btn btn-primary btn-sm" [disabled]="bgLoading()" (click)="fileInput.click()">
+        {{ bgLoading() ? 'Chargement...' : theme.background() ? 'Changer l’image' : 'Choisir une image' }}
+      </button>
+      @if (theme.background()) {
+        <button type="button" class="btn-sm btn-outline-danger" (click)="theme.clearBackground()">Retirer</button>
+      }
+      <span class="bg-hint">JPEG, PNG ou WebP, 15 Mo max</span>
+    </div>
+  </div>
+
+  @if (bgError()) {
+    <p class="error" role="alert">{{ bgError() }}</p>
+  }
+
+  @if (theme.background()) {
+    <div class="field dim-field">
+      <label class="label" for="bg-dim">
+        {{ theme.applied() === 'dark' ? 'Assombrir' : 'Éclaircir' }} l'image : {{ theme.backgroundDim() }} %
+      </label>
+      <input
+        id="bg-dim"
+        class="range"
+        type="range"
+        min="0"
+        max="80"
+        step="5"
+        [value]="theme.backgroundDim()"
+        (input)="onDimInput($event, false)"
+        (change)="onDimInput($event, true)"
+      />
+    </div>
+  }
 </section>

@@ -7,27 +7,27 @@
 
 .page-title {
   margin: 0 0 20px;
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--text);
 }
 
 .page-intro {
   margin: -12px 0 20px;
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--text-muted);
 }
 
 .block-title {
   margin: 0 0 8px;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text);
 }
 
 .block-text {
   margin: 0 0 16px;
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--text-muted);
 }
 
@@ -41,7 +41,7 @@
 .label {
   display: block;
   margin: 0 0 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -61,13 +61,13 @@
 
 .error {
   margin: 4px 0 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--red);
 }
 
 .success {
   margin: 8px 0 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--green);
 }
 
@@ -81,7 +81,7 @@
 .btn-sm {
   padding: 2px 16px;
   min-height: 32px;
-  font-size: 14px;
+  font-size: 0.875rem;
   border: none;
   border-radius: 3px;
   font-weight: 500;
@@ -112,7 +112,7 @@
   border: none;
   background: transparent;
   color: var(--text);
-  font-size: 14px;
+  font-size: 0.875rem;
   cursor: pointer;
 }
 
@@ -127,7 +127,7 @@
   gap: 6px;
   padding: 2px 8px;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
 }

@@ -1,12 +1,9 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import "tailwindcss";
 
-/* Le variant "dark:" de Tailwind suit l'attribut data-theme posé par ThemeService */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* ========== Thème sombre (par défaut) ========== */
 :root,
+/* Thème sombre */
 [data-theme="dark"] {
   color-scheme: dark;
 
@@ -33,7 +30,7 @@
   --link: #00a8fc;
 }
 
-/* ========== Thème clair ========== */
+/* Thème clair */
 [data-theme="light"] {
   color-scheme: light;
 
@@ -139,13 +136,19 @@ body {
   --text-muted: #3c3e45;
 }
 
-/* Fond d'écran fixe derrière toute l'application */
+/* Fond d'écran fixe derrière toute l'application (dégradé de l'effet verre) */
 [data-glass="on"] body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   background: var(--wallpaper);
+}
+
+/* Image choisie par l'utilisateur : dessinée par ThemeService dans .app-wallpaper.
+ * On masque alors le dégradé de l'effet verre. */
+[data-bg="image"] body::before {
+  display: none;
 }
 
 /* Navigateur sans backdrop-filter : on rend les surfaces plus opaques pour garder la lisibilité */
@@ -175,7 +178,7 @@ body {
   border: 1px solid transparent;
   border-radius: 3px;
   color: var(--text-input);
-  font-size: 16px;
+  font-size: 1rem;
   padding: 10px 12px;
   outline: none;
 }
@@ -187,7 +190,7 @@ body {
 .btn {
   border: none;
   border-radius: 3px;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 500;
   padding: 12px;
   cursor: pointer;
@@ -226,6 +229,6 @@ body {
 
 .field-error {
   color: var(--red);
-  font-size: 12px;
+  font-size: 0.75rem;
   margin: 4px 0 0;
 }

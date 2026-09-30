@@ -89,7 +89,7 @@
   border-radius: 50%;
   background-color: var(--blue);
   color: #fff;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
@@ -107,13 +107,13 @@
 }
 
 .title {
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: var(--text);
 }
 
 .subtitle {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
@@ -167,6 +167,6 @@
   justify-content: space-between;
   padding: 8px 16px;
   border-top: 1px solid var(--surface-divider);
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--text-muted);
 }

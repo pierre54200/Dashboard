@@ -11,7 +11,7 @@
 }
 
 .add-bar-text {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -33,7 +33,7 @@
   border-radius: 4px;
   background-color: var(--btn-grey);
   color: #fff;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.15s ease;
@@ -44,7 +44,7 @@
 }
 
 .hint {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-muted);
 }
 
@@ -88,7 +88,7 @@
 }
 
 .linked-name {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text);
   overflow: hidden;
@@ -96,7 +96,7 @@
 }
 
 .linked-provider {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
