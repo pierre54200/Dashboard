@@ -4,6 +4,7 @@ import { RegisterComponent } from "./Component/Auth/register/register.component"
 import { DashboardComponent } from "./Component/Dashboard/dashboard.component";
 import { AuthGuard } from "./Guard/auth-guard-guard";
 import { SettingsComponent } from "./Component/Settings/settings.component";
+import { TermsComponent } from "./Component/Legal/terms/terms.component";
 
 export const routes: Routes = [
 
@@ -12,7 +13,7 @@ export const routes: Routes = [
   // Auth
   { path: "login", component: LoginComponent },
   { path: "register", component: RegisterComponent },
-
+  { path: "terms", component: TermsComponent },
   // Dashboard
   {
     path: "dashboard",
