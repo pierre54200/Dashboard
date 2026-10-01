@@ -10,11 +10,6 @@ Interface en thème sombre aux couleurs de Discord.
 - [Services et widgets](#services-et-widgets)
 - [Installation et lancement](#installation-et-lancement)
 - [Utilisation](#utilisation)
-- [Architecture](#architecture)
-- [Choix technologiques](#choix-technologiques)
-- [Modèle de données](#modèle-de-données)
-- [POC](#poc)
-- [Structure du dépôt](#structure-du-dépôt)
 
 ## Fonctionnalités
 
