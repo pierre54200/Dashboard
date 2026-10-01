@@ -2,7 +2,7 @@ import { Routes } from "@angular/router";
 import { LoginComponent } from "./Component/Auth/login/login.component";
 import { RegisterComponent } from "./Component/Auth/register/register.component";
 import { DashboardComponent } from "./Component/Dashboard/dashboard.component";
-import { AuthGuard } from "./Guard/auth-guard-guard";
+import { AuthGuard } from "./Guard/auth-guard";
 import { SettingsComponent } from "./Component/Settings/settings.component";
 import { TermsComponent } from "./Component/Legal/terms/terms.component";
 import { userResolver } from "./Resolver/User/user-resolver";
