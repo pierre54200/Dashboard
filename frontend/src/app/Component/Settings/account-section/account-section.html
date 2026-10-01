@@ -117,3 +117,17 @@
 
   </div>
 </section>
+
+<hr class="divider" />
+
+<section>
+  <h2 class="block-title">Mes données</h2>
+  <p class="block-text">
+    Télécharge une copie de toutes les données enregistrées sur ton compte (profil, préférences,
+    consentements) dans un fichier JSON. C'est ton droit d'accès et de portabilité prévu par le RGPD.
+    <a routerLink="/terms" class="link">En savoir plus</a>
+  </p>
+  <button type="button" class="btn btn-primary btn-sm" (click)="exportData()">
+    Télécharger mes données
+  </button>
+</section>

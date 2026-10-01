@@ -21,7 +21,7 @@ type EditableField = "username";
 })
 export class AccountSection {
   private route = inject(ActivatedRoute);
-  user = signal<IUser | null>(this.route.snapshot.data['user']);
+  user = signal<IUser | null>(this.route.snapshot.data["user"]);
 
   constructor(private userService: UserService) {}
 
@@ -64,5 +64,20 @@ export class AccountSection {
 
   deleteAccount(): void {
     this.userService.deleteUser();
+  }
+
+  exportData(): void {
+    const data = this.user();
+    if (!data) return;
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `dashboard-donnees-${data.username}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 }
