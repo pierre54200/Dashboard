@@ -1,0 +1,193 @@
+.terms-page {
+  min-height: 100vh;
+  padding: 40px 16px;
+  background-color: var(--app-bg);
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.terms-card {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 40px;
+  border-radius: var(--surface-radius);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow);
+  background-color: var(--surface);
+  -webkit-backdrop-filter: var(--surface-filter);
+  backdrop-filter: var(--surface-filter);
+  box-sizing: border-box;
+  line-height: 1.6;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+}
+
+.terms-title {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.terms-meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* ---------- Sommaire ---------- */
+
+.toc {
+  margin: 24px 0 8px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  background-color: var(--bg-input);
+}
+
+.toc-title {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.toc ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.toc-link {
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--link);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toc-link:hover {
+  text-decoration: underline;
+}
+
+.toc-link:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* ---------- Contenu ---------- */
+
+section {
+  scroll-margin-top: 16px;
+}
+
+section:focus {
+  outline: none;
+}
+
+.section-title {
+  margin: 32px 0 12px;
+  padding-top: 24px;
+  border-top: 1px solid var(--surface-divider);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.section-subtitle,
+h3 {
+  margin: 20px 0 6px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+p,
+li {
+  font-size: 0.9375rem;
+  color: var(--text-input);
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+li {
+  margin-bottom: 4px;
+}
+
+strong {
+  color: var(--text);
+}
+
+/* ---------- Tableau ---------- */
+
+.table-wrap {
+  overflow-x: auto;
+  margin: 8px 0 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--surface-divider);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+td:first-child {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+td {
+  color: var(--text-input);
+}
+
+.terms-footer {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.terms-footer .btn {
+  display: inline-block;
+  padding: 10px 20px;
+  text-decoration: none;
+}
+
+@media (max-width: 767px) {
+  .terms-page {
+    padding: 16px;
+  }
+
+  .terms-card {
+    padding: 24px 16px;
+  }
+
+  td:first-child {
+    white-space: normal;
+  }
+}

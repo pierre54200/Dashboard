@@ -5,12 +5,9 @@
   <div class="banner"></div>
 
   <div class="profile-head">
-    <span class="avatar">{{ user().username.charAt(0).toUpperCase() }}</span>
+    <span class="avatar">{{ this.user()?.username.charAt(0).toUpperCase() }}</span>
     <div class="profile-name">
-      <span>{{ user().username }}</span>
-      @if (user().verified) {
-        <span class="pill pill-on">Compte vérifié</span>
-      }
+      <span>{{ this.user()?.username }}</span>
     </div>
   </div>
 
@@ -18,113 +15,119 @@
     <!-- Nom d'utilisateur -->
     <div class="row">
       @if (editing() === 'username') {
-        <form class="row-edit" (ngSubmit)="saveEdit()">
-          <label class="label" for="edit-username">Nom d'utilisateur</label>
-          <input id="edit-username" class="input" name="username" [(ngModel)]="draft" autofocus />
-          <div class="actions">
-            <button type="button" class="btn-link" (click)="editing.set(null)">Annuler</button>
-            <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
-          </div>
-        </form>
-      } @else {
-        <div>
-          <span class="label">Nom d'utilisateur</span>
-          <span class="value">{{ user().username }}</span>
+      <form class="row-edit" (ngSubmit)="saveEdit()">
+        <label class="label" for="edit-username">Nom d'utilisateur</label>
+        <input id="edit-username" class="input" name="username" [(ngModel)]="draft" autofocus />
+        <div class="actions">
+          <button type="button" class="btn-link" (click)="editing.set(null)">Annuler</button>
+          <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
         </div>
-        <button type="button" class="btn-sm btn-grey" (click)="startEdit('username')">Modifier</button>
+      </form>
+      } @else {
+      <div>
+        <span class="label">Nom d'utilisateur</span>
+        <span class="value">{{ this.user()?.username }}</span>
+      </div>
+      <button type="button" class="btn-sm btn-grey" (click)="startEdit('username')">Modifier</button>
       }
     </div>
 
     <!-- E-mail -->
-    <div class="row">
+    <!-- <div class="row">
       @if (editing() === 'email') {
-        <form class="row-edit" (ngSubmit)="saveEdit()">
-          <label class="label" for="edit-email">E-mail</label>
-          <input id="edit-email" class="input" type="email" name="email" [(ngModel)]="draft" autofocus />
-          <div class="actions">
-            <button type="button" class="btn-link" (click)="editing.set(null)">Annuler</button>
-            <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
-          </div>
-        </form>
-      } @else {
-        <div>
-          <span class="label">E-mail</span>
-          <span class="value">
-            {{ revealEmail() ? user().email : mask(user().email) }}
-            <button type="button" class="link reveal" (click)="revealEmail.set(!revealEmail())">
-              {{ revealEmail() ? 'Masquer' : 'Afficher' }}
-            </button>
-          </span>
+      <form class="row-edit" (ngSubmit)="saveEdit()">
+        <label class="label" for="edit-email">E-mail</label>
+        <input id="edit-email" class="input" type="email" name="email" [(ngModel)]="draft" autofocus />
+        <div class="actions">
+          <button type="button" class="btn-link" (click)="editing.set(null)">Annuler</button>
+          <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
         </div>
-        <button type="button" class="btn-sm btn-grey" (click)="startEdit('email')">Modifier</button>
+      </form>
+      } @else {
+      <div>
+        <span class="label">E-mail</span>
+        <span class="value">
+          {{ revealEmail() ? user().email : mask(user().email) }}
+          <button type="button" class="link reveal" (click)="revealEmail.set(!revealEmail())">
+            {{ revealEmail() ? 'Masquer' : 'Afficher' }}
+          </button>
+        </span>
+      </div>
+      <button type="button" class="btn-sm btn-grey" (click)="startEdit('email')">Modifier</button>
+      }
+    </div> -->
+
+    <div class="row">
+      <h2 class="block-title">Mot de passe</h2>
+      @if (!showPassword()) {
+      <button type="button" class="btn btn-primary btn-sm" (click)="showPassword.set(true); passwordSuccess.set(false)">
+        Changer le mot de passe
+      </button>
+      @if (passwordSuccess()) {
+      <p class="success">Mot de passe mis à jour.</p>
+      }
+      } @else {
+      <form class="password-form" (ngSubmit)="changePassword()" novalidate>
+        <div class="field">
+          <label class="label" for="pwd-current">Mot de passe actuel</label>
+          <input id="pwd-current" class="input" type="password" name="current" autocomplete="current-password"
+            [(ngModel)]="currentPassword" />
+        </div>
+        <div class="field">
+          <label class="label" for="pwd-new">Nouveau mot de passe</label>
+          <input id="pwd-new" class="input" type="password" name="new" autocomplete="new-password"
+            [(ngModel)]="newPassword" />
+        </div>
+        <div class="field">
+          <label class="label" for="pwd-confirm">Confirme le nouveau mot de passe</label>
+          <input id="pwd-confirm" class="input" type="password" name="confirm" autocomplete="new-password"
+            [(ngModel)]="confirmPassword" />
+        </div>
+        @if (passwordError()) {
+        <p class="error" role="alert">{{ passwordError() }}</p>
+        }
+        <div class="actions">
+          <button type="button" class="btn-link"
+            (click)="showPassword.set(false); passwordError.set(null)">Annuler</button>
+          <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+        </div>
+      </form>
       }
     </div>
 
-    <!-- Date d'inscription -->
     <div class="row">
-      <div>
-        <span class="label">Membre depuis</span>
-        <span class="value">{{ user().createdAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+      <h2 class="block-title">Supprimer le compte</h2>
+      <p class="block-text">
+        Ton compte, ton dashboard et tous tes abonnements aux services seront supprimés définitivement.
+      </p>
+
+      @if (!confirmDelete()) {
+      <button type="button" class="btn-sm btn-outline-danger" (click)="confirmDelete.set(true)">Supprimer le
+        compte</button>
+      } @else {
+      <div class="danger-confirm" role="alertdialog" aria-labelledby="del-q">
+        <p id="del-q">Tu es sûr ? Cette action est irréversible.</p>
+        <div class="actions">
+          <button type="button" class="btn-link" (click)="confirmDelete.set(false)">Annuler</button>
+          <button type="button" class="btn btn-danger btn-sm" (click)="deleteAccount()">Oui, supprimer</button>
+        </div>
       </div>
+      }
     </div>
+
   </div>
 </section>
 
 <hr class="divider" />
 
-<!-- Mot de passe -->
 <section>
-  <h2 class="block-title">Mot de passe</h2>
-  @if (!showPassword()) {
-    <button type="button" class="btn btn-primary btn-sm" (click)="showPassword.set(true); passwordSuccess.set(false)">
-      Changer le mot de passe
-    </button>
-    @if (passwordSuccess()) {
-      <p class="success">Mot de passe mis à jour.</p>
-    }
-  } @else {
-    <form class="password-form" (ngSubmit)="changePassword()" novalidate>
-      <div class="field">
-        <label class="label" for="pwd-current">Mot de passe actuel</label>
-        <input id="pwd-current" class="input" type="password" name="current" autocomplete="current-password" [(ngModel)]="currentPassword" />
-      </div>
-      <div class="field">
-        <label class="label" for="pwd-new">Nouveau mot de passe</label>
-        <input id="pwd-new" class="input" type="password" name="new" autocomplete="new-password" [(ngModel)]="newPassword" />
-      </div>
-      <div class="field">
-        <label class="label" for="pwd-confirm">Confirme le nouveau mot de passe</label>
-        <input id="pwd-confirm" class="input" type="password" name="confirm" autocomplete="new-password" [(ngModel)]="confirmPassword" />
-      </div>
-      @if (passwordError()) {
-        <p class="error" role="alert">{{ passwordError() }}</p>
-      }
-      <div class="actions">
-        <button type="button" class="btn-link" (click)="showPassword.set(false); passwordError.set(null)">Annuler</button>
-        <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
-      </div>
-    </form>
-  }
-</section>
-
-<hr class="divider" />
-
-<!-- Suppression du compte -->
-<section>
-  <h2 class="block-title">Supprimer le compte</h2>
+  <h2 class="block-title">Mes données</h2>
   <p class="block-text">
-    Ton compte, ton dashboard et tous tes abonnements aux services seront supprimés définitivement.
+    Télécharge une copie de toutes les données enregistrées sur ton compte (profil, préférences,
+    consentements) dans un fichier JSON. C'est ton droit d'accès et de portabilité prévu par le RGPD.
+    <a routerLink="/terms" class="link">En savoir plus</a>
   </p>
-
-  @if (!confirmDelete()) {
-    <button type="button" class="btn-sm btn-outline-danger" (click)="confirmDelete.set(true)">Supprimer le compte</button>
-  } @else {
-    <div class="danger-confirm" role="alertdialog" aria-labelledby="del-q">
-      <p id="del-q">Tu es sûr ? Cette action est irréversible.</p>
-      <div class="actions">
-        <button type="button" class="btn-link" (click)="confirmDelete.set(false)">Annuler</button>
-        <button type="button" class="btn btn-danger btn-sm" (click)="deleteAccount()">Oui, supprimer</button>
-      </div>
-    </div>
-  }
+  <button type="button" class="btn btn-primary btn-sm" (click)="exportData()">
+    Télécharger mes données
+  </button>
 </section>

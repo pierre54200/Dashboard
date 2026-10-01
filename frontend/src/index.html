@@ -1,11 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr" data-theme="dark" data-bs-theme="dark">
 <head>
   <meta charset="utf-8">
   <title>Dashboard</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="logo.ico">
+  <!-- Applique le thème avant le chargement d'Angular pour éviter un flash de couleur -->
+  <script>
+    (function () {
+      var p = "dark";
+      try { p = localStorage.getItem("theme") || "dark"; } catch (e) {}
+      if (p === "system") p = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      if (p !== "light") p = "dark";
+      document.documentElement.setAttribute("data-theme", p);
+      document.documentElement.setAttribute("data-bs-theme", p);
+      var g = "off";
+      try { g = localStorage.getItem("glass") === "true" ? "on" : "off"; } catch (e) {}
+      document.documentElement.setAttribute("data-glass", g);
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

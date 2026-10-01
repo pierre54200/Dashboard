@@ -79,20 +79,32 @@
         </p>
       </div>
 
-      <label class="register-terms">
-        <input
-          type="checkbox"
-          id="terms"
-          name="terms"
-          formControlName="terms"
-        />
-        J'accepte les conditions d'utilisation
-      </label>
+      <div class="register-terms-field">
+        <div class="register-terms">
+          <input
+            type="checkbox"
+            id="terms"
+            name="terms"
+            formControlName="terms"
+            aria-describedby="terms-error"
+            [attr.aria-invalid]="isFieldInvalid('terms')"
+          />
+          <label for="terms">
+            J'accepte les
+            <a routerLink="/terms" target="_blank" rel="noopener" class="link">conditions d'utilisation</a>
+            et la
+            <a routerLink="/terms" target="_blank" rel="noopener" class="link">politique de confidentialité</a>
+          </label>
+        </div>
+        <p id="terms-error" class="field-error" *ngIf="isFieldInvalid('terms')">
+          {{ getErrorMessage("terms") }}
+        </p>
+      </div>
 
       <button
         type="submit"
         class="btn btn-primary"
-        [disabled]="registerForm.invalid || !registerForm.value.terms"
+        [disabled]="registerForm.invalid"
       >
         S'inscrire
       </button>

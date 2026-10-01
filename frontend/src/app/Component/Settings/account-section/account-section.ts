@@ -1,41 +1,39 @@
-import { Component, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { UserService } from '../../../Service/User/user.service';
+import {
+  Component,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+  WritableSignal,
+} from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { UserService } from "../../../Service/User/user.service";
+import { IUser } from "../../../Interface/Auth/auth.interface";
+import { ActivatedRoute } from "@angular/router";
 
-type EditableField = 'username' | 'email';
+type EditableField = "username";
 
 @Component({
-  selector: 'app-account-section',
+  selector: "app-account-section",
   imports: [FormsModule],
-  templateUrl: './account-section.html',
-  styleUrls: ['../settings-shared.css', './account-section.css'],
+  templateUrl: "./account-section.html",
+  styleUrls: ["../settings-shared.css", "./account-section.css"],
 })
 export class AccountSection {
+  private route = inject(ActivatedRoute);
+  user = signal<IUser | null>(this.route.snapshot.data["user"]);
 
-  constructor(
-    private userService: UserService,
-  ) {}
-
-
-
-
-
-  user = signal({
-    username: 'pierre',
-    email: 'pierre@exemple.fr',
-    createdAt: new Date('2026-09-01'),
-    verified: true,
-  });
+  constructor(private userService: UserService) {}
 
   /** Champ en cours d'édition (un seul à la fois). */
   editing = signal<EditableField | null>(null);
-  draft = '';
+  draft = "";
 
   // Changement de mot de passe
   showPassword = signal(false);
-  currentPassword = '';
-  newPassword = '';
-  confirmPassword = '';
+  currentPassword = "";
+  newPassword = "";
+  confirmPassword = "";
   passwordError = signal<string | null>(null);
   passwordSuccess = signal(false);
 
@@ -43,29 +41,43 @@ export class AccountSection {
   confirmDelete = signal(false);
 
   startEdit(field: EditableField): void {
-    this.draft = this.user()[field];
+    this.draft = this.user()?.[field] ?? "";
     this.editing.set(field);
   }
 
   saveEdit(): void {
     const field = this.editing();
-    if (!field || !this.draft.trim()) return;
-    this.user.update((u) => ({ ...u, [field]: this.draft.trim() }));
+    const value = this.draft.trim();
+    if (!field || !value) return;
+    this.user.update((u) => (u ? { ...u, [field]: value } : u));
     this.editing.set(null);
-    // A brancher : PATCH /api/me/
   }
 
   mask(email: string): string {
-    const [name, domain] = email.split('@');
-    return '*'.repeat(Math.max(name.length, 4)) + '@' + domain;
+    const [name, domain] = email.split("@");
+    return "*".repeat(Math.max(name.length, 4)) + "@" + domain;
   }
 
   revealEmail = signal(false);
 
-  changePassword(): void {
-  }
+  changePassword(): void {}
 
   deleteAccount(): void {
     this.userService.deleteUser();
+  }
+
+  exportData(): void {
+    const data = this.user();
+    if (!data) return;
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `dashboard-donnees-${data.username}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 }
