@@ -1,16 +1,25 @@
-import { Component, ElementRef, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  input,
+  signal,
+  viewChild,
+} from "@angular/core";
 import {
   CdkDrag,
   CdkDragDrop,
   CdkDragPlaceholder,
   CdkDropList,
   moveItemInArray,
-} from '@angular/cdk/drag-drop';
-import { WidgetCard } from './Widgets/widget-card/widget-card';
-import { WeatherWidget } from './Widgets/weather-widget/weather-widget';
-import { Router } from '@angular/router';
+} from "@angular/cdk/drag-drop";
+import { WidgetCard } from "./Widgets/widget-card/widget-card";
+import { WeatherWidget } from "./Widgets/weather-widget/weather-widget";
+import { Router } from "@angular/router";
+import { IUser } from "../../Interface/Auth/auth.interface";
+import { UserService } from "../../Service/User/user.service";
+import { TitleCasePipe } from "@angular/common";
 
-export type WidgetType = 'weather';
+export type WidgetType = "weather";
 
 export interface WidgetConfig {
   id: number;
@@ -25,24 +34,45 @@ export interface WidgetConfig {
 }
 
 @Component({
-  selector: 'app-homepage',
+  selector: "app-homepage",
   imports: [
     CdkDropList,
     CdkDrag,
     CdkDragPlaceholder,
     WidgetCard,
     WeatherWidget,
+    TitleCasePipe,
   ],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css',
+  templateUrl: "./dashboard.component.html",
+  styleUrl: "./dashboard.component.css",
 })
 export class DashboardComponent {
+  user = input<IUser | null>(null);
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private userService: UserService,
+  ) {}
 
   widgets = signal<WidgetConfig[]>([
-    { id: 1, type: 'weather', title: 'Météo', cols: 1, rows: 1, refreshRate: 300, params: { city: 'Nancy' } },
-    { id: 2, type: 'weather', title: 'Météo', cols: 1, rows: 1, refreshRate: 300, params: { city: 'Paris' } },
+    {
+      id: 1,
+      type: "weather",
+      title: "Météo",
+      cols: 1,
+      rows: 1,
+      refreshRate: 300,
+      params: { city: "Nancy" },
+    },
+    {
+      id: 2,
+      type: "weather",
+      title: "Météo",
+      cols: 1,
+      rows: 1,
+      refreshRate: 300,
+      params: { city: "Paris" },
+    },
   ]);
 
   lastUpdate = new Date();
@@ -54,7 +84,7 @@ export class DashboardComponent {
   private readonly ROW_HEIGHT = 240;
   private readonly GAP = 16;
 
-  private grid = viewChild<ElementRef<HTMLElement>>('grid');
+  private grid = viewChild<ElementRef<HTMLElement>>("grid");
   resizingId = signal<number | null>(null);
 
   startResize(event: PointerEvent, w: WidgetConfig): void {
@@ -70,7 +100,9 @@ export class DashboardComponent {
     const startY = event.clientY;
     const startCols = w.cols;
     const startRows = w.rows;
-    const colStep = (gridEl.clientWidth - this.GAP * (this.MAX_COLS - 1)) / this.MAX_COLS + this.GAP;
+    const colStep =
+      (gridEl.clientWidth - this.GAP * (this.MAX_COLS - 1)) / this.MAX_COLS +
+      this.GAP;
     const rowStep = this.ROW_HEIGHT + this.GAP;
 
     this.resizingId.set(w.id);
@@ -82,16 +114,16 @@ export class DashboardComponent {
     };
 
     const onUp = () => {
-      grip.removeEventListener('pointermove', onMove);
-      grip.removeEventListener('pointerup', onUp);
-      grip.removeEventListener('pointercancel', onUp);
+      grip.removeEventListener("pointermove", onMove);
+      grip.removeEventListener("pointerup", onUp);
+      grip.removeEventListener("pointercancel", onUp);
       this.resizingId.set(null);
       // Ici : sauvegarder la nouvelle taille côté Django
     };
 
-    grip.addEventListener('pointermove', onMove);
-    grip.addEventListener('pointerup', onUp);
-    grip.addEventListener('pointercancel', onUp);
+    grip.addEventListener("pointermove", onMove);
+    grip.addEventListener("pointerup", onUp);
+    grip.addEventListener("pointercancel", onUp);
   }
 
   resizeWithKeyboard(event: KeyboardEvent, w: WidgetConfig): void {
@@ -111,7 +143,11 @@ export class DashboardComponent {
     const c = Math.min(this.MAX_COLS, Math.max(1, cols));
     const r = Math.min(this.MAX_ROWS, Math.max(1, rows));
     this.widgets.update((list) =>
-      list.map((w) => (w.id === id && (w.cols !== c || w.rows !== r) ? { ...w, cols: c, rows: r } : w)),
+      list.map((w) =>
+        w.id === id && (w.cols !== c || w.rows !== r)
+          ? { ...w, cols: c, rows: r }
+          : w,
+      ),
     );
   }
 
@@ -129,20 +165,20 @@ export class DashboardComponent {
 
   configure(w: WidgetConfig): void {
     // A brancher sur ta modale de configuration
-    console.log('configurer', w);
+    console.log("configurer", w);
   }
 
   refresh(w: WidgetConfig): void {
     // A brancher sur ton service de rafraîchissement
-    console.log('actualiser', w);
+    console.log("actualiser", w);
   }
 
   /** Texte affiché sous le titre de la carte, ex : "Nancy". */
   subtitleOf(w: WidgetConfig): string {
-    return String(Object.values(w.params)[0] ?? '');
+    return String(Object.values(w.params)[0] ?? "");
   }
 
   settings(): void {
-    this.router.navigate(['dashboard/settings']); 
+    this.router.navigate(["dashboard/settings"]);
   }
 }

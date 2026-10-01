@@ -1,10 +1,9 @@
 <div class="dash">
   <header class="topbar">
     <div class="topbar-left">
-      <button class="logo" (click)="settings()">D</button>
+      <button class="logo" (click)="settings()"> {{ this.user()?.username.charAt(0).toUpperCase() }} </button>
       <div>
-        <h1 class="title">Mon dashboard</h1>
-        <p class="subtitle">{{ widgets().length }} widgets · glisse les cartes pour les réorganiser</p>
+        <h1 class="title">Bienvenu {{ this.user()?.username | titlecase }} </h1>
       </div>
     </div>
 

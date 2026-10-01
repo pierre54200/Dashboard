@@ -1,20 +1,176 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import "tailwindcss";
 
-:root {
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root,
+/* Thème sombre */
+[data-theme="dark"] {
+  color-scheme: dark;
+
   --bg: #313338;
   --bg-elevated: #2b2d31;
   --bg-input: #1e1f22;
+  --bg-hover: #35373c;
+  --bg-active: #404249;
+  --bg-subtle: rgba(255, 255, 255, 0.05);
+  --border: #3f4147;
+
+  --btn-grey: #4e5058;
+  --btn-grey-hover: #6d6f78;
+
   --blue: #5865f2;
   --blue-hover: #4752c4;
   --red: #da373c;
   --red-hover: #a12828;
   --green: #23a55a;
+
   --text: #f2f3f5;
   --text-muted: #b5bac1;
   --text-input: #dbdee1;
   --link: #00a8fc;
+}
+
+/* Thème clair */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #ffffff;
+  --bg-elevated: #f2f3f5;
+  --bg-input: #e3e5e8;
+  --bg-hover: #e8e9eb;
+  --bg-active: #d7d9dc;
+  --bg-subtle: rgba(0, 0, 0, 0.05);
+  --border: #d4d7dc;
+
+  --btn-grey: #6d6f78;
+  --btn-grey-hover: #4e5058;
+
+  --blue: #5865f2;
+  --blue-hover: #4752c4;
+  --red: #da373c;
+  --red-hover: #a12828;
+  --green: #1f8b4c;
+
+  --text: #060607;
+  --text-muted: #4e5058;
+  --text-input: #313338;
+  --link: #006ce7;
+}
+
+/* Expose les variables à Tailwind : bg-bg, bg-elevated, text-muted, border-border... */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-elevated: var(--bg-elevated);
+  --color-input: var(--bg-input);
+  --color-hover: var(--bg-hover);
+  --color-border: var(--border);
+  --color-primary: var(--blue);
+  --color-danger: var(--red);
+  --color-success: var(--green);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-link: var(--link);
+}
+
+/* ========== Surfaces (cartes, barres) ==========
+ * Par défaut : opaques. L'effet verre les redéfinit plus bas. */
+:root {
+  --app-bg: var(--bg);
+  --surface: var(--bg-elevated);
+  --surface-border: var(--bg-input);
+  --surface-divider: var(--bg-input);
+  --surface-filter: none;
+  --surface-shadow: none;
+  --surface-radius: 8px;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* ========== Effet verre (style Liquid Glass) ==========
+ * Activé par data-glass="on" sur <html>, combinable avec le thème sombre ou clair. */
+
+[data-glass="on"] {
+  --app-bg: transparent;
+  --surface-filter: blur(24px) saturate(180%);
+  --surface-radius: 20px;
+}
+
+[data-glass="on"][data-theme="dark"] {
+  --wallpaper:
+    radial-gradient(at 15% 20%, #5865f2 0px, transparent 50%),
+    radial-gradient(at 85% 15%, #eb459e 0px, transparent 45%),
+    radial-gradient(at 70% 85%, #23a55a 0px, transparent 45%),
+    radial-gradient(at 20% 90%, #00a8fc 0px, transparent 40%),
+    #111214;
+  --surface: rgba(30, 31, 34, 0.35);
+  --surface-border: rgba(255, 255, 255, 0.14);
+  --surface-divider: rgba(255, 255, 255, 0.08);
+  --surface-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    0 8px 32px rgba(0, 0, 0, 0.35);
+  --bg-hover: rgba(255, 255, 255, 0.1);
+  --bg-active: rgba(255, 255, 255, 0.16);
+  --text-muted: #d0d3d8;
+}
+
+[data-glass="on"][data-theme="light"] {
+  --wallpaper:
+    radial-gradient(at 15% 20%, #a5acff 0px, transparent 50%),
+    radial-gradient(at 85% 15%, #ffb1d8 0px, transparent 45%),
+    radial-gradient(at 70% 85%, #9be7bb 0px, transparent 45%),
+    radial-gradient(at 20% 90%, #9ddcff 0px, transparent 40%),
+    #eef0f4;
+  --surface: rgba(255, 255, 255, 0.45);
+  --surface-border: rgba(255, 255, 255, 0.7);
+  --surface-divider: rgba(0, 0, 0, 0.06);
+  --surface-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.3),
+    0 8px 32px rgba(31, 38, 80, 0.15);
+  --bg-hover: rgba(0, 0, 0, 0.06);
+  --bg-active: rgba(0, 0, 0, 0.1);
+  --text-muted: #3c3e45;
+}
+
+/* Fond d'écran fixe derrière toute l'application (dégradé de l'effet verre) */
+[data-glass="on"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--wallpaper);
+}
+
+/* Image choisie par l'utilisateur : dessinée par ThemeService dans .app-wallpaper.
+ * On masque alors le dégradé de l'effet verre. */
+[data-bg="image"] body::before {
+  display: none;
+}
+
+/* Navigateur sans backdrop-filter : on rend les surfaces plus opaques pour garder la lisibilité */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-glass="on"][data-theme="dark"] { --surface: rgba(30, 31, 34, 0.88); }
+  [data-glass="on"][data-theme="light"] { --surface: rgba(255, 255, 255, 0.9); }
+}
+
+/* Accessibilité : l'utilisateur a demandé moins de transparence dans son système */
+@media (prefers-reduced-transparency: reduce) {
+  [data-glass="on"][data-theme="dark"] { --surface: rgba(30, 31, 34, 0.92); }
+  [data-glass="on"][data-theme="light"] { --surface: rgba(255, 255, 255, 0.94); }
+}
+
+/* Classe utilitaire réutilisable pour toute surface (modales, menus...) */
+.surface {
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--surface-shadow);
+  -webkit-backdrop-filter: var(--surface-filter);
+  backdrop-filter: var(--surface-filter);
 }
 
 .input {
@@ -22,7 +178,7 @@
   border: 1px solid transparent;
   border-radius: 3px;
   color: var(--text-input);
-  font-size: 16px;
+  font-size: 1rem;
   padding: 10px 12px;
   outline: none;
 }
@@ -34,7 +190,7 @@
 .btn {
   border: none;
   border-radius: 3px;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 500;
   padding: 12px;
   cursor: pointer;
@@ -73,6 +229,6 @@
 
 .field-error {
   color: var(--red);
-  font-size: 12px;
+  font-size: 0.75rem;
   margin: 4px 0 0;
 }

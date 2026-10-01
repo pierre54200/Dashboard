@@ -5,7 +5,7 @@
 .settings {
   display: flex;
   min-height: 100vh;
-  background-color: var(--bg);
+  background-color: var(--app-bg);
   color: var(--text);
   font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
@@ -16,7 +16,10 @@
   flex: 1 0 218px;
   display: flex;
   justify-content: flex-end;
-  background-color: var(--bg-elevated);
+  background-color: var(--surface);
+  border-right: 1px solid var(--surface-divider);
+  -webkit-backdrop-filter: var(--surface-filter);
+  backdrop-filter: var(--surface-filter);
 }
 
 .sidebar-inner {
@@ -30,7 +33,7 @@
 .nav-heading {
   margin: 0;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -48,19 +51,19 @@
   border-radius: 4px;
   background: transparent;
   color: var(--text-muted);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
 }
 
 .nav-item:hover {
-  background-color: #35373c;
+  background-color: var(--bg-hover);
   color: var(--text-input);
 }
 
 .nav-item.active {
-  background-color: #404249;
+  background-color: var(--bg-active);
   color: var(--text);
 }
 
@@ -71,7 +74,7 @@
 .nav-separator {
   height: 1px;
   margin: 8px 10px;
-  background-color: #3f4147;
+  background-color: var(--border);
 }
 
 /* ---------- Contenu ---------- */
@@ -113,13 +116,13 @@
 }
 
 .close-btn:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-subtle);
   color: var(--text);
   border-color: var(--text);
 }
 
 .close-hint {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -150,7 +153,7 @@
 
   .nav-item {
     width: auto;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   .content-inner {

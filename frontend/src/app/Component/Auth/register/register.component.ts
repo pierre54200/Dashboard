@@ -11,9 +11,11 @@ import { AuthService } from "../../../Service/Auth/auth.service";
 import { IRegister } from "../../../Interface/Auth/auth.interface";
 import { CommonModule } from "@angular/common";
 import { Title } from "@angular/platform-browser";
+import { RouterLink } from "@angular/router";
+import { TERMS_VERSION } from "../../Legal/terms/terms.component";
 
 @Component({
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   selector: "app-register",
   styleUrl: "./register.component.css",
   templateUrl: "./register.component.html",
@@ -37,7 +39,11 @@ export class RegisterComponent {
     const control = this.registerForm.get(field);
     if (!control || !control.errors) return "";
 
-    if (control.errors["required"]) return "Ce champ est obligatoire";
+    if (control.errors["required"]) {
+      return field === "terms"
+        ? "Tu dois accepter les conditions pour créer un compte"
+        : "Ce champ est obligatoire";
+    }
     if (control.errors["email"]) return "Adresse e-mail invalide";
     if (control.errors["minlength"]) {
       const requiredLength = control.errors["minlength"].requiredLength;
@@ -58,7 +64,7 @@ export class RegisterComponent {
         email: ["", [Validators.required, Validators.email]],
         password: ["", [Validators.required, Validators.minLength(8)]],
         confirmPassword: ["", [Validators.required, Validators.minLength(8)]],
-        terms: [false],
+        terms: [false, Validators.requiredTrue],
       },
       { validators: this.passwordsMatchValidator },
     );
@@ -71,13 +77,17 @@ export class RegisterComponent {
   }
 
   onSubmit(): void {
-    //TODO submit login
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
 
     const user: IRegister = {
       username: this.registerForm.value.username,
       email: this.registerForm.value.email,
       password: this.registerForm.value.password,
     };
-    console.log(user);
+
+    this.authService.register(user);
   }
 }

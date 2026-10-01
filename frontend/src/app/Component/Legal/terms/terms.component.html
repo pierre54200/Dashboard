@@ -1,0 +1,201 @@
+<div class="terms-page">
+  <article class="terms-card">
+    <header class="terms-header">
+      <a routerLink="/register" class="back link">&larr; Retour à l'inscription</a>
+      <h1 class="terms-title">Conditions d'utilisation et confidentialité</h1>
+      <p class="terms-meta">
+        Dernière mise à jour : {{ legal.updatedAt }} · Version {{ version }}
+      </p>
+    </header>
+
+    <nav class="toc" aria-label="Sommaire">
+      <h2 class="toc-title">Sommaire</h2>
+      <ol>
+        @for (item of toc; track item.id) {
+          <li>
+            <button type="button" class="toc-link" (click)="scrollTo(item.id)">{{ item.label }}</button>
+          </li>
+        }
+      </ol>
+    </nav>
+
+    <!-- ============ CGU ============ -->
+    <section id="cgu" tabindex="-1" aria-labelledby="cgu-title">
+      <h2 id="cgu-title" class="section-title">1. Conditions générales d'utilisation</h2>
+
+      <h3>1.1 Objet</h3>
+      <p>
+        {{ legal.appName }} est une application qui permet de composer un tableau de bord personnel à partir
+        de widgets (météo, flux RSS, services en ligne...). Les présentes conditions encadrent l'accès et
+        l'utilisation de l'application, éditée par {{ legal.editor }}.
+      </p>
+
+      <h3>1.2 Acceptation</h3>
+      <p>
+        La création d'un compte nécessite d'accepter ces conditions ainsi que la politique de confidentialité
+        ci-dessous. Si vous ne les acceptez pas, vous ne pouvez pas utiliser l'application.
+      </p>
+
+      <h3>1.3 Compte utilisateur</h3>
+      <ul>
+        <li>Vous devez fournir une adresse e-mail valide et garder vos identifiants confidentiels.</li>
+        <li>Vous êtes responsable des actions réalisées depuis votre compte.</li>
+        <li>L'inscription est réservée aux personnes âgées d'au moins 15 ans, conformément à la loi française.</li>
+        <li>Vous pouvez supprimer votre compte à tout moment depuis Paramètres &gt; Mon compte.</li>
+      </ul>
+
+      <h3>1.4 Utilisation acceptable</h3>
+      <p>Vous vous engagez à ne pas :</p>
+      <ul>
+        <li>tenter d'accéder aux comptes ou aux données d'autres utilisateurs ;</li>
+        <li>perturber le fonctionnement de l'application (surcharge, attaques, contournement des sécurités) ;</li>
+        <li>importer des contenus illicites, notamment comme image d'arrière-plan.</li>
+      </ul>
+      <p>Tout manquement peut entraîner la suspension ou la suppression du compte.</p>
+
+      <h3>1.5 Services tiers</h3>
+      <p>
+        Certains widgets affichent des données provenant de services externes (GitHub, fournisseurs météo, flux
+        RSS...). Ces services ont leurs propres conditions, que vous acceptez lorsque vous y connectez votre compte.
+        {{ legal.appName }} n'est pas responsable de leur contenu ni de leur disponibilité.
+      </p>
+
+      <h3>1.6 Disponibilité et responsabilité</h3>
+      <p>
+        L'application est fournie en l'état, dans le cadre d'un projet étudiant. Nous faisons notre possible pour
+        qu'elle fonctionne correctement, sans pouvoir garantir une disponibilité continue ni l'exactitude des
+        données affichées par les widgets.
+      </p>
+
+      <h3>1.7 Modification des conditions</h3>
+      <p>
+        Ces conditions peuvent évoluer. En cas de changement important, vous en serez informé et votre accord
+        pourra vous être demandé à nouveau.
+      </p>
+
+      <h3>1.8 Droit applicable</h3>
+      <p>Les présentes conditions sont soumises au droit français.</p>
+    </section>
+
+    <!-- ============ RGPD ============ -->
+    <section id="rgpd" tabindex="-1" aria-labelledby="rgpd-title">
+      <h2 id="rgpd-title" class="section-title">2. Politique de confidentialité (RGPD)</h2>
+      <p>
+        Cette politique explique quelles données personnelles nous traitons, pourquoi, pendant combien de temps,
+        et comment exercer vos droits, conformément au Règlement général sur la protection des données
+        (RGPD, règlement UE 2016/679) et à la loi Informatique et Libertés.
+      </p>
+      <p>
+        <strong>Responsable du traitement :</strong> {{ legal.editor }}.
+        Contact : <a class="link" [href]="'mailto:' + legal.contactEmail">{{ legal.contactEmail }}</a>
+      </p>
+    </section>
+
+    <section id="donnees" tabindex="-1" aria-labelledby="donnees-title">
+      <h3 id="donnees-title" class="section-subtitle">2.1 Données collectées</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th scope="col">Catégorie</th><th scope="col">Données</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Compte</td><td>Nom d'utilisateur, adresse e-mail, mot de passe (stocké uniquement sous forme chiffrée et irréversible), date d'inscription</td></tr>
+            <tr><td>Consentement</td><td>Version des conditions acceptée et date d'acceptation</td></tr>
+            <tr><td>Dashboard</td><td>Widgets ajoutés et leurs réglages (par exemple la ville choisie pour la météo), position, fréquence d'actualisation</td></tr>
+            <tr><td>Préférences</td><td>Thème, effet verre, taille du texte, image d'arrière-plan importée</td></tr>
+            <tr><td>Services connectés</td><td>Jetons d'accès fournis par les services que vous connectez (stockés chiffrés), nom du compte lié</td></tr>
+            <tr><td>Données techniques</td><td>Cookies de session et de sécurité, adresse IP dans les journaux du serveur</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Nous ne collectons aucune donnée sensible et ne faisons aucun profilage publicitaire.</p>
+    </section>
+
+    <section id="finalites" tabindex="-1" aria-labelledby="finalites-title">
+      <h3 id="finalites-title" class="section-subtitle">2.2 Finalités et bases légales</h3>
+      <ul>
+        <li><strong>Créer et gérer votre compte, afficher votre dashboard :</strong> exécution du contrat (article 6.1.b du RGPD).</li>
+        <li><strong>Connecter vos comptes externes :</strong> votre consentement (article 6.1.a), que vous pouvez retirer à tout moment depuis Paramètres &gt; Connexions.</li>
+        <li><strong>Sécuriser l'application</strong> (prévention des abus, journaux techniques) : intérêt légitime (article 6.1.f).</li>
+        <li><strong>Prouver votre acceptation des conditions :</strong> obligation de pouvoir démontrer le consentement (article 7.1).</li>
+      </ul>
+      <p>Vos données ne sont ni vendues, ni louées, ni utilisées à des fins publicitaires.</p>
+    </section>
+
+    <section id="conservation" tabindex="-1" aria-labelledby="conservation-title">
+      <h3 id="conservation-title" class="section-subtitle">2.3 Durée de conservation</h3>
+      <ul>
+        <li>Données du compte, du dashboard et des préférences : tant que votre compte existe. Elles sont supprimées dès que vous supprimez votre compte.</li>
+        <li>Jetons des services connectés : jusqu'à la déconnexion du service ou la suppression du compte.</li>
+        <li>Journaux techniques du serveur : 6 mois maximum.</li>
+        <li>Préférences stockées dans votre navigateur : jusqu'à ce que vous effaciez les données du site.</li>
+      </ul>
+    </section>
+
+    <section id="tiers" tabindex="-1" aria-labelledby="tiers-title">
+      <h3 id="tiers-title" class="section-subtitle">2.4 Services tiers et destinataires</h3>
+      <p>
+        Vos données sont accessibles uniquement à l'équipe du projet. Pour afficher vos widgets, notre serveur
+        interroge des services externes en leur transmettant le strict nécessaire : par exemple le nom d'une ville
+        pour la météo, ou votre jeton d'accès pour un service que vous avez connecté. Votre navigateur ne contacte
+        jamais directement ces services.
+      </p>
+      <p>
+        Certains de ces services (comme GitHub) sont situés hors de l'Union européenne. Ces transferts ont lieu
+        uniquement si vous connectez le service concerné, et sont encadrés par les garanties prévues par le RGPD
+        (décision d'adéquation ou clauses contractuelles types).
+      </p>
+    </section>
+
+    <section id="cookies" tabindex="-1" aria-labelledby="cookies-title">
+      <h3 id="cookies-title" class="section-subtitle">2.5 Cookies et stockage local</h3>
+      <p>L'application utilise uniquement des éléments strictement nécessaires à son fonctionnement :</p>
+      <ul>
+        <li><strong>sessionid</strong> : cookie qui vous garde connecté ;</li>
+        <li><strong>csrftoken</strong> : cookie de sécurité contre la falsification de requêtes ;</li>
+        <li><strong>stockage local du navigateur</strong> : vos préférences d'affichage, pour les appliquer dès l'ouverture de la page.</li>
+      </ul>
+      <p>
+        Aucun cookie publicitaire ni de mesure d'audience n'est utilisé. Ces éléments étant indispensables,
+        ils ne nécessitent pas de consentement préalable (article 82 de la loi Informatique et Libertés).
+      </p>
+    </section>
+
+    <section id="securite" tabindex="-1" aria-labelledby="securite-title">
+      <h3 id="securite-title" class="section-subtitle">2.6 Sécurité</h3>
+      <ul>
+        <li>Les mots de passe sont hachés : personne, y compris l'équipe, ne peut les lire.</li>
+        <li>Les jetons des services connectés sont chiffrés avant d'être enregistrés.</li>
+        <li>Les clés d'API restent côté serveur et ne sont jamais envoyées au navigateur.</li>
+        <li>Les formulaires sont protégés contre les attaques CSRF et les données saisies sont validées.</li>
+      </ul>
+      <p>En cas de violation de données présentant un risque pour vous, vous serez informé dans les meilleurs délais.</p>
+    </section>
+
+    <section id="droits" tabindex="-1" aria-labelledby="droits-title">
+      <h3 id="droits-title" class="section-subtitle">2.7 Vos droits</h3>
+      <p>Vous disposez des droits suivants sur vos données :</p>
+      <ul>
+        <li><strong>Accès</strong> : obtenir une copie de vos données ;</li>
+        <li><strong>Rectification</strong> : modifier vos informations, directement dans Paramètres &gt; Mon compte ;</li>
+        <li><strong>Effacement</strong> : supprimer votre compte et toutes vos données, directement dans Paramètres &gt; Mon compte ;</li>
+        <li><strong>Portabilité</strong> : recevoir vos données dans un format lisible par machine ;</li>
+        <li><strong>Opposition et limitation</strong> du traitement ;</li>
+        <li><strong>Retrait du consentement</strong> à tout moment, sans remettre en cause les traitements déjà réalisés.</li>
+      </ul>
+      <p>
+        Pour exercer ces droits, écrivez à
+        <a class="link" [href]="'mailto:' + legal.contactEmail">{{ legal.contactEmail }}</a>.
+        Nous répondons dans un délai d'un mois.
+      </p>
+      <p>
+        Si vous estimez que vos droits ne sont pas respectés, vous pouvez adresser une réclamation à la CNIL
+        (<a class="link" href="https://www.cnil.fr" target="_blank" rel="noopener">www.cnil.fr</a>).
+      </p>
+    </section>
+
+    <footer class="terms-footer">
+      <a routerLink="/register" class="btn btn-primary">Retour à l'inscription</a>
+    </footer>
+  </article>
+</div>
