@@ -1,5 +1,6 @@
 import {
   Component,
+  inject,
   input,
   linkedSignal,
   signal,
@@ -8,6 +9,7 @@ import {
 import { FormsModule } from "@angular/forms";
 import { UserService } from "../../../Service/User/user.service";
 import { IUser } from "../../../Interface/Auth/auth.interface";
+import { ActivatedRoute } from "@angular/router";
 
 type EditableField = "username";
 
@@ -18,8 +20,8 @@ type EditableField = "username";
   styleUrls: ["../settings-shared.css", "./account-section.css"],
 })
 export class AccountSection {
-  user = input<IUser | null>(null);
-  profile = linkedSignal(() => this.user());
+  private route = inject(ActivatedRoute);
+  user = signal<IUser | null>(this.route.snapshot.data['user']);
 
   constructor(private userService: UserService) {}
 
@@ -39,7 +41,7 @@ export class AccountSection {
   confirmDelete = signal(false);
 
   startEdit(field: EditableField): void {
-    this.draft = this.profile()?.[field] ?? "";
+    this.draft = this.user()?.[field] ?? "";
     this.editing.set(field);
   }
 
@@ -47,7 +49,7 @@ export class AccountSection {
     const field = this.editing();
     const value = this.draft.trim();
     if (!field || !value) return;
-    this.profile.update((u) => (u ? { ...u, [field]: value } : u));
+    this.user.update((u) => (u ? { ...u, [field]: value } : u));
     this.editing.set(null);
   }
 
