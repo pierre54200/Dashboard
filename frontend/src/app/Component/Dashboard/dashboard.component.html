@@ -1,9 +1,9 @@
 <div class="dash">
   <header class="topbar">
     <div class="topbar-left">
-      <button class="logo" (click)="settings()"> {{ this.letter }} </button>
+      <button class="logo" (click)="settings()"> {{ this.user()?.username.charAt(0).toUpperCase() }} </button>
       <div>
-        <h1 class="title">Bienvenu {{ this.user.username | titlecase }} </h1>
+        <h1 class="title">Bienvenu {{ this.user()?.username | titlecase }} </h1>
       </div>
     </div>
 

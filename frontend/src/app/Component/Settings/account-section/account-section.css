@@ -2,13 +2,17 @@
 
 .profile {
   overflow: hidden;
-  border-radius: 8px;
-  background-color: var(--bg-input);
+  border-radius: var(--surface-radius);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow);
+  background-color: var(--surface);
+  -webkit-backdrop-filter: var(--surface-filter);
+  backdrop-filter: var(--surface-filter);
 }
 
 .banner {
   height: 100px;
-  background-color: var(--blue);
+
 }
 
 .profile-head {
@@ -25,7 +29,7 @@
   width: 80px;
   height: 80px;
   flex-shrink: 0;
-  border: 7px solid var(--bg-input);
+    box-shadow: 0 0 0 1px var(--surface-border);
   border-radius: 50%;
   background-color: var(--btn-grey);
   color: #fff;
@@ -38,9 +42,9 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding-bottom: 12px;
+  padding-bottom: 30px;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 800;
   color: var(--text);
 }
 
@@ -48,9 +52,7 @@
   margin: 16px;
   padding: 16px;
   border-radius: 8px;
-  background-color: var(--surface);
-  -webkit-backdrop-filter: var(--surface-filter);
-  backdrop-filter: var(--surface-filter);
+  background-color: var(--bg-subtle);
 }
 
 .row {

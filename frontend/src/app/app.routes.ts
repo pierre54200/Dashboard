@@ -5,6 +5,7 @@ import { DashboardComponent } from "./Component/Dashboard/dashboard.component";
 import { AuthGuard } from "./Guard/auth-guard-guard";
 import { SettingsComponent } from "./Component/Settings/settings.component";
 import { TermsComponent } from "./Component/Legal/terms/terms.component";
+import { userResolver } from "./Resolver/User/user-resolver";
 
 export const routes: Routes = [
 
@@ -22,10 +23,12 @@ export const routes: Routes = [
       {
         path: "",
         component: DashboardComponent,
+        resolve: { user: userResolver },
       },
       {
         path: "settings",
         component: SettingsComponent,
+        resolve: { user: userResolver },
       }
     ],
   },

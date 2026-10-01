@@ -1,8 +1,7 @@
 import {
-  ChangeDetectorRef,
   Component,
   ElementRef,
-  OnInit,
+  input,
   signal,
   viewChild,
 } from "@angular/core";
@@ -47,30 +46,13 @@ export interface WidgetConfig {
   templateUrl: "./dashboard.component.html",
   styleUrl: "./dashboard.component.css",
 })
-export class DashboardComponent implements OnInit {
-  user!: IUser;
-  letter!: string;
+export class DashboardComponent {
+  user = input<IUser | null>(null);
 
   constructor(
     private router: Router,
     private userService: UserService,
-    private cdr: ChangeDetectorRef,
   ) {}
-
-  ngOnInit(): void {
-    this.userService
-      .me()
-      .subscribe({
-        next: (data: IUser) => {
-          this.user = data;
-          this.letter = this.user.username[0].toUpperCase();
-          this.cdr.markForCheck();
-        },
-        error: (err) => {
-          console.error(err);
-        },
-      });
-  }
 
   widgets = signal<WidgetConfig[]>([
     {

@@ -1,10 +1,11 @@
-import { Component, HostListener, signal } from '@angular/core';
+import { Component, HostListener, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AccountSection } from './account-section/account-section';
 import { ServicesSection } from './services-section/services-section';
 import { ConnectionsSection } from './connections-section/connections-section';
 import { AppearanceSection } from './appearance-section/appearance-section';
 import { AuthService } from '../../Service/Auth/auth.service';
+import { IUser } from '../../Interface/Auth/auth.interface';
 
 type Section = 'account' | 'services' | 'connections' | 'appearance';
 
@@ -16,6 +17,7 @@ type Section = 'account' | 'services' | 'connections' | 'appearance';
 })
 export class SettingsComponent {
   section = signal<Section>('account');
+  user = input<IUser | null>(null);
 
   readonly nav: { id: Section; label: string }[] = [
     { id: 'account', label: 'Mon compte' },
