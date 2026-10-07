@@ -1,7 +1,3 @@
-"""
-Server-side clients for the external APIs. Keys never leave the backend.
-Needs: pip install requests
-"""
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
