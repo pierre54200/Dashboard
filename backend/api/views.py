@@ -2,13 +2,16 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
+from .models import UserApiInfo, UserWidgetSettings
 from .serializer import (
+    ApiInfoSerializer,
     ErrorSerializer,
     LoginSerializer,
     RegisterSerializer,
@@ -17,11 +20,12 @@ from .serializer import (
 
 USERS = ["Users"]
 AUTH = ["Auth"]
-
+SETTINGS = ["Settings"]
 
 """
 GETTERS
 """
+@login_not_required
 @extend_schema(
     tags=USERS,
     summary="Ping",
@@ -31,11 +35,11 @@ GETTERS
 @api_view(["GET"])
 @authentication_classes([])
 @permission_classes([AllowAny])
-@login_not_required
 def get_user(request):
     return Response(status=status.HTTP_200_OK)
 
 
+@login_not_required
 @extend_schema(
     tags=USERS,
     summary="Get a user by id",
@@ -45,7 +49,6 @@ def get_user(request):
 @api_view(["GET"])
 @authentication_classes([])
 @permission_classes([AllowAny])
-@login_not_required
 def get_user_from_id(request, userId):
     try:
         user = User.objects.get(pk=userId)
@@ -54,6 +57,7 @@ def get_user_from_id(request, userId):
     return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
 
 
+@login_not_required
 @extend_schema(
     methods=["GET"],
     tags=USERS,
@@ -75,14 +79,151 @@ def users_me(request):
     if request.method == "GET":
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
 
-    user.delete()
+    user.delete()  # cascades to api info + widget settings
     logout(request)
     return Response(status=status.HTTP_200_OK)
 
 
 """
+API INTEGRATIONS
+"""
+@login_not_required
+@extend_schema(
+    methods=["GET"],
+    tags=SETTINGS,
+    summary="Get the current user's API configuration",
+    description="Secrets are never returned, only `has_*` booleans telling whether they are set.",
+    responses={200: ApiInfoSerializer},
+    examples=[OpenApiExample(
+        "Success",
+        value={
+            "weather_city": "Paris",
+            "steam_id": "76561198000000000",
+            "has_steam_friends_api_key": True,
+            "has_steam_updates_api_key": False,
+            "has_github_token": True,
+        },
+        response_only=True,
+    )],
+)
+@extend_schema(
+    methods=["PATCH"],
+    tags=SETTINGS,
+    summary="Update the current user's API configuration",
+    description="Partial update: only send the fields you want to change. Send an empty string to clear one.",
+    request=ApiInfoSerializer,
+    responses={200: ApiInfoSerializer, 400: ApiInfoSerializer},
+    examples=[
+        OpenApiExample(
+            "Update city and token",
+            value={"weather_city": "Paris", "github_token": "ghp_xxxxxxxxxxxxxxxxxxxx"},
+            request_only=True,
+        ),
+        OpenApiExample(
+            "Clear the GitHub token",
+            value={"github_token": ""},
+            request_only=True,
+        ),
+        OpenApiExample(
+            "Success",
+            value={
+                "weather_city": "Paris",
+                "steam_id": "76561198000000000",
+                "has_steam_friends_api_key": True,
+                "has_steam_updates_api_key": False,
+                "has_github_token": True,
+            },
+            response_only=True,
+            status_codes=["200"],
+        ),
+        OpenApiExample(
+            "Validation error",
+            value={"steam_id": ["Must be a 17-digit SteamID64."]},
+            response_only=True,
+            status_codes=["400"],
+        ),
+    ],
+)
+@api_view(["GET", "PATCH"])
+@permission_classes([IsAuthenticated])
+def users_me_integrations(request):
+    info, _ = UserApiInfo.objects.get_or_create(user=request.user)
+
+    if request.method == "GET":
+        return Response(ApiInfoSerializer(info).data)
+
+    serializer = ApiInfoSerializer(info, data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
+
+
+"""
+WIDGET SETTINGS (FrontEndSettings)
+"""
+@login_not_required
+@extend_schema(
+    methods=["GET"],
+    tags=SETTINGS,
+    summary="Get the widget settings",
+    description="Returns the JSON object previously saved (`{}` if none).",
+    responses={200: OpenApiTypes.OBJECT},
+    examples=[OpenApiExample(
+        "Saved settings",
+        value={"theme": "dark", "layout": [{"id": "weather", "x": 0, "y": 0, "w": 2, "h": 2}]},
+        response_only=True,
+    )],
+)
+@extend_schema(
+    methods=["POST"],
+    tags=SETTINGS,
+    summary="Replace the widget settings",
+    description="The request body (any JSON object) fully replaces the stored settings.",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: ErrorSerializer},
+    examples=[
+        OpenApiExample(
+            "Widget settings",
+            value={"theme": "dark", "layout": [{"id": "weather", "x": 0, "y": 0, "w": 2, "h": 2}]},
+            request_only=True,
+        ),
+        OpenApiExample(
+            "Success (echoes the stored JSON)",
+            value={"theme": "dark", "layout": [{"id": "weather", "x": 0, "y": 0, "w": 2, "h": 2}]},
+            response_only=True,
+            status_codes=["200"],
+        ),
+        OpenApiExample(
+            "Not an object",
+            value={"error": "Body must be a JSON object."},
+            response_only=True,
+            status_codes=["400"],
+        ),
+    ],
+)
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def users_me_widgets(request):
+    if request.method == "GET":
+        obj = UserWidgetSettings.objects.filter(user=request.user).first()
+        return Response(obj.settings if obj else {})
+
+    data = request.data
+    if hasattr(data, "dict"):
+        data = data.dict()
+    if not isinstance(data, dict):
+        return Response({"error": "Body must be a JSON object."}, status=status.HTTP_400_BAD_REQUEST)
+
+    obj, _ = UserWidgetSettings.objects.update_or_create(
+        user=request.user, defaults={"settings": data}
+    )
+    return Response(obj.settings, status=status.HTTP_200_OK)
+
+
+"""
 AUTH
 """
+@login_not_required
 @extend_schema(
     tags=AUTH,
     summary="Register a new user",
@@ -93,10 +234,8 @@ AUTH
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
-@login_not_required
 def register_user(request):
     serializer = RegisterSerializer(data=request.data)
-    # assert isinstance(serializer, LoginSerializer)
     serializer.is_valid(raise_exception=True)
 
     try:
@@ -111,6 +250,7 @@ def register_user(request):
     return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
+@login_not_required
 @extend_schema(
     tags=AUTH,
     summary="Log in",
@@ -121,17 +261,16 @@ def register_user(request):
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
-@login_not_required
 def login_user(request):
     serializer = LoginSerializer(data=request.data, context={"request": request})
-    assert isinstance(serializer, LoginSerializer)
     serializer.is_valid(raise_exception=True)
 
     user = serializer.user
-    login(request, serializer.user)
+    login(request, user)
     return Response(UserSerializer(user).data, status=status.HTTP_202_ACCEPTED)
 
 
+@login_not_required
 @extend_schema(
     tags=AUTH,
     summary="Log out",
