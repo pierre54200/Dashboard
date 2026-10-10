@@ -1,4 +1,5 @@
-import { Component, Injector, effect } from "@angular/core";
+import { Component, Injector, effect, signal } from "@angular/core";
+import { HttpErrorResponse } from "@angular/common/http";
 import {
   AbstractControl,
   FormBuilder,
@@ -11,20 +12,25 @@ import { AuthService } from "../../../Service/Auth/auth.service";
 import { IRegister } from "../../../Interface/Auth/auth.interface";
 import { CommonModule } from "@angular/common";
 import { Title } from "@angular/platform-browser";
-import { RouterLink } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { TERMS_VERSION } from "../../Legal/terms/terms.component";
 import { TranslatePipe } from "../../../I18n/translate.pipe";
 import { I18nService } from "../../../I18n/i18n.service";
 import { LanguageSwitch } from "../../Shared/language-switch/language-switch";
+import { OAuthButtons } from "../../Shared/oauth-buttons/oauth-buttons";
 
 @Component({
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe, LanguageSwitch],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe, LanguageSwitch, OAuthButtons],
   selector: "app-register",
-  styleUrl: "./register.component.css",
+  styleUrls: ["../auth-shared.css", "./register.component.css"],
   templateUrl: "./register.component.html",
 })
 export class RegisterComponent {
   registerForm!: FormGroup;
+  submitting = signal(false);
+  /** Erreurs renvoyées par Django (pseudo ou e-mail déjà pris...), déjà traduites. */
+  serverErrors = signal<Record<string, string>>({});
+  serverError = signal<string | null>(null);
 
   constructor(
     private authService: AuthService,
@@ -32,6 +38,7 @@ export class RegisterComponent {
     private ts: Title,
     private i18n: I18nService,
     private injector: Injector,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -57,6 +64,11 @@ export class RegisterComponent {
   isFieldInvalid(field: string): boolean {
     const control = this.registerForm.get(field);
     return !!control && control.invalid && control.touched;
+  }
+
+  /** Message renvoyé par le serveur pour ce champ, effacé dès que le champ change. */
+  serverErrorFor(field: string): string | null {
+    return this.serverErrors()[field] ?? null;
   }
 
   initForm(): void {
@@ -88,8 +100,38 @@ export class RegisterComponent {
       username: this.registerForm.value.username,
       email: this.registerForm.value.email,
       password: this.registerForm.value.password,
+      language: this.i18n.lang(),
     };
 
-    this.authService.register(user);
+    this.submitting.set(true);
+    this.serverErrors.set({});
+    this.serverError.set(null);
+    this.authService.register(user).subscribe({
+      next: (res) => {
+        this.submitting.set(false);
+        this.router.navigate(["/check-email"], {
+          queryParams: { email: res.email, sent: res.email_sent ? null : 0 },
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.submitting.set(false);
+        if (err.status === 400 && err.error && typeof err.error === "object") {
+          const errors: Record<string, string> = {};
+          for (const [field, messages] of Object.entries(err.error)) {
+            const first = Array.isArray(messages) ? String(messages[0]) : String(messages);
+            errors[field] = this.i18n.apiError(first);
+          }
+          this.serverErrors.set(errors);
+          for (const field of Object.keys(errors)) {
+            this.registerForm.get(field)?.valueChanges.subscribe(() => {
+              const { [field]: _, ...rest } = this.serverErrors();
+              this.serverErrors.set(rest);
+            });
+          }
+        } else {
+          this.serverError.set(this.i18n.t("widget.error.server"));
+        }
+      },
+    });
   }
 }

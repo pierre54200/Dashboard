@@ -3,6 +3,12 @@
     <div class="lang-corner"><app-language-switch [compact]="true" /></div>
     <h1 class="register-title">{{ 'register.title' | t }}</h1>
 
+    @if (serverError(); as e) {
+      <div class="alert" role="alert"><p>{{ e }}</p></div>
+    }
+
+    <app-oauth-buttons />
+
     <form
       class="register-form"
       [formGroup]="registerForm"
@@ -21,6 +27,7 @@
         <p class="field-error" *ngIf="isFieldInvalid('username')">
           {{ getErrorMessage("username") }}
         </p>
+        <p class="field-error" *ngIf="!isFieldInvalid('username') && serverErrorFor('username') as msg">{{ msg }}</p>
       </div>
 
       <div class="register-field">
@@ -36,6 +43,7 @@
         <p class="field-error" *ngIf="isFieldInvalid('email')">
           {{ getErrorMessage("email") }}
         </p>
+        <p class="field-error" *ngIf="!isFieldInvalid('email') && serverErrorFor('email') as msg">{{ msg }}</p>
       </div>
 
       <div class="register-field">
@@ -51,6 +59,7 @@
         <p class="field-error" *ngIf="isFieldInvalid('password')">
           {{ getErrorMessage("password") }}
         </p>
+        <p class="field-error" *ngIf="!isFieldInvalid('password') && serverErrorFor('password') as msg">{{ msg }}</p>
       </div>
 
       <div class="register-field">
@@ -103,13 +112,13 @@
       <button
         type="submit"
         class="btn btn-primary"
-        [disabled]="registerForm.invalid"
+        [disabled]="registerForm.invalid || submitting()"
       >
         {{ 'register.submit' | t }}
       </button>
 
       <p class="register-footer">
-        {{ 'register.have_account' | t }} <a href="/login" class="link">{{ 'register.login' | t }}</a>
+        {{ 'register.have_account' | t }} <a routerLink="/login" class="link">{{ 'register.login' | t }}</a>
       </p>
     </form>
   </div>

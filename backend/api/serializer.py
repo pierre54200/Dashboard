@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from .auth_backends import find_user_by_login
 from .models import UserApiInfo
 
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
@@ -17,9 +18,14 @@ class UserSerializer(serializers.Serializer):
 
 
 class RegisterSerializer(serializers.Serializer):
-    username = serializers.CharField(min_length=3, max_length=150)
+    username = serializers.CharField(
+        min_length=3, max_length=150,
+        validators=User._meta.get_field("username").validators,
+    )
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
+    language = serializers.ChoiceField(choices=["fr", "en"], required=False, write_only=True,
+                                       help_text="Language of the confirmation email and of the interface")
 
     def validate_username(self, value):
         if User.objects.filter(username__iexact=value).exists():
@@ -39,7 +45,9 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        validated_data.pop("language", None)
+        # Inactive until the email address is confirmed
+        return User.objects.create_user(**validated_data, is_active=False)
 
 
 class LoginSerializer(serializers.Serializer):
@@ -55,9 +63,29 @@ class LoginSerializer(serializers.Serializer):
             password=attrs["password"],
         )
         if user is None:
+            # Right password but account not confirmed yet: say so (only after a correct password,
+            # so this doesn't reveal which accounts exist).
+            candidate = find_user_by_login(attrs["username"])
+            if candidate and not candidate.is_active and candidate.check_password(attrs["password"]):
+                raise EmailNotConfirmed(candidate.email)
             raise serializers.ValidationError("Invalid username or password.")
         self.user = user
         return attrs
+
+
+class EmailNotConfirmed(Exception):
+    def __init__(self, email):
+        super().__init__("Email address not confirmed.")
+        self.email = email
+
+
+class ConfirmEmailSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+
+
+class ResendConfirmationSerializer(serializers.Serializer):
+    email = serializers.EmailField()
 
 
 class ErrorSerializer(serializers.Serializer):

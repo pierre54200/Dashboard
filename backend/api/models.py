@@ -58,3 +58,24 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"Profile of user {self.user_id}"
+
+class SocialAccount(models.Model):
+    """Google or GitHub account linked to a user (OAuth 2.0 login)."""
+
+    PROVIDERS = [("google", "Google"), ("github", "GitHub")]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="social_accounts")
+    provider = models.CharField(max_length=20, choices=PROVIDERS)
+    uid = models.CharField(max_length=255)  # account id at the provider, never changes
+    email = models.EmailField(blank=True, default="")
+    login = models.CharField(max_length=255, blank=True, default="")  # name shown in the settings
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["provider", "uid"], name="uniq_social_provider_uid"),
+            models.UniqueConstraint(fields=["user", "provider"], name="uniq_social_user_provider"),
+        ]
+
+    def __str__(self):
+        return f"{self.provider} account of user {self.user_id}"

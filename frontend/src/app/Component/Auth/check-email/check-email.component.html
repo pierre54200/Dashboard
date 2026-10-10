@@ -1,0 +1,41 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="lang-corner"><app-language-switch [compact]="true" /></div>
+
+    <div class="state-icon" aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 6L2 7" />
+      </svg>
+    </div>
+    <h1 class="login-title">{{ 'confirm.check.title' | t }}</h1>
+    <p class="login-subtitle">
+      {{ 'confirm.check.text' | t }}
+      @if (email()) { <strong class="email">{{ email() }}</strong> }
+    </p>
+
+    @if (sendFailed()) {
+      <div class="alert" role="alert"><p>{{ 'confirm.check.send_failed' | t }}</p></div>
+    } @else if (resent()) {
+      <div class="alert success" role="status"><p>{{ 'confirm.resent' | t }}</p></div>
+    }
+
+    <p class="help">{{ 'confirm.check.spam' | t }}</p>
+
+    <button
+      type="button"
+      class="btn btn-grey full"
+      (click)="resend()"
+      [disabled]="!email() || cooldown() > 0"
+    >
+      @if (cooldown() > 0) {
+        {{ 'confirm.resend_in' | t: { n: cooldown() } }}
+      } @else {
+        {{ 'confirm.resend' | t }}
+      }
+    </button>
+
+    <p class="login-footer">
+      {{ 'confirm.already' | t }} <a routerLink="/login" class="link">{{ 'register.login' | t }}</a>
+    </p>
+  </div>
+</div>

@@ -10,6 +10,7 @@ Ce document s'adresse aux développeurs qui reprennent ou évaluent le projet. I
 - [Cycle de vie d'un widget](#cycle-de-vie-dun-widget)
 - [Le timer d'actualisation](#le-timer-dactualisation)
 - [Préférences et traductions](#préférences-et-traductions)
+- [Authentification](#authentification)
 - [Sécurité](#sécurité)
 - [Structure du dépôt](#structure-du-dépôt)
 
@@ -122,6 +123,7 @@ erDiagram
     User ||--|| UserApiInfo : "a"
     User ||--|| UserWidgetSettings : "a"
     User ||--o{ SteamPlaytimeSnapshot : "a"
+    User ||--o{ SocialAccount : "a"
 ```
 
 | Modèle | Rôle | Champs principaux |
@@ -130,6 +132,7 @@ erDiagram
 | `UserProfile` | Profil et préférences | `sexe`, `age`, `pfp` et `background` (images), `theme`, `glass`, `background_dim`, `text_scale`, `language` |
 | `UserApiInfo` | Abonnement aux services | `weather_city`, `steam_id`, clés d'API Steam, `github_token` |
 | `UserWidgetSettings` | Disposition du dashboard | `settings` (JSON) |
+| `SocialAccount` | Compte Google ou GitHub lié | `provider`, `uid` (identifiant chez le fournisseur), `email`, `login` ; unique par fournisseur et uid, et un seul compte par fournisseur et utilisateur |
 | `SteamPlaytimeSnapshot` | Temps de jeu Steam relevé chaque jour | `app_id`, `playtime_forever`, `date` (unique par utilisateur, jeu et jour) |
 
 **Pourquoi la disposition est un seul champ JSON.** Les widgets n'ont pas tous les mêmes paramètres (une ville, un dépôt et un nombre, rien du tout...), et le dashboard est toujours lu et écrit en entier. Un champ JSON évite une table par type de widget et s'enregistre en une seule requête. Chaque widget y est décrit ainsi :
@@ -207,11 +210,41 @@ Un nouveau widget n'a qu'à hériter de `PollingWidget` et à décrire sa requê
 
 **Traductions.** Les textes sont dans deux fichiers, `I18n/fr.ts` (référence) et `I18n/en.ts`. Le type de `en.ts` est dérivé des clés de `fr.ts` : une traduction oubliée empêche la compilation. Les templates utilisent le pipe `t` (`{{ 'dashboard.add_widget' | t }}`), les dates relatives et les heures suivent la langue choisie, et les messages d'erreur renvoyés par Django (en anglais) sont traduits côté front quand ils sont connus. Avant la connexion, la langue suit celle du navigateur. Si l'utilisateur en choisit une autre sur la page de connexion, elle est enregistrée sur son compte à la connexion.
 
+## Authentification
+
+**Inscription et confirmation par e-mail.** Le compte est créé inactif (`is_active=False`) et Django envoie un lien `/confirm-email?uid=...&token=...`. Le jeton est signé avec la clé secrète, expire au bout de 3 jours, et contient l'état `is_active` dans son empreinte : une fois le compte activé, le même lien ne fonctionne plus. Aucune table de jetons n'est nécessaire. Le renvoi du lien répond toujours la même chose, que l'adresse existe ou non, et n'envoie pas plus d'un e-mail par minute.
+
+**Connexion par e-mail.** Le backend d'authentification `EmailOrUsernameBackend` cherche par adresse e-mail (sans tenir compte de la casse) quand l'identifiant contient un `@`, sinon par nom d'utilisateur. Un compte non confirmé reçoit le code `email_not_confirmed` uniquement si le mot de passe est correct, pour ne pas révéler quelles adresses sont inscrites.
+
+**Google et GitHub (OAuth 2.0, flux « authorization code »).**
+
+```mermaid
+sequenceDiagram
+    participant N as Navigateur
+    participant D as Django
+    participant P as Google / GitHub
+    N->>D: GET /api/auth/github/login
+    D-->>N: redirection, state aléatoire gardé en session
+    N->>P: page d'autorisation
+    P-->>N: redirection vers /callback?code&state
+    N->>D: GET /api/auth/github/callback
+    D->>P: code + client secret, contre un access token
+    D->>P: identité et adresse e-mail vérifiée
+    D-->>N: session ouverte, redirection vers /dashboard
+```
+
+Le `client_secret` ne quitte jamais le serveur, le `state` protège contre les connexions forgées. Le compte du dashboard est choisi dans cet ordre : compte déjà lié, utilisateur connecté (liaison depuis les paramètres), utilisateur avec la même adresse **vérifiée** par le fournisseur, sinon création d'un compte sans mot de passe. Une adresse non vérifiée n'est jamais utilisée, sinon n'importe qui pourrait prendre le contrôle d'un compte en créant un compte GitHub à son adresse. Le dernier moyen de connexion d'un compte (mot de passe ou compte lié) ne peut pas être dissocié.
+
+Pour GitHub, le scope `notifications` est demandé : le token obtenu est réutilisé par les widgets GitHub si l'utilisateur n'en a pas saisi un lui-même.
+
 ## Sécurité
 
 | Risque | Protection |
 | --- | --- |
 | Vol de mot de passe | Hachage par Django (PBKDF2), jamais stocké ni renvoyé en clair |
+| Inscription avec l'adresse d'un autre | Compte inactif tant que le lien envoyé à l'adresse n'a pas été ouvert |
+| Énumération des comptes | Mêmes réponses et même temps de réponse que l'adresse existe ou non (connexion et renvoi du lien) |
+| Usurpation par OAuth | Paramètre `state` vérifié, liaison automatique uniquement sur une adresse vérifiée par le fournisseur |
 | Vol de session par XSS | Cookie de session inaccessible au JavaScript, échappement automatique des templates Angular |
 | Falsification de requête (CSRF) | Jeton CSRF exigé pour toute requête qui modifie des données |
 | Fuite des clés d'API | Clés et tokens uniquement côté serveur, champs en écriture seule dans l'API (le front ne reçoit que `has_github_token: true`), messages d'erreur sans URL |
@@ -224,7 +257,8 @@ Un nouveau widget n'a qu'à hériter de `PollingWidget` et à décrire sa requê
 **Limites connues :**
 
 - Les clés Steam et le token GitHub sont stockés en clair dans la base. Les chiffrer (par exemple avec Fernet, de la bibliothèque `cryptography`) protégerait ces secrets en cas de fuite de la base.
-- `DEBUG` est activé dans `settings.py` : à désactiver, et à lire depuis `.env`, pour un déploiement.
+- `DEBUG` est lu depuis `DJANGO_DEBUG` et vaut `true` par défaut : le mettre à `false` pour un déploiement.
+- Le token GitHub obtenu par OAuth est stocké comme celui saisi à la main, donc en clair lui aussi.
 
 ## Structure du dépôt
 

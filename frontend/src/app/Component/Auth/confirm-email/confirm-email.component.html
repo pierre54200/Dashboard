@@ -1,0 +1,57 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="lang-corner"><app-language-switch [compact]="true" /></div>
+
+    @switch (state()) {
+      @case ("checking") {
+        <h1 class="login-title">{{ 'confirm.checking' | t }}</h1>
+        <p class="login-subtitle">{{ 'confirm.checking_text' | t }}</p>
+      }
+
+      @case ("success") {
+        <div class="state-icon ok" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        </div>
+        <h1 class="login-title">{{ 'confirm.success.title' | t }}</h1>
+        <p class="login-subtitle">{{ 'confirm.success.text' | t }}</p>
+        <a routerLink="/dashboard" class="btn btn-primary full go">{{ 'confirm.success.go' | t }}</a>
+      }
+
+      @case ("invalid") {
+        <div class="state-icon ko" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </div>
+        <h1 class="login-title">{{ 'confirm.invalid.title' | t }}</h1>
+        <p class="login-subtitle">{{ 'confirm.invalid.text' | t }}</p>
+
+        @if (resent()) {
+          <div class="alert success" role="status"><p>{{ 'confirm.resent' | t }}</p></div>
+        } @else {
+          <form class="resend-form" (ngSubmit)="resend()">
+            <label for="resend-email" class="login-label">{{ 'auth.email' | t }}</label>
+            <input
+              id="resend-email"
+              name="email"
+              type="email"
+              class="input"
+              autocomplete="email"
+              required
+              [(ngModel)]="email"
+            />
+            <button type="submit" class="btn btn-primary full" [disabled]="!email.trim()">
+              {{ 'confirm.resend' | t }}
+            </button>
+          </form>
+        }
+
+        <p class="login-footer">
+          {{ 'confirm.already' | t }} <a routerLink="/login" class="link">{{ 'register.login' | t }}</a>
+        </p>
+      }
+    }
+  </div>
+</div>

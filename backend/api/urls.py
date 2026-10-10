@@ -1,6 +1,12 @@
 from django.urls import path
 
+from .oauth import oauth_callback, oauth_login
 from .views import (
+    oauth_providers,
+    users_me_connection_delete,
+    users_me_connections,
+    confirm_email,
+    resend_confirmation,
     get_user,
     get_user_from_id,
     login_user,
@@ -31,6 +37,14 @@ urlpatterns = [
     path('users/register', register_user, name='register_user'),
     path('users/login', login_user, name='login_user'),
     path('users/logout', logout_user, name='logout_user'),
+    path('users/confirm', confirm_email, name='confirm_email'),
+    path('users/me/connections', users_me_connections, name='users_me_connections'),
+    path('users/me/connections/<str:provider>', users_me_connection_delete, name='users_me_connection_delete'),
+
+    path('auth/providers', oauth_providers, name='oauth_providers'),
+    path('auth/<str:provider>/login', oauth_login, name='oauth_login'),
+    path('auth/<str:provider>/callback', oauth_callback, name='oauth_callback'),
+    path('users/confirm/resend', resend_confirmation, name='resend_confirmation'),
 
     path('widgets/avatars', widget_avatars, name='widget_avatars'),
     path('widgets/weather', widget_weather, name='widget_weather'),

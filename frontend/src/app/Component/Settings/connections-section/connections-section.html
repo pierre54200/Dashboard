@@ -1,41 +1,62 @@
 <h1 class="page-title">{{ 'settings.nav.connections' | t }}</h1>
 <p class="page-intro">{{ 'connections.intro' | t }}</p>
 
-<!-- Boutons d'ajout rapide, comme la barre de Discord -->
-<div class="add-bar">
-  <span class="add-bar-text">{{ 'connections.add' | t }}</span>
-  <div class="add-bar-buttons">
-    @for (p of providers(); track p.id) {
-      @if (!p.linked) {
-        <button type="button" class="provider-btn" (click)="link(p)">
+@if (notice(); as n) {
+  <div class="notice" [class.error]="n.kind === 'error'" [attr.role]="n.kind === 'error' ? 'alert' : 'status'">
+    {{ n.key | t: { name: n.name ?? '' } }}
+  </div>
+}
+
+@if (loading()) {
+  <p class="empty">{{ 'common.loading' | t }}</p>
+} @else {
+  <!-- Boutons d'ajout rapide, comme la barre de Discord -->
+  <div class="add-bar">
+    <span class="add-bar-text">{{ 'connections.add' | t }}</span>
+    <div class="add-bar-buttons">
+      @for (p of available(); track p.id) {
+        <button
+          type="button"
+          class="provider-btn"
+          (click)="link(p)"
+          [disabled]="!p.enabled || busy() !== null"
+          [title]="p.enabled ? '' : ('connections.not_configured' | t)"
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M12 5v14M5 12h14" />
           </svg>
           {{ p.name }}
         </button>
       }
-    }
-    @if (linkedCount() === providers().length) {
-      <span class="hint">{{ 'connections.all_linked' | t }}</span>
-    }
+      @if (available().length === 0) {
+        <span class="hint">{{ 'connections.all_linked' | t }}</span>
+      }
+    </div>
   </div>
-</div>
 
-<!-- Comptes liés -->
-<ul class="linked-list">
-  @for (p of providers(); track p.id) {
-    @if (p.linked) {
+  @if (noneConfigured()) {
+    <p class="hint below">{{ 'connections.not_configured' | t }}</p>
+  }
+
+  <!-- Comptes liés -->
+  <ul class="linked-list">
+    @for (p of linked(); track p.id) {
       <li class="linked">
         <span class="provider-icon">{{ p.name.charAt(0) }}</span>
         <div class="linked-info">
           <span class="linked-name">{{ p.account }}</span>
-          <span class="linked-provider">{{ p.name }}</span>
+          <span class="linked-provider">
+            {{ p.name }}
+            @if (p.linked_at) {
+              <span class="since">{{ 'connections.since' | t: { date: linkedDate(p.linked_at) } }}</span>
+            }
+          </span>
         </div>
         <button
           type="button"
           class="icon-btn"
           (click)="unlink(p)"
-          [disabled]="!canUnlink()"
+          [disabled]="!canUnlink() || busy() !== null"
           [attr.aria-label]="'connections.unlink_named' | t: { name: p.name }"
           [title]="(canUnlink() ? 'connections.unlink' : 'connections.keep_one') | t"
         >
@@ -45,9 +66,13 @@
         </button>
       </li>
     }
-  }
-</ul>
+  </ul>
 
-@if (linkedCount() === 0) {
-  <p class="empty">{{ 'connections.empty' | t }}</p>
+  @if (linked().length === 0) {
+    <p class="empty">{{ 'connections.empty' | t }}</p>
+  }
+
+  @if (!hasPassword()) {
+    <p class="hint below">{{ 'connections.no_password' | t }}</p>
+  }
 }

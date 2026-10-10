@@ -1,5 +1,5 @@
-import { Component, HostListener, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, HostListener, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AccountSection } from './account-section/account-section';
 import { ServicesSection } from './services-section/services-section';
 import { ConnectionsSection } from './connections-section/connections-section';
@@ -17,7 +17,13 @@ type Section = 'account' | 'services' | 'connections' | 'appearance';
   styleUrl: './settings.component.css',
 })
 export class SettingsComponent {
-  section = signal<Section>('account');
+  // Retour d'une liaison Google / GitHub : on ouvre directement l'onglet Connexions
+  private query = inject(ActivatedRoute).snapshot.queryParamMap;
+  section = signal<Section>(
+    this.query.has('oauth_linked') || this.query.has('oauth_error')
+      ? 'connections'
+      : 'account',
+  );
 
   readonly nav: { id: Section; label: TranslationKey }[] = [
     { id: 'account', label: 'settings.nav.account' },

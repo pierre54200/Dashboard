@@ -30,7 +30,10 @@ Un seul écran pour suivre ce qui vous intéresse, au lieu d'ouvrir dix onglets.
 
 **Compte**
 
-- Inscription avec acceptation des conditions d'utilisation, connexion par nom d'utilisateur et mot de passe.
+- Inscription avec acceptation des conditions d'utilisation, puis confirmation de l'adresse e-mail par un lien (valable 3 jours, renvoi possible).
+- Connexion avec son nom d'utilisateur **ou** son adresse e-mail, et son mot de passe.
+- Connexion et inscription en un clic avec **Google** ou **GitHub** (OAuth 2.0). Un compte existant avec la même adresse vérifiée est retrouvé, pas dupliqué.
+- Liaison et dissociation des comptes Google et GitHub dans **Paramètres > Connexions**. La connexion GitHub sert aussi de token pour les widgets GitHub.
 - Profil modifiable : pseudo, e-mail, sexe, âge, photo de profil.
 - Export de ses données au format JSON et suppression du compte (RGPD).
 - Section d'administration Django pour gérer les utilisateurs.
@@ -102,8 +105,52 @@ Puis remplir `.env` :
 | `DJANGO_SECRET` | Clé secrète de Django : une longue chaîne aléatoire, par exemple générée avec `python3 -c "import secrets; print(secrets.token_urlsafe(50))"` |
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Nom de la base, utilisateur et mot de passe de PostgreSQL |
 | `POSTGRES_HOST`, `POSTGRES_PORT` | `db` et `5432` avec Docker |
+| `DJANGO_DEBUG` | `true` par défaut, `false` en production |
+| `FRONTEND_URL`, `BACKEND_URL` | Adresses publiques du front et de l'API (`http://localhost:4200` et `http://localhost:8080` par défaut). Servent aux liens des e-mails et aux redirections OAuth |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` | Serveur SMTP pour les e-mails de confirmation. Facultatif : sans `EMAIL_HOST`, les e-mails sont affichés dans les logs du backend |
+| `DEFAULT_FROM_EMAIL` | Expéditeur des e-mails, par exemple `Dashboard <noreply@exemple.fr>` |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Facultatif : active « Continuer avec Google » |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Facultatif : active « Continuer avec GitHub » |
 
 Le fichier `.env` est ignoré par Git : aucun secret ne doit apparaître dans le dépôt.
+
+#### Envoi des e-mails de confirmation
+
+Sans configuration, Django utilise le backend « console » : l'e-mail complet, avec son lien, s'affiche dans les logs.
+
+```bash
+docker-compose logs -f backend
+```
+
+Pour de vrais envois, avec Gmail par exemple : activer la validation en deux étapes du compte Google, créer un [mot de passe d'application](https://myaccount.google.com/apppasswords), puis :
+
+```env
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=true
+EMAIL_HOST_USER=ton.adresse@gmail.com
+EMAIL_HOST_PASSWORD=le-mot-de-passe-d-application
+DEFAULT_FROM_EMAIL=Dashboard <ton.adresse@gmail.com>
+```
+
+#### Connexion avec Google et GitHub (facultatif)
+
+Les boutons « Continuer avec ... » n'apparaissent que pour les fournisseurs configurés.
+
+**GitHub** : [Settings > Developer settings > OAuth Apps > New OAuth App](https://github.com/settings/applications/new)
+
+- Homepage URL : `http://localhost:4200`
+- Authorization callback URL : `http://localhost:8080/api/auth/github/callback`
+- Copier le Client ID, générer un Client secret, puis les mettre dans `GITHUB_CLIENT_ID` et `GITHUB_CLIENT_SECRET`.
+
+**Google** : [Google Cloud Console > API et services > Identifiants](https://console.cloud.google.com/apis/credentials)
+
+1. Configurer l'écran de consentement OAuth (type « Externe », ajouter son adresse dans les utilisateurs de test).
+2. Créer un ID client OAuth de type « Application Web ».
+3. URI de redirection autorisé : `http://localhost:8080/api/auth/google/callback`
+4. Mettre l'ID et le code secret dans `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET`.
+
+L'URI de redirection doit correspondre exactement à `BACKEND_URL` suivi de `/api/auth/<fournisseur>/callback`. Après modification du `.env`, redémarrer le backend (`docker-compose up -d backend`).
 
 ### Build et lancement
 
@@ -139,7 +186,7 @@ Les données de la base sont conservées dans le volume Docker `pgdata`, entre d
 
 ## Utilisation
 
-1. Ouvrir http://localhost:4200, choisir sa langue en haut à droite, puis créer un compte.
+1. Ouvrir http://localhost:4200, choisir sa langue en haut à droite, puis créer un compte et cliquer sur le lien reçu par e-mail (ou dans les logs du backend si aucun serveur SMTP n'est configuré). On peut aussi utiliser « Continuer avec Google » ou « Continuer avec GitHub ».
 2. Sur le dashboard, cliquer sur **Ajouter un widget**, choisir **Météo**, saisir une ville, choisir une fréquence d'actualisation, puis valider.
 3. Pour les widgets Steam et GitHub, ouvrir les **Paramètres** (avatar en haut à gauche), section **Services**, et renseigner ses identifiants. Les widgets correspondants affichent ensuite leurs données.
 4. Sur chaque carte :
@@ -198,7 +245,11 @@ La documentation complète et interactive est sur http://localhost:8080/api/docs
 | Route | Rôle |
 | --- | --- |
 | `GET /about.json` | Description des services et widgets (format imposé par le sujet) |
-| `POST /api/users/register`, `/login`, `/logout` | Inscription, connexion, déconnexion |
+| `POST /api/users/register`, `/login`, `/logout` | Inscription (compte inactif jusqu'à confirmation), connexion par pseudo ou e-mail, déconnexion |
+| `POST /api/users/confirm`, `/confirm/resend` | Confirmation de l'adresse e-mail avec le lien reçu, renvoi du lien |
+| `GET /api/auth/providers` | Fournisseurs OAuth configurés |
+| `GET /api/auth/<google\|github>/login`, `/callback` | Connexion avec Google ou GitHub (navigation complète, pas d'appel AJAX) |
+| `GET /api/users/me/connections`, `DELETE /api/users/me/connections/<fournisseur>` | Comptes Google et GitHub liés |
 | `GET`, `PATCH /api/users/me/profile` | Profil et préférences (JSON, ou multipart pour les images) |
 | `GET`, `PATCH /api/users/me/integrations` | Identifiants des services (les secrets sont en écriture seule) |
 | `GET`, `POST /api/users/me/widgets` | Disposition du dashboard |
@@ -242,3 +293,7 @@ Ajouter la clé dans `frontend/src/app/I18n/fr.ts` et dans `en.ts`, puis l'utili
 | Un widget affiche « Service externe injoignable » | Le conteneur backend n'a pas de DNS (fréquent après un changement de réseau) | Redémarrer Docker, ou ajouter `dns: [1.1.1.1, 8.8.8.8]` au service `backend` |
 | Un widget Steam affiche « bibliothèque privée » | Détails de jeu privés sur Steam | Profil Steam, Modifier le profil, Confidentialité : « Détails du jeu » en Public |
 | Les widgets GitHub restent vides | Token sans le scope `notifications` | Générer un token classique avec ce scope |
+| L'e-mail de confirmation n'arrive pas | Pas de serveur SMTP configuré, ou identifiants refusés | Chercher le lien dans `docker-compose logs backend`, vérifier les variables `EMAIL_*` |
+| « Lien invalide ou expiré » | Lien déjà utilisé, de plus de 3 jours, ou adresse modifiée entre temps | Demander un nouveau lien sur la page affichée |
+| Google affiche `redirect_uri_mismatch` | L'URI de redirection déclarée ne correspond pas | Déclarer exactement `http://localhost:8080/api/auth/google/callback` |
+| « La demande de connexion a expiré » après Google ou GitHub | Le cookie de session a été perdu en route | Utiliser `localhost` partout, pas un mélange de `localhost` et `127.0.0.1` |

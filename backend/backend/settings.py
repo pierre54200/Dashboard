@@ -28,7 +28,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = (os.environ.get("DJANGO_DEBUG") or "true").lower() in ("1", "true", "yes")
+
+# Public addresses, used to build links in emails and OAuth redirects
+FRONTEND_URL = (os.environ.get("FRONTEND_URL") or "http://localhost:4200").rstrip("/")
+BACKEND_URL = (os.environ.get("BACKEND_URL") or "http://localhost:8080").rstrip("/")
+
+# Log in with Google / GitHub. Redirect URIs to declare at the provider:
+#   {BACKEND_URL}/api/auth/google/callback   and   {BACKEND_URL}/api/auth/github/callback
+# A provider without both values is hidden from the login page.
+OAUTH_CLIENTS = {
+    "google": {
+        "client_id": os.environ.get("GOOGLE_CLIENT_ID", ""),
+        "client_secret": os.environ.get("GOOGLE_CLIENT_SECRET", ""),
+    },
+    "github": {
+        "client_id": os.environ.get("GITHUB_CLIENT_ID", ""),
+        "client_secret": os.environ.get("GITHUB_CLIENT_SECRET", ""),
+    },
+}
+
+# Log in with the username or the email address
+AUTHENTICATION_BACKENDS = ["api.auth_backends.EmailOrUsernameBackend"]
 
 ALLOWED_HOSTS = []
 
@@ -159,11 +180,30 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# Without EMAIL_HOST in .env, emails (account confirmation) are printed in the backend logs:
+#   docker compose logs backend
+if os.environ.get("EMAIL_HOST"):
+    MAILERS = {
+        'default': {
+            'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+            'OPTIONS': {
+                'host': os.environ["EMAIL_HOST"],
+                'port': int(os.environ.get("EMAIL_PORT") or 587),
+                'username': os.environ.get("EMAIL_HOST_USER", ""),
+                'password': os.environ.get("EMAIL_HOST_PASSWORD", ""),
+                'use_tls': (os.environ.get("EMAIL_USE_TLS") or "true").lower() in ("1", "true", "yes"),
+                'timeout': 10,
+            },
+        },
+    }
+else:
+    MAILERS = {
+        'default': {
+            'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        },
+    }
+
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL") or "Dashboard <no-reply@dashboard.local>"
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",

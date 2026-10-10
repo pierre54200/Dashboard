@@ -1,0 +1,51 @@
+.state-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background-color: rgba(88, 101, 242, 0.15);
+  color: var(--blue);
+}
+
+.state-icon.ok {
+  background-color: rgba(35, 165, 89, 0.15);
+  color: var(--green);
+}
+
+.state-icon.ko {
+  background-color: rgba(218, 55, 60, 0.15);
+  color: var(--red);
+}
+
+.email {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.help {
+  margin: 0 0 16px;
+  font-size: 0.8125rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.full {
+  width: 100%;
+}
+
+.resend-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+a.go {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}

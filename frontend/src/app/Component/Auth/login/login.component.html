@@ -4,6 +4,21 @@
     <h1 class="login-title">{{ 'login.title' | t }}</h1>
     <p class="login-subtitle">{{ 'login.subtitle' | t }}</p>
 
+    @if (error(); as e) {
+      <div class="alert" role="alert">
+        <p>{{ e | t }}</p>
+        @if (unconfirmedEmail()) {
+          @if (resent()) {
+            <p class="alert-ok">{{ 'confirm.resent' | t }}</p>
+          } @else {
+            <button type="button" class="link-btn" (click)="resend()">{{ 'confirm.resend' | t }}</button>
+          }
+        }
+      </div>
+    }
+
+    <app-oauth-buttons />
+
     <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <div class="login-field">
         <label for="email" class="login-label">{{ 'login.identifier' | t }}</label>
@@ -45,7 +60,7 @@
       <button
         type="submit"
         class="btn btn-primary"
-        [disabled]="loginForm.invalid"
+        [disabled]="loginForm.invalid || submitting()"
       >
         {{ 'login.submit' | t }}
       </button>

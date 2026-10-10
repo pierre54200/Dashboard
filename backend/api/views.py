@@ -1,6 +1,7 @@
-from django.contrib.auth import login, logout
+from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
@@ -15,8 +16,13 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import UserApiInfo, UserProfile, UserWidgetSettings
+from .models import SocialAccount, UserApiInfo, UserProfile, UserWidgetSettings
+from .oauth import PROVIDERS, enabled_providers
+from .emails import confirmation_token, send_confirmation_email, user_from_uid
 from .serializer import (
+    ConfirmEmailSerializer,
+    EmailNotConfirmed,
+    ResendConfirmationSerializer,
     ApiInfoSerializer,
     ErrorSerializer,
     LoginSerializer,
@@ -234,9 +240,15 @@ AUTH
 @extend_schema(
     tags=AUTH,
     summary="Register a new user",
-    description="Creates the user and logs them in (session cookie).",
+    description="Creates an inactive account and emails a confirmation link. "
+                "The user can log in once the address is confirmed (POST /api/users/confirm).",
     request=RegisterSerializer,
-    responses={201: UserSerializer, 400: RegisterSerializer},
+    responses={201: OpenApiTypes.OBJECT, 400: RegisterSerializer},
+    examples=[OpenApiExample(
+        "Created",
+        value={"detail": "confirmation_sent", "email": "alice@example.com", "email_sent": True},
+        response_only=True, status_codes=["201"],
+    )],
 )
 @api_view(["POST"])
 @authentication_classes([])
@@ -245,32 +257,98 @@ def register_user(request):
     serializer = RegisterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
+    language = serializer.validated_data.get("language", "fr")
     try:
-        user = serializer.save()
+        with transaction.atomic():
+            user = serializer.save()
+            UserProfile.objects.create(user=user, language=language)
     except IntegrityError:
         return Response(
             {"username": ["Username already taken."]},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    login(request, user)
-    return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+    sent = send_confirmation_email(user, language)
+    return Response(
+        {"detail": "confirmation_sent", "email": user.email, "email_sent": sent},
+        status=status.HTTP_201_CREATED,
+    )
+
+
+RESEND_COOLDOWN = 60  # seconds between two confirmation emails for the same address
+
+
+@login_not_required
+@extend_schema(
+    tags=AUTH,
+    summary="Confirm the email address",
+    description="Activates the account from the link received by email, then logs the user in.",
+    request=ConfirmEmailSerializer,
+    responses={200: UserSerializer, 400: ErrorSerializer},
+)
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def confirm_email(request):
+    serializer = ConfirmEmailSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    user = user_from_uid(get_user_model(), serializer.validated_data["uid"])
+    if user is None or not confirmation_token.check_token(user, serializer.validated_data["token"]):
+        return Response({"error": "invalid_or_expired"}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.is_active = True
+    user.save(update_fields=["is_active"])
+    login(request, user, backend="api.auth_backends.EmailOrUsernameBackend")
+    return Response(UserSerializer(user).data)
+
+
+@login_not_required
+@extend_schema(
+    tags=AUTH,
+    summary="Send the confirmation email again",
+    description="Always answers 200, whether the address exists or not, so it can't be used to "
+                "find out who has an account. One email per address per minute at most.",
+    request=ResendConfirmationSerializer,
+    responses={200: None},
+)
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def resend_confirmation(request):
+    serializer = ResendConfirmationSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data["email"].strip().lower()
+
+    if cache.add(f"confirm_resend:{email}", True, RESEND_COOLDOWN):
+        user = get_user_model().objects.filter(email__iexact=email, is_active=False).first()
+        if user is not None:
+            profile = UserProfile.objects.filter(user=user).first()
+            send_confirmation_email(user, profile.language if profile else "fr")
+    return Response(status=status.HTTP_200_OK)
 
 
 @login_not_required
 @extend_schema(
     tags=AUTH,
     summary="Log in",
-    description="Starts a session (session cookie).",
+    description="Starts a session (session cookie). `username` accepts the username or the email "
+                "address. 403 with code `email_not_confirmed` if the account isn't confirmed yet.",
     request=LoginSerializer,
-    responses={202: UserSerializer, 400: LoginSerializer},
+    responses={202: UserSerializer, 400: LoginSerializer, 403: OpenApiTypes.OBJECT},
 )
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def login_user(request):
     serializer = LoginSerializer(data=request.data, context={"request": request})
-    serializer.is_valid(raise_exception=True)
+    try:
+        serializer.is_valid(raise_exception=True)
+    except EmailNotConfirmed as e:
+        return Response(
+            {"error": "Email address not confirmed.", "code": "email_not_confirmed", "email": e.email},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     user = serializer.user
     login(request, user)
@@ -405,3 +483,79 @@ def users_me_profile(request):
                         status=status.HTTP_400_BAD_REQUEST)
 
     return Response(ProfileSerializer(_profile_data(user, profile), context=context).data)
+
+
+
+"""
+OAUTH CONNECTIONS (Google, GitHub)
+"""
+@login_not_required
+@extend_schema(
+    tags=AUTH,
+    summary="Login providers available on this server",
+    description="Providers with a client id and secret in .env. To log in, open "
+                "GET /api/auth/<provider>/login in the browser (full-page navigation).",
+    responses={200: OpenApiTypes.OBJECT},
+    examples=[OpenApiExample("Success", value=[{"id": "github", "name": "GitHub"}], response_only=True)],
+)
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def oauth_providers(request):
+    return Response([{"id": p, "name": PROVIDERS[p]["name"]} for p in enabled_providers()])
+
+
+def _connections_data(user):
+    linked = {a.provider: a for a in SocialAccount.objects.filter(user=user)}
+    enabled = set(enabled_providers())
+    return {
+        "has_password": user.has_usable_password(),
+        "providers": [
+            {
+                "id": p,
+                "name": conf["name"],
+                "enabled": p in enabled,
+                "linked": p in linked,
+                "account": (linked[p].login or linked[p].email) if p in linked else None,
+                "linked_at": linked[p].created_at if p in linked else None,
+            }
+            for p, conf in PROVIDERS.items()
+        ],
+    }
+
+
+@login_not_required
+@extend_schema(
+    tags=SETTINGS,
+    summary="Google / GitHub accounts linked to the current user",
+    description="To link a provider, open GET /api/auth/<provider>/login?mode=link in the browser.",
+    responses={200: OpenApiTypes.OBJECT},
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def users_me_connections(request):
+    return Response(_connections_data(request.user))
+
+
+@login_not_required
+@extend_schema(
+    tags=SETTINGS,
+    summary="Unlink a Google / GitHub account",
+    description="Refused (400, code `keep_one`) if it is the only way left to log in "
+                "(account created with Google/GitHub, without a password).",
+    responses={200: OpenApiTypes.OBJECT, 400: ErrorSerializer, 404: ErrorSerializer},
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def users_me_connection_delete(request, provider):
+    account = SocialAccount.objects.filter(user=request.user, provider=provider).first()
+    if account is None:
+        return Response({"error": "Not linked."}, status=status.HTTP_404_NOT_FOUND)
+    others = SocialAccount.objects.filter(user=request.user).exclude(pk=account.pk).exists()
+    if not request.user.has_usable_password() and not others:
+        return Response(
+            {"error": "Keep at least one way to log in.", "code": "keep_one"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    account.delete()
+    return Response(_connections_data(request.user))

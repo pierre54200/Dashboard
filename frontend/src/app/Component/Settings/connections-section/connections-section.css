@@ -127,3 +127,36 @@
   text-align: center;
   color: var(--text-muted);
 }
+.provider-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.provider-btn:disabled:hover {
+  background-color: var(--btn-grey);
+}
+
+.hint.below {
+  display: block;
+  margin: -12px 0 20px;
+}
+
+.notice {
+  margin: 0 0 20px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--green);
+  border-radius: 4px;
+  background-color: rgba(35, 165, 89, 0.12);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.notice.error {
+  border-left-color: var(--red);
+  background-color: rgba(218, 55, 60, 0.12);
+}
+
+.since::before {
+  content: "\00b7";
+  margin: 0 6px;
+}
