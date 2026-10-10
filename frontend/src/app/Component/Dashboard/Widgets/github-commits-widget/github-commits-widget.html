@@ -25,16 +25,16 @@
       }
     </ul>
   } @else {
-    <div class="state">Aucun commit à afficher.</div>
+    <div class="state">{{ 'commits.empty' | t }}</div>
   }
 } @else if (error()) {
   <div class="state error" role="alert">
     <span>{{ error() }}</span>
-    <button type="button" class="retry" (click)="load(true)">Réessayer</button>
+    <button type="button" class="retry" (click)="load(true)">{{ 'common.retry' | t }}</button>
   </div>
 } @else {
   <div class="state" aria-live="polite">
     <span class="spinner" aria-hidden="true"></span>
-    <span>Chargement des commits...</span>
+    <span>{{ 'commits.loading' | t }}</span>
   </div>
 }

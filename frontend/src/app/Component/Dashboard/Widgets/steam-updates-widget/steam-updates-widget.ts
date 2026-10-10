@@ -2,10 +2,11 @@ import { Component } from "@angular/core";
 import { PollingWidget } from "../polling-widget";
 import { ISteamUpdate } from "../../../../Interface/Widget/widget.interface";
 import { RelativeTimePipe } from "../../../../Pipe/relative-time.pipe";
+import { TranslatePipe } from "../../../../I18n/translate.pipe";
 
 @Component({
   selector: "app-steam-updates-widget",
-  imports: [RelativeTimePipe],
+  imports: [RelativeTimePipe, TranslatePipe],
   templateUrl: "./steam-updates-widget.html",
   styleUrls: ["../widget-shared.css", "./steam-updates-widget.css"],
 })

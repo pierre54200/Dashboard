@@ -2,21 +2,8 @@ import { Component, computed } from "@angular/core";
 import { PollingWidget } from "../polling-widget";
 import { IGithubNotification } from "../../../../Interface/Widget/widget.interface";
 import { RelativeTimePipe } from "../../../../Pipe/relative-time.pipe";
+import { TranslatePipe } from "../../../../I18n/translate.pipe";
 
-const REASONS: Record<string, string> = {
-  assign: "Assigné",
-  author: "Auteur",
-  comment: "Commentaire",
-  ci_activity: "CI",
-  invitation: "Invitation",
-  manual: "Abonné",
-  mention: "Mentionné",
-  review_requested: "Revue demandée",
-  security_alert: "Alerte sécurité",
-  state_change: "Changement d'état",
-  subscribed: "Abonné",
-  team_mention: "Équipe mentionnée",
-};
 
 const TYPES: Record<string, { label: string; css: string }> = {
   PullRequest: { label: "PR", css: "pr" },
@@ -29,7 +16,7 @@ const TYPES: Record<string, { label: string; css: string }> = {
 
 @Component({
   selector: "app-github-notifications-widget",
-  imports: [RelativeTimePipe],
+  imports: [RelativeTimePipe, TranslatePipe],
   templateUrl: "./github-notifications-widget.html",
   styleUrls: ["../widget-shared.css", "./github-notifications-widget.css"],
 })
@@ -41,7 +28,8 @@ export class GithubNotificationsWidget extends PollingWidget<IGithubNotification
   }
 
   reason(n: IGithubNotification): string {
-    return REASONS[n.reason] ?? n.reason;
+    const key = `notif.reason.${n.reason}`;
+    return this.i18n.has(key) ? this.i18n.t(key as never) : n.reason;
   }
 
   type(n: IGithubNotification) {

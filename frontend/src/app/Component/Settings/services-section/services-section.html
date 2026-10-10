@@ -1,8 +1,5 @@
-<h1 class="page-title">Services</h1>
-<p class="page-intro">
-  Configure les services pour débloquer leurs widgets.
-  {{ subscribedCount() }} sur {{ services().length }} actifs.
-</p>
+<h1 class="page-title">{{ 'settings.nav.services' | t }}</h1>
+<p class="page-intro">{{ 'services.intro' | t: { n: subscribedCount(), total: services().length } }}</p>
 
 @if (loadError()) {
   <p class="error" role="alert">{{ loadError() }}</p>
@@ -10,9 +7,9 @@
 
 <!-- Filtres -->
 <div class="tabs" role="tablist">
-  <button type="button" role="tab" class="tab" [class.active]="filter() === 'all'" [attr.aria-selected]="filter() === 'all'" (click)="filter.set('all')">Tous</button>
-  <button type="button" role="tab" class="tab" [class.active]="filter() === 'subscribed'" [attr.aria-selected]="filter() === 'subscribed'" (click)="filter.set('subscribed')">Actifs</button>
-  <button type="button" role="tab" class="tab" [class.active]="filter() === 'available'" [attr.aria-selected]="filter() === 'available'" (click)="filter.set('available')">À configurer</button>
+  <button type="button" role="tab" class="tab" [class.active]="filter() === 'all'" [attr.aria-selected]="filter() === 'all'" (click)="filter.set('all')">{{ 'services.filter.all' | t }}</button>
+  <button type="button" role="tab" class="tab" [class.active]="filter() === 'subscribed'" [attr.aria-selected]="filter() === 'subscribed'" (click)="filter.set('subscribed')">{{ 'services.filter.active' | t }}</button>
+  <button type="button" role="tab" class="tab" [class.active]="filter() === 'available'" [attr.aria-selected]="filter() === 'available'" (click)="filter.set('available')">{{ 'services.filter.todo' | t }}</button>
 </div>
 
 <ul class="service-list">
@@ -25,32 +22,32 @@
           <div class="service-name">
             {{ s.name }}
             @if (s.byDefault) {
-              <span class="pill pill-default">Par défaut</span>
+              <span class="pill pill-default">{{ 'services.pill.default' | t }}</span>
             } @else if (s.configured) {
-              <span class="pill pill-on">Connecté</span>
+              <span class="pill pill-on">{{ 'services.pill.on' | t }}</span>
             } @else {
-              <span class="pill pill-off">Non connecté</span>
+              <span class="pill pill-off">{{ 'services.pill.off' | t }}</span>
             }
           </div>
           <p class="service-desc">{{ s.description }}</p>
           <p class="service-meta">
-            {{ s.widgets }} widget{{ s.widgets > 1 ? 's' : '' }}
+            {{ i18n.plural('services.widgets', s.widgets) }}
             @if (s.account) { · {{ s.account }} }
           </p>
           @if (saved() === s.id) {
-            <p class="success" role="status">Enregistré.</p>
+            <p class="success" role="status">{{ 'common.saved' | t }}</p>
           }
         </div>
 
         <div class="service-action">
           @if (s.configured && !s.byDefault) {
             <button type="button" class="btn-sm btn-grey" [attr.aria-expanded]="openForm() === s.id" (click)="toggleForm(s)">
-              {{ openForm() === s.id ? 'Annuler' : 'Modifier' }}
+              {{ (openForm() === s.id ? 'common.cancel' : 'common.edit') | t }}
             </button>
-            <button type="button" class="btn-sm btn-outline-danger" (click)="openForm.set(null); confirmUnsub.set(s.id)">Se déconnecter</button>
+            <button type="button" class="btn-sm btn-outline-danger" (click)="openForm.set(null); confirmUnsub.set(s.id)">{{ 'services.disconnect' | t }}</button>
           } @else {
             <button type="button" class="btn btn-primary btn-sm" [attr.aria-expanded]="openForm() === s.id" (click)="toggleForm(s)">
-              {{ openForm() === s.id ? 'Annuler' : (s.byDefault ? 'Modifier' : 'Configurer') }}
+              {{ (openForm() === s.id ? 'common.cancel' : (s.byDefault ? 'common.edit' : 'services.configure')) | t }}
             </button>
           }
         </div>
@@ -62,19 +59,19 @@
           @switch (s.id) {
             @case ('weather') {
               <div class="field">
-                <label class="label" for="cfg-city">Ville par défaut</label>
-                <input class="input" id="cfg-city" type="text" name="city" [(ngModel)]="city" placeholder="Ex : Paris" autocomplete="address-level2" />
-                <p class="field-hint">Utilisée par les widgets météo qui n’ont pas de ville propre.</p>
+                <label class="label" for="cfg-city">{{ 'services.weather.city' | t }}</label>
+                <input class="input" id="cfg-city" type="text" name="city" [(ngModel)]="city" [placeholder]="'services.weather.city_placeholder' | t" autocomplete="address-level2" />
+                <p class="field-hint">{{ 'services.weather.city_hint' | t }}</p>
               </div>
             }
             @case ('steam') {
               <div class="field">
                 <label class="label" for="cfg-steam-id">Steam ID</label>
                 <input class="input" id="cfg-steam-id" type="text" name="steamId" inputmode="numeric" maxlength="17" [(ngModel)]="steamId" placeholder="76561198XXXXXXXXX" autocomplete="off" />
-                <p class="field-hint">Le nombre de 17 chiffres dans l’URL de ton profil Steam, ou via steamid.io.</p>
+                <p class="field-hint">{{ 'services.steam.id_hint' | t }}</p>
               </div>
               <div class="field">
-                <label class="label" for="cfg-steam-key">Clé d’API Steam</label>
+                <label class="label" for="cfg-steam-key">{{ 'services.steam.key' | t }}</label>
                 <input
                   class="input"
                   id="cfg-steam-key"
@@ -82,16 +79,16 @@
                   name="steamKey"
                   autocomplete="off"
                   [(ngModel)]="steamKey"
-                  [placeholder]="info()?.has_steam_friends_api_key ? 'Clé enregistrée, laisser vide pour la conserver' : '32 caractères'"
+                  [placeholder]="(info()?.has_steam_friends_api_key ? 'services.steam.key_saved' : 'services.steam.key_placeholder') | t"
                 />
-                <p class="field-hint">À créer sur steamcommunity.com/dev/apikey.</p>
+                <p class="field-hint">{{ 'services.steam.key_hint' | t }}</p>
               </div>
             }
             @case ('github') {
               <div class="field">
                 <label class="label" for="cfg-gh">Personal access token</label>
                 <input class="input" id="cfg-gh" type="password" name="githubToken" autocomplete="off" [(ngModel)]="githubToken" placeholder="ghp_..." />
-                <p class="field-hint">Token classique avec le scope « notifications ».</p>
+                <p class="field-hint">{{ 'services.github.token_hint' | t }}</p>
               </div>
             }
           }
@@ -101,7 +98,7 @@
           }
           <div class="actions">
             <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving()">
-              {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+              {{ (saving() ? 'common.saving' : 'common.save') | t }}
             </button>
           </div>
         </form>
@@ -109,19 +106,19 @@
 
       <!-- Confirmation de déconnexion -->
       @if (confirmUnsub() === s.id) {
-        <div class="service-panel danger" role="alertdialog" [attr.aria-label]="'Se déconnecter de ' + s.name">
-          <p>Les identifiants {{ s.name }} seront effacés et ses widgets n’afficheront plus de données.</p>
+        <div class="service-panel danger" role="alertdialog" [attr.aria-label]="'services.disconnect_from' | t: { name: s.name }">
+          <p>{{ 'services.disconnect_warning' | t: { name: s.name } }}</p>
           @if (formError()) {
             <p class="error" role="alert">{{ formError() }}</p>
           }
           <div class="actions">
-            <button type="button" class="btn-link" (click)="confirmUnsub.set(null)">Annuler</button>
-            <button type="button" class="btn btn-danger btn-sm" [disabled]="saving()" (click)="unsubscribe(s)">Se déconnecter</button>
+            <button type="button" class="btn-link" (click)="confirmUnsub.set(null)">{{ 'common.cancel' | t }}</button>
+            <button type="button" class="btn btn-danger btn-sm" [disabled]="saving()" (click)="unsubscribe(s)">{{ 'services.disconnect' | t }}</button>
           </div>
         </div>
       }
     </li>
   } @empty {
-    <li class="empty">Aucun service dans cette catégorie.</li>
+    <li class="empty">{{ 'services.empty' | t }}</li>
   }
 </ul>

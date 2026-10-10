@@ -1,9 +1,11 @@
 import { Component, computed, input } from "@angular/core";
 import { PollingWidget } from "../polling-widget";
 import { ISteamMonthlyGame, ISteamMonthlyPlaytime } from "../../../../Interface/Widget/widget.interface";
+import { TranslatePipe } from "../../../../I18n/translate.pipe";
 
 @Component({
   selector: "app-steam-playtime-widget",
+  imports: [TranslatePipe],
   templateUrl: "./steam-playtime-widget.html",
   styleUrls: ["../widget-shared.css", "./steam-playtime-widget.css"],
 })
@@ -14,7 +16,7 @@ export class SteamPlaytimeWidget extends PollingWidget<ISteamMonthlyPlaytime> {
     const month = this.data()?.month;
     if (!month) return "";
     const [y, m] = month.split("-").map(Number);
-    return new Date(y, m - 1, 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+    return new Date(y, m - 1, 1).toLocaleDateString(this.i18n.locale(), { month: "long", year: "numeric" });
   });
 
   partial = computed(() => {
@@ -43,8 +45,8 @@ export class SteamPlaytimeWidget extends PollingWidget<ISteamMonthlyPlaytime> {
   duration(minutes: number): string {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
-    if (!h) return `${m} min`;
-    return m ? `${h} h ${String(m).padStart(2, "0")}` : `${h} h`;
+    if (!h) return this.i18n.t("time.minutes", { m });
+    return m ? this.i18n.t("time.hours_minutes", { h, m: String(m).padStart(2, "0") }) : this.i18n.t("time.hours", { h });
   }
 
   hideImage(event: Event): void {

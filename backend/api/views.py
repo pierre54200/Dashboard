@@ -311,6 +311,7 @@ def _profile_data(user, profile):
             "glass": profile.glass,
             "background_dim": profile.background_dim,
             "text_scale": profile.text_scale,
+            "language": profile.language,
         },
     }
 
@@ -333,6 +334,7 @@ def _profile_data(user, profile):
                 "glass": False,
                 "background_dim": 40,
                 "text_scale": 100,
+                "language": "fr",
             },
         },
         response_only=True,
@@ -388,7 +390,7 @@ def users_me_profile(request):
             for field in ("sexe", "age"):
                 if field in info:
                     setattr(profile, field, info[field])
-            for field in ("theme", "glass", "background_dim", "text_scale"):
+            for field in ("theme", "glass", "background_dim", "text_scale", "language"):
                 if field in perso:
                     setattr(profile, field, perso[field])
             for field in ("background", "pfp"):

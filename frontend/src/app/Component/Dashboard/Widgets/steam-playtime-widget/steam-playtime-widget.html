@@ -1,5 +1,5 @@
 @if (data(); as d) {
-  <p class="section-label">Les plus joués · {{ monthLabel() }}</p>
+  <p class="section-label">{{ 'playtime.title' | t: { month: monthLabel() } }}</p>
 
   @if (d.games.length) {
     <ol class="ranking">
@@ -21,20 +21,20 @@
       }
     </ol>
   } @else {
-    <div class="state">Aucune partie enregistrée ce mois-ci.</div>
+    <div class="state">{{ 'playtime.empty' | t }}</div>
   }
 
   @if (partial()) {
-    <p class="note">Suivi depuis le {{ d.tracked_since.slice(8, 10) }} : le temps joué avant n'est pas compté.</p>
+    <p class="note">{{ 'playtime.partial' | t: { day: +d.tracked_since.slice(8, 10) } }}</p>
   }
 } @else if (error()) {
   <div class="state error" role="alert">
     <span>{{ error() }}</span>
-    <button type="button" class="retry" (click)="load(true)">Réessayer</button>
+    <button type="button" class="retry" (click)="load(true)">{{ 'common.retry' | t }}</button>
   </div>
 } @else {
   <div class="state" aria-live="polite">
     <span class="spinner" aria-hidden="true"></span>
-    <span>Calcul du temps de jeu...</span>
+    <span>{{ 'playtime.loading' | t }}</span>
   </div>
 }

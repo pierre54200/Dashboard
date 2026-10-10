@@ -16,16 +16,16 @@
       }
     </ul>
   } @else {
-    <div class="state">Aucune actualité récente pour vos jeux.</div>
+    <div class="state">{{ 'updates.empty' | t }}</div>
   }
 } @else if (error()) {
   <div class="state error" role="alert">
     <span>{{ error() }}</span>
-    <button type="button" class="retry" (click)="load(true)">Réessayer</button>
+    <button type="button" class="retry" (click)="load(true)">{{ 'common.retry' | t }}</button>
   </div>
 } @else {
   <div class="state" aria-live="polite">
     <span class="spinner" aria-hidden="true"></span>
-    <span>Recherche des mises à jour...</span>
+    <span>{{ 'updates.loading' | t }}</span>
   </div>
 }

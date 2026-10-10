@@ -1,11 +1,9 @@
-<h1 class="page-title">Connexions</h1>
-<p class="page-intro">
-  Lie un compte tiers pour te connecter au dashboard sans mot de passe.
-</p>
+<h1 class="page-title">{{ 'settings.nav.connections' | t }}</h1>
+<p class="page-intro">{{ 'connections.intro' | t }}</p>
 
 <!-- Boutons d'ajout rapide, comme la barre de Discord -->
 <div class="add-bar">
-  <span class="add-bar-text">Ajouter une connexion</span>
+  <span class="add-bar-text">{{ 'connections.add' | t }}</span>
   <div class="add-bar-buttons">
     @for (p of providers(); track p.id) {
       @if (!p.linked) {
@@ -18,7 +16,7 @@
       }
     }
     @if (linkedCount() === providers().length) {
-      <span class="hint">Tout est déjà lié</span>
+      <span class="hint">{{ 'connections.all_linked' | t }}</span>
     }
   </div>
 </div>
@@ -38,8 +36,8 @@
           class="icon-btn"
           (click)="unlink(p)"
           [disabled]="!canUnlink()"
-          [attr.aria-label]="'Dissocier ' + p.name"
-          [title]="canUnlink() ? 'Dissocier' : 'Garde au moins une méthode de connexion'"
+          [attr.aria-label]="'connections.unlink_named' | t: { name: p.name }"
+          [title]="(canUnlink() ? 'connections.unlink' : 'connections.keep_one') | t"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M18 6 6 18M6 6l12 12" />
@@ -51,5 +49,5 @@
 </ul>
 
 @if (linkedCount() === 0) {
-  <p class="empty">Aucun compte lié pour l’instant.</p>
+  <p class="empty">{{ 'connections.empty' | t }}</p>
 }

@@ -11,6 +11,7 @@ import {
 import { HttpErrorResponse } from "@angular/common/http";
 import { Observable, Subscription } from "rxjs";
 import { WidgetService } from "../../../Service/Widget/widget.service";
+import { I18nService } from "../../../I18n/i18n.service";
 
 const MIN_REFRESH_SECONDS = 15;
 
@@ -28,6 +29,7 @@ export abstract class PollingWidget<T> {
   loading = signal(false);
 
   protected readonly api = inject(WidgetService);
+  protected readonly i18n = inject(I18nService);
   private sub?: Subscription;
   private lastReloadKey = 0;
 
@@ -64,7 +66,8 @@ export abstract class PollingWidget<T> {
         this.loaded.emit(new Date());
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(err.error?.error ?? "Le serveur est injoignable.");
+        const raw = err.error?.error;
+        this.error.set(raw ? this.i18n.apiError(raw) : this.i18n.t("widget.error.server"));
         this.setLoading(false);
       },
     });

@@ -191,3 +191,13 @@ td {
     white-space: normal;
   }
 }
+
+.terms-header {
+  position: relative;
+}
+
+.terms-lang {
+  position: absolute;
+  top: 0;
+  right: 0;
+}

@@ -88,3 +88,13 @@
   margin: 12px 0 0;
   color: var(--text-muted);
 }
+/* Sélecteur de langue en haut à droite de la carte */
+.register-card {
+  position: relative;
+}
+
+.lang-corner {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}

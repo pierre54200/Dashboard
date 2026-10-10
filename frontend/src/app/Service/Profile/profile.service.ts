@@ -3,6 +3,7 @@ import { HttpClient } from "@angular/common/http";
 import { Observable, tap } from "rxjs";
 import { environment } from "../../Environments/environment";
 import { IProfile, IProfileUpdate } from "../../Interface/Profile/profile.interface";
+import type { TranslationKey } from "../../I18n/fr";
 
 export const ACCEPTED_IMAGES = ["image/jpeg", "image/png", "image/webp"];
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -39,9 +40,10 @@ export class ProfileService {
   }
 }
 
-export function checkImageFile(file: File): string | null {
-  if (!ACCEPTED_IMAGES.includes(file.type)) return "Format non pris en charge. Utilise une image JPEG, PNG ou WebP.";
-  if (file.size > MAX_SOURCE_BYTES) return "L'image est trop lourde (25 Mo maximum).";
+/** Vérifie le fichier choisi ; renvoie la clé du message d'erreur, ou null. */
+export function checkImageFile(file: File): TranslationKey | null {
+  if (!ACCEPTED_IMAGES.includes(file.type)) return "image.error.format";
+  if (file.size > MAX_SOURCE_BYTES) return "image.error.size";
   return null;
 }
 
@@ -75,7 +77,8 @@ export async function compressImage(file: File, maxSize: number, square = false)
   return blob;
 }
 
-export function firstApiError(body: unknown, fallback = "L'enregistrement a échoué."): string {
+/** Message brut de Django (en anglais), à passer à I18nService.apiError ; "" si introuvable. */
+export function firstApiError(body: unknown, fallback = ""): string {
   let value: unknown = body;
   for (let i = 0; i < 4 && value && typeof value === "object"; i++) {
     value = Array.isArray(value) ? value[0] : Object.values(value as object)[0];

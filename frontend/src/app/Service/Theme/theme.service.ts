@@ -2,6 +2,7 @@ import { Injectable, computed, effect, signal, untracked } from "@angular/core";
 import { firstValueFrom } from "rxjs";
 import { IProfileUpdate } from "../../Interface/Profile/profile.interface";
 import { ProfileService, checkImageFile, compressImage } from "../Profile/profile.service";
+import type { TranslationKey } from "../../I18n/fr";
 
 export type ThemePreference = "dark" | "light" | "system";
 export type AppliedTheme = "dark" | "light";
@@ -102,7 +103,7 @@ export class ThemeService {
     this.save({ text_scale: value });
   }
 
-  async setBackgroundFromFile(file: File): Promise<string | null> {
+  async setBackgroundFromFile(file: File): Promise<TranslationKey | null> {
     const invalid = checkImageFile(file);
     if (invalid) return invalid;
 
@@ -110,13 +111,13 @@ export class ThemeService {
     try {
       image = await compressImage(file, MAX_BACKGROUND_WIDTH);
     } catch {
-      return "Impossible de lire ou de compresser cette image.";
+      return "image.error.read";
     }
     try {
       await firstValueFrom(this.profiles.uploadImage("background", image));
       return null;
     } catch {
-      return "L'envoi de l'image a échoué.";
+      return "image.error.upload";
     }
   }
 

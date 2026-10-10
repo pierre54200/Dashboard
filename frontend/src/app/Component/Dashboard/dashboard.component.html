@@ -1,7 +1,7 @@
 <div class="dash">
   <header class="topbar">
     <div class="topbar-left">
-      <button class="logo" [class.has-photo]="!!pfp()" (click)="settings()" aria-label="Paramètres">
+      <button class="logo" [class.has-photo]="!!pfp()" (click)="settings()" [attr.aria-label]="'common.settings' | t">
         @if (pfp()) {
           <img [src]="pfp()" alt="" width="40" height="40" />
         } @else {
@@ -9,7 +9,7 @@
         }
       </button>
       <div>
-        <h1 class="title">Bienvenue {{ username() | titlecase }} </h1>
+        <h1 class="title">{{ 'dashboard.welcome' | t: { name: (username() | titlecase) } }}</h1>
       </div>
     </div>
 
@@ -17,7 +17,7 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
         <path d="M12 5v14M5 12h14" />
       </svg>
-      <span>Ajouter un widget</span>
+      <span>{{ 'dashboard.add_widget' | t }}</span>
     </button>
   </header>
 
@@ -35,7 +35,7 @@
           <div class="placeholder" *cdkDragPlaceholder [style.--cols]="w.cols" [style.--rows]="w.rows"></div>
 
           <app-widget-card
-            [title]="w.title"
+            [title]="titleOf(w)"
             [service]="serviceOf(w)"
             [subtitle]="subtitleOf(w)"
             [refreshRate]="w.refreshRate"
@@ -109,11 +109,11 @@
             class="resize-grip"
             role="slider"
             tabindex="0"
-            [attr.aria-label]="'Taille du widget ' + w.title"
+            [attr.aria-label]="'dashboard.resize' | t: { title: titleOf(w) }"
             aria-valuemin="1"
             [attr.aria-valuemax]="MAX_COLS"
             [attr.aria-valuenow]="w.cols"
-            [attr.aria-valuetext]="w.cols + ' colonnes sur ' + w.rows + ' rangées'"
+            [attr.aria-valuetext]="'dashboard.resize_value' | t: { cols: w.cols, rows: w.rows }"
             (pointerdown)="startResize($event, w)"
             (keydown)="resizeWithKeyboard($event, w)"
           >
@@ -128,7 +128,7 @@
         </div>
       } @empty {
         @if (layoutLoaded()) {
-          <p class="empty">Ton dashboard est vide. Ajoute un widget pour commencer.</p>
+          <p class="empty">{{ 'dashboard.empty' | t }}</p>
         }
       }
     </div>
@@ -140,23 +140,23 @@
   <form class="dialog-inner" (ngSubmit)="submitDialog()">
     <header class="dialog-header">
       @if (editingId() === null) {
-        <h2 id="add-title">Ajouter un widget</h2>
-        <p>Choisis un widget et règle son actualisation.</p>
+        <h2 id="add-title">{{ 'dialog.add.title' | t }}</h2>
+        <p>{{ 'dialog.add.subtitle' | t }}</p>
       } @else {
-        <h2 id="add-title">Modifier le widget</h2>
-        <p>{{ definition(selectedType()).description }}</p>
+        <h2 id="add-title">{{ 'dialog.edit.title' | t }}</h2>
+        <p>{{ definition(selectedType()).description | t }}</p>
       }
     </header>
 
     <div class="dialog-body">
       @if (editingId() !== null) {
         <label class="field">
-          <span class="label">Nom affiché</span>
-          <input class="input" type="text" name="title" [(ngModel)]="newTitle" maxlength="60" [placeholder]="definition(selectedType()).title" autocomplete="off" />
+          <span class="label">{{ 'dialog.name' | t }}</span>
+          <input class="input" type="text" name="title" [(ngModel)]="newTitle" maxlength="60" [placeholder]="definition(selectedType()).title | t" autocomplete="off" />
         </label>
       } @else {
       <fieldset class="type-list">
-        <legend class="label">Widget</legend>
+        <legend class="label">{{ 'dialog.widget' | t }}</legend>
         @for (d of catalog; track d.type) {
           <label class="type-option" [class.selected]="selectedType() === d.type">
             <input
@@ -166,10 +166,10 @@
               [checked]="selectedType() === d.type"
               (change)="selectType(d.type)"
             />
-            <span class="type-icon" [attr.data-service]="d.service">{{ d.service.charAt(0) }}</span>
+            <span class="type-icon" [attr.data-service]="d.service">{{ (d.service | t).charAt(0) }}</span>
             <span class="type-text">
-              <span class="type-name">{{ d.title }}</span>
-              <span class="type-desc">{{ d.description }}</span>
+              <span class="type-name">{{ d.title | t }}</span>
+              <span class="type-desc">{{ d.description | t }}</span>
             </span>
           </label>
         }
@@ -178,32 +178,32 @@
 
       @if (selectedType() === 'weather') {
         <label class="field">
-          <span class="label">Ville</span>
-          <input class="input" type="text" name="city" [(ngModel)]="newCity" placeholder="Ex : Nancy" required autocomplete="address-level2" />
+          <span class="label">{{ 'dialog.city' | t }}</span>
+          <input class="input" type="text" name="city" [(ngModel)]="newCity" [placeholder]="'dialog.city_placeholder' | t" required autocomplete="address-level2" />
         </label>
       } @else if (selectedType() === 'github_commits') {
         <label class="field">
-          <span class="label">Dépôt</span>
-          <input class="input" type="text" name="repo" [(ngModel)]="newRepo" placeholder="proprietaire/nom" autocomplete="off" spellcheck="false" />
-          <span class="field-hint">Un dépôt privé nécessite le token GitHub enregistré dans les Paramètres.</span>
+          <span class="label">{{ 'dialog.repo' | t }}</span>
+          <input class="input" type="text" name="repo" [(ngModel)]="newRepo" [placeholder]="'dialog.repo_placeholder' | t" autocomplete="off" spellcheck="false" />
+          <span class="field-hint">{{ 'dialog.repo_hint' | t }}</span>
         </label>
       } @else {
         <p class="hint">
-          Ce widget utilise les informations enregistrées dans
-          <button type="button" class="link-btn" (click)="closeAddDialog(); settings()">Paramètres</button>
-          (Steam ID, clé d'API ou token GitHub).
+          {{ 'dialog.uses_settings.before' | t }}
+          <button type="button" class="link-btn" (click)="closeAddDialog(); settings()">{{ 'common.settings' | t }}</button>
+          {{ 'dialog.uses_settings.after' | t }}
         </p>
       }
 
       @if (definition(selectedType()).count; as c) {
         <label class="field">
-          <span class="label">{{ c.label }}</span>
+          <span class="label">{{ c.label | t }}</span>
           <input class="input" type="number" name="count" [(ngModel)]="newCount" [min]="c.min" [max]="c.max" step="1" />
         </label>
       }
 
       <label class="field">
-        <span class="label">Actualisation</span>
+        <span class="label">{{ 'dialog.refresh' | t }}</span>
         <select class="input" name="refresh" [(ngModel)]="newRefresh">
           @for (r of refreshOptions(); track r.value) {
             <option [ngValue]="r.value">{{ r.label }}</option>
@@ -216,9 +216,9 @@
     </div>
 
     <footer class="dialog-footer">
-      <button type="button" class="btn-cancel" (click)="closeAddDialog()">Annuler</button>
+      <button type="button" class="btn-cancel" (click)="closeAddDialog()">{{ 'common.cancel' | t }}</button>
       <button type="submit" class="btn btn-primary" [disabled]="(selectedType() === 'weather' && !newCity.trim()) || (selectedType() === 'github_commits' && !newRepo.trim())">
-        {{ editingId() === null ? 'Ajouter au dashboard' : 'Enregistrer' }}
+        {{ (editingId() === null ? 'dialog.add.submit' : 'common.save') | t }}
       </button>
     </footer>
   </form>

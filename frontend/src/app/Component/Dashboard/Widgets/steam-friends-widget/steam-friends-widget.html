@@ -1,6 +1,6 @@
 @if (data(); as friends) {
   @if (friends.length) {
-    <p class="section-label">{{ inGame() }} en jeu · {{ online() }} en ligne · {{ friends.length }} amis</p>
+    <p class="section-label">{{ 'friends.summary' | t: { game: inGame(), online: online(), total: friends.length } }}</p>
 
     <ul class="list">
       @for (f of friends; track f.steam_id) {
@@ -13,9 +13,9 @@
             <span class="row-main">
               <span class="row-title" [class.offline]="f.status === 0">{{ f.name }}</span>
               @if (f.game) {
-                <span class="row-sub game">Joue à {{ f.game }}</span>
+                <span class="row-sub game">{{ 'friends.playing' | t: { game: f.game } }}</span>
               } @else if (f.status === 0 && f.last_logoff) {
-                <span class="row-sub">Vu {{ f.last_logoff | relativeTime }}</span>
+                <span class="row-sub">{{ 'friends.seen' | t: { when: (f.last_logoff | relativeTime) } }}</span>
               } @else {
                 <span class="row-sub">{{ statusLabel(f) }}</span>
               }
@@ -25,16 +25,16 @@
       }
     </ul>
   } @else {
-    <div class="state">Aucun ami à afficher.</div>
+    <div class="state">{{ 'friends.empty' | t }}</div>
   }
 } @else if (error()) {
   <div class="state error" role="alert">
     <span>{{ error() }}</span>
-    <button type="button" class="retry" (click)="load(true)">Réessayer</button>
+    <button type="button" class="retry" (click)="load(true)">{{ 'common.retry' | t }}</button>
   </div>
 } @else {
   <div class="state" aria-live="polite">
     <span class="spinner" aria-hidden="true"></span>
-    <span>Chargement des amis...</span>
+    <span>{{ 'friends.loading' | t }}</span>
   </div>
 }

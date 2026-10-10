@@ -1,4 +1,4 @@
-<h1 class="page-title">Mon compte</h1>
+<h1 class="page-title">{{ 'settings.nav.account' | t }}</h1>
 
 <!-- Carte de profil -->
 <section class="profile">
@@ -7,12 +7,12 @@
   <div class="profile-head">
     <div class="avatar-wrap">
       @if (pfp()) {
-        <img class="avatar photo" [src]="pfp()" alt="Ta photo de profil" />
+        <img class="avatar photo" [src]="pfp()" [alt]="'account.pfp_alt' | t" />
       } @else {
         <span class="avatar" aria-hidden="true">{{ info()?.username?.charAt(0)?.toUpperCase() }}</span>
       }
       <input #pfpInput id="pfp-file" class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" (change)="onPfpSelected($event)" />
-      <button type="button" class="avatar-edit" [disabled]="pfpLoading()" (click)="pfpInput.click()" [attr.aria-label]="pfp() ? 'Changer la photo de profil' : 'Ajouter une photo de profil'">
+      <button type="button" class="avatar-edit" [disabled]="pfpLoading()" (click)="pfpInput.click()" [attr.aria-label]="(pfp() ? 'account.pfp_change' : 'account.pfp_add') | t">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
         </svg>
@@ -25,12 +25,12 @@
 
   <div class="pfp-actions">
     <button type="button" class="btn btn-primary btn-sm" [disabled]="pfpLoading()" (click)="pfpInput.click()">
-      {{ pfpLoading() ? 'Envoi...' : pfp() ? 'Changer la photo' : 'Ajouter une photo' }}
+      {{ (pfpLoading() ? 'common.sending' : pfp() ? 'account.photo_change' : 'account.photo_add') | t }}
     </button>
     @if (pfp()) {
-      <button type="button" class="btn-sm btn-outline-danger" (click)="removePfp()">Retirer</button>
+      <button type="button" class="btn-sm btn-outline-danger" (click)="removePfp()">{{ 'common.remove' | t }}</button>
     }
-    <span class="hint">JPEG, PNG ou WebP, recadrée et compressée automatiquement</span>
+    <span class="hint">{{ 'account.photo_hint' | t }}</span>
     @if (pfpError()) {
       <p class="error" role="alert">{{ pfpError() }}</p>
     }
@@ -41,12 +41,12 @@
       <div class="field-row">
         @if (editing() === field) {
           <form class="row-edit" (ngSubmit)="saveEdit()" novalidate>
-            <label class="label" [for]="'edit-' + field">{{ labels[field] }}</label>
+            <label class="label" [for]="'edit-' + field">{{ labels[field] | t }}</label>
             @switch (field) {
               @case ('sexe') {
                 <select [id]="'edit-' + field" class="input" name="draft" [(ngModel)]="draft">
                   @for (s of sexes; track s) {
-                    <option [value]="s">{{ s || 'Non renseigné' }}</option>
+                    <option [value]="s">{{ sexLabel(s) }}</option>
                   }
                 </select>
               }
@@ -64,50 +64,50 @@
               <p class="error" role="alert">{{ editError() }}</p>
             }
             <div class="actions">
-              <button type="button" class="btn-link" (click)="editing.set(null)">Annuler</button>
-              <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving()">{{ saving() ? 'Enregistrement...' : 'Enregistrer' }}</button>
+              <button type="button" class="btn-link" (click)="editing.set(null)">{{ 'common.cancel' | t }}</button>
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving()">{{ (saving() ? 'common.saving' : 'common.save') | t }}</button>
             </div>
           </form>
         } @else {
           <div>
-            <span class="label">{{ labels[field] }}</span>
+            <span class="label">{{ labels[field] | t }}</span>
             <span class="value">
               {{ display(field) }}
               @if (field === 'email' && info()?.email) {
                 <button type="button" class="link reveal" (click)="revealEmail.set(!revealEmail())">
-                  {{ revealEmail() ? 'Masquer' : 'Afficher' }}
+                  {{ (revealEmail() ? 'account.hide' : 'account.show') | t }}
                 </button>
               }
             </span>
           </div>
-          <button type="button" class="btn-sm btn-grey" (click)="startEdit(field)">Modifier</button>
+          <button type="button" class="btn-sm btn-grey" (click)="startEdit(field)">{{ 'common.edit' | t }}</button>
         }
       </div>
     }
 
     <div class="field-row stacked">
-      <h2 class="block-title">Mot de passe</h2>
+      <h2 class="block-title">{{ 'auth.password' | t }}</h2>
       @if (!showPassword()) {
       <button type="button" class="btn btn-primary btn-sm" (click)="showPassword.set(true); passwordSuccess.set(false)">
-        Changer le mot de passe
+        {{ 'account.password.change' | t }}
       </button>
       @if (passwordSuccess()) {
-      <p class="success">Mot de passe mis à jour.</p>
+      <p class="success">{{ 'account.password.updated' | t }}</p>
       }
       } @else {
       <form class="password-form" (ngSubmit)="changePassword()" novalidate>
         <div class="field">
-          <label class="label" for="pwd-current">Mot de passe actuel</label>
+          <label class="label" for="pwd-current">{{ 'account.password.current' | t }}</label>
           <input id="pwd-current" class="input" type="password" name="current" autocomplete="current-password"
             [(ngModel)]="currentPassword" />
         </div>
         <div class="field">
-          <label class="label" for="pwd-new">Nouveau mot de passe</label>
+          <label class="label" for="pwd-new">{{ 'account.password.new' | t }}</label>
           <input id="pwd-new" class="input" type="password" name="new" autocomplete="new-password"
             [(ngModel)]="newPassword" />
         </div>
         <div class="field">
-          <label class="label" for="pwd-confirm">Confirme le nouveau mot de passe</label>
+          <label class="label" for="pwd-confirm">{{ 'account.password.confirm' | t }}</label>
           <input id="pwd-confirm" class="input" type="password" name="confirm" autocomplete="new-password"
             [(ngModel)]="confirmPassword" />
         </div>
@@ -116,7 +116,7 @@
         }
         <div class="actions">
           <button type="button" class="btn-link"
-            (click)="showPassword.set(false); passwordError.set(null)">Annuler</button>
+            (click)="showPassword.set(false); passwordError.set(null)">{{ 'common.cancel' | t }}</button>
           <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
         </div>
       </form>
@@ -124,20 +124,19 @@
     </div>
 
     <div class="field-row stacked">
-      <h2 class="block-title">Supprimer le compte</h2>
+      <h2 class="block-title">{{ 'account.delete.title' | t }}</h2>
       <p class="block-text">
-        Ton compte, ton dashboard et tous tes abonnements aux services seront supprimés définitivement.
+        {{ 'account.delete.text' | t }}
       </p>
 
       @if (!confirmDelete()) {
-      <button type="button" class="btn-sm btn-outline-danger" (click)="confirmDelete.set(true)">Supprimer le
-        compte</button>
+      <button type="button" class="btn-sm btn-outline-danger" (click)="confirmDelete.set(true)">{{ 'account.delete.title' | t }}</button>
       } @else {
       <div class="danger-confirm" role="alertdialog" aria-labelledby="del-q">
-        <p id="del-q">Tu es sûr ? Cette action est irréversible.</p>
+        <p id="del-q">{{ 'account.delete.confirm' | t }}</p>
         <div class="actions">
-          <button type="button" class="btn-link" (click)="confirmDelete.set(false)">Annuler</button>
-          <button type="button" class="btn btn-danger btn-sm" (click)="deleteAccount()">Oui, supprimer</button>
+          <button type="button" class="btn-link" (click)="confirmDelete.set(false)">{{ 'common.cancel' | t }}</button>
+          <button type="button" class="btn btn-danger btn-sm" (click)="deleteAccount()">{{ 'account.delete.yes' | t }}</button>
         </div>
       </div>
       }
@@ -149,13 +148,12 @@
 <hr class="divider" />
 
 <section>
-  <h2 class="block-title">Mes données</h2>
+  <h2 class="block-title">{{ 'account.data.title' | t }}</h2>
   <p class="block-text">
-    Télécharge une copie de toutes les données enregistrées sur ton compte (profil, préférences,
-    consentements) dans un fichier JSON. C'est ton droit d'accès et de portabilité prévu par le RGPD.
-    <a routerLink="/terms" class="link">En savoir plus</a>
+    {{ 'account.data.text' | t }}
+    <a routerLink="/terms" class="link">{{ 'account.data.more' | t }}</a>
   </p>
   <button type="button" class="btn btn-primary btn-sm" (click)="exportData()">
-    Télécharger mes données
+    {{ 'account.data.download' | t }}
   </button>
 </section>

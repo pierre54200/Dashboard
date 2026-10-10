@@ -1,4 +1,4 @@
-import { Component } from "@angular/core";
+import { Component, Injector, effect } from "@angular/core";
 import {
   AbstractControl,
   FormBuilder,
@@ -13,9 +13,12 @@ import { CommonModule } from "@angular/common";
 import { Title } from "@angular/platform-browser";
 import { RouterLink } from "@angular/router";
 import { TERMS_VERSION } from "../../Legal/terms/terms.component";
+import { TranslatePipe } from "../../../I18n/translate.pipe";
+import { I18nService } from "../../../I18n/i18n.service";
+import { LanguageSwitch } from "../../Shared/language-switch/language-switch";
 
 @Component({
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe, LanguageSwitch],
   selector: "app-register",
   styleUrl: "./register.component.css",
   templateUrl: "./register.component.html",
@@ -27,12 +30,14 @@ export class RegisterComponent {
     private authService: AuthService,
     private fb: FormBuilder,
     private ts: Title,
+    private i18n: I18nService,
+    private injector: Injector,
   ) {}
 
   ngOnInit(): void {
     this.initForm();
 
-    this.ts.setTitle("Register - Dashboard");
+    effect(() => this.ts.setTitle(this.i18n.t("register.page_title")), { injector: this.injector });
   }
 
   getErrorMessage(field: string): string {
@@ -40,16 +45,13 @@ export class RegisterComponent {
     if (!control || !control.errors) return "";
 
     if (control.errors["required"]) {
-      return field === "terms"
-        ? "Tu dois accepter les conditions pour créer un compte"
-        : "Ce champ est obligatoire";
+      return this.i18n.t(field === "terms" ? "register.error.terms" : "register.error.required");
     }
-    if (control.errors["email"]) return "Adresse e-mail invalide";
+    if (control.errors["email"]) return this.i18n.t("register.error.email");
     if (control.errors["minlength"]) {
-      const requiredLength = control.errors["minlength"].requiredLength;
-      return `${requiredLength} caractères minimum`;
+      return this.i18n.t("register.error.minlength", { n: control.errors["minlength"].requiredLength });
     }
-    return "Champ invalide";
+    return this.i18n.t("register.error.invalid");
   }
 
   isFieldInvalid(field: string): boolean {

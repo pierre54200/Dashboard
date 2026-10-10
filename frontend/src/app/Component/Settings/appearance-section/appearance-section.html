@@ -1,8 +1,16 @@
-<h1 class="page-title">Apparence</h1>
-<p class="page-intro">Choisis le thème de ton dashboard.</p>
+<h1 class="page-title">{{ 'settings.nav.appearance' | t }}</h1>
+<p class="page-intro">{{ 'appearance.intro' | t }}</p>
 
 <section>
-  <h2 class="block-title" id="theme-title">Thème</h2>
+  <h2 class="block-title">{{ 'language.title' | t }}</h2>
+  <p class="block-text">{{ 'language.text' | t }}</p>
+  <app-language-switch />
+</section>
+
+<hr class="divider" />
+
+<section>
+  <h2 class="block-title" id="theme-title">{{ 'appearance.theme' | t }}</h2>
 
   <div class="themes" role="radiogroup" aria-labelledby="theme-title">
     @for (choice of choices; track choice.value) {
@@ -17,15 +25,15 @@
           <span [style.background]="choice.preview[1]"></span>
           <span [style.background]="choice.preview[2]"></span>
         </span>
-        <span class="theme-label">{{ choice.label }}</span>
-        <span class="theme-desc">{{ choice.description }}</span>
+        <span class="theme-label">{{ choice.label | t }}</span>
+        <span class="theme-desc">{{ choice.description | t }}</span>
       </button>
     }
   </div>
 
   @if (theme.preference() === 'system') {
     <p class="block-text hint">
-      Thème appliqué actuellement : {{ theme.applied() === 'dark' ? 'sombre' : 'clair' }}.
+      {{ 'appearance.theme.applied' | t: { theme: ((theme.applied() === 'dark' ? 'appearance.theme.applied_dark' : 'appearance.theme.applied_light') | t) } }}
     </p>
   }
 </section>
@@ -33,8 +41,8 @@
 <hr class="divider" />
 
 <section>
-  <h2 class="block-title" id="text-title">Taille du texte</h2>
-  <p class="block-text">S'applique à tout le site : dashboard, widgets et paramètres.</p>
+  <h2 class="block-title" id="text-title">{{ 'appearance.text' | t }}</h2>
+  <p class="block-text">{{ 'appearance.text.desc' | t }}</p>
 
   <div class="scales" role="radiogroup" aria-labelledby="text-title">
     @for (s of textScales; track s.value) {
@@ -46,24 +54,21 @@
         (click)="theme.setTextScale(s.value)"
       >
         <span class="scale-sample" [style.font-size.px]="s.value * 0.18" aria-hidden="true">Aa</span>
-        <span class="scale-label">{{ s.label }}</span>
+        <span class="scale-label">{{ s.label | t }}</span>
       </button>
     }
   </div>
 
   <p class="scale-preview">
-    Aperçu : voici à quoi ressemble le texte de ton dashboard avec cette taille.
+    {{ 'appearance.text.preview' | t }}
   </p>
 </section>
 
 <hr class="divider" />
 
 <section>
-  <h2 class="block-title" id="glass-title">Effet verre</h2>
-  <p class="block-text" id="glass-desc">
-    Widgets transparents et flous sur un fond coloré, dans le style de la dernière mise à jour d'Apple.
-    Fonctionne avec le thème sombre comme avec le clair.
-  </p>
+  <h2 class="block-title" id="glass-title">{{ 'appearance.glass' | t }}</h2>
+  <p class="block-text" id="glass-desc">{{ 'appearance.glass.desc' | t }}</p>
 
   <div class="toggle-row">
     <span class="glass-preview" [class.is-light]="theme.applied() === 'light'" aria-hidden="true">
@@ -88,18 +93,15 @@
 <hr class="divider" />
 
 <section>
-  <h2 class="block-title" id="bg-title">Arrière-plan</h2>
-  <p class="block-text">
-    Mets une image en fond de ton dashboard. Elle est redimensionnée et compressée automatiquement.
-    Combine-la avec l'effet verre pour voir l'image à travers les widgets.
-  </p>
+  <h2 class="block-title" id="bg-title">{{ 'appearance.bg' | t }}</h2>
+  <p class="block-text">{{ 'appearance.bg.desc' | t }}</p>
 
   <div class="bg-row">
     <div class="bg-thumb" [class.is-empty]="!theme.background()">
       @if (theme.background()) {
-        <img [src]="theme.background()" alt="Aperçu de l'arrière-plan actuel" />
+        <img [src]="theme.background()" [alt]="'appearance.bg.preview_alt' | t" />
       } @else {
-        <span>Aucune image</span>
+        <span>{{ 'appearance.bg.none' | t }}</span>
       }
     </div>
 
@@ -113,12 +115,12 @@
         (change)="onFileSelected($event)"
       />
       <button type="button" class="btn btn-primary btn-sm" [disabled]="bgLoading()" (click)="fileInput.click()">
-        {{ bgLoading() ? 'Chargement...' : theme.background() ? 'Changer l’image' : 'Choisir une image' }}
+        {{ (bgLoading() ? 'common.loading' : theme.background() ? 'appearance.bg.change' : 'appearance.bg.choose') | t }}
       </button>
       @if (theme.background()) {
-        <button type="button" class="btn-sm btn-outline-danger" (click)="theme.clearBackground()">Retirer</button>
+        <button type="button" class="btn-sm btn-outline-danger" (click)="theme.clearBackground()">{{ 'common.remove' | t }}</button>
       }
-      <span class="bg-hint">JPEG, PNG ou WebP, enregistrée sur ton compte</span>
+      <span class="bg-hint">{{ 'appearance.bg.hint' | t }}</span>
     </div>
   </div>
 
@@ -129,7 +131,7 @@
   @if (theme.background()) {
     <div class="field dim-field">
       <label class="label" for="bg-dim">
-        {{ theme.applied() === 'dark' ? 'Assombrir' : 'Éclaircir' }} l'image : {{ theme.backgroundDim() }} %
+        {{ (theme.applied() === 'dark' ? 'appearance.bg.darken' : 'appearance.bg.lighten') | t: { n: theme.backgroundDim() } }}
       </label>
       <input
         id="bg-dim"

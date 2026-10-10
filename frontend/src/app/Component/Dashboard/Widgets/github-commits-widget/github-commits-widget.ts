@@ -3,10 +3,11 @@ import { of } from "rxjs";
 import { PollingWidget } from "../polling-widget";
 import { IGithubCommit } from "../../../../Interface/Widget/widget.interface";
 import { RelativeTimePipe } from "../../../../Pipe/relative-time.pipe";
+import { TranslatePipe } from "../../../../I18n/translate.pipe";
 
 @Component({
   selector: "app-github-commits-widget",
-  imports: [RelativeTimePipe],
+  imports: [RelativeTimePipe, TranslatePipe],
   templateUrl: "./github-commits-widget.html",
   styleUrls: ["../widget-shared.css", "./github-commits-widget.css"],
 })

@@ -11,19 +11,27 @@ import {
   firstApiError,
 } from "../../../Service/Profile/profile.service";
 import { IProfile } from "../../../Interface/Profile/profile.interface";
+import { TranslatePipe } from "../../../I18n/translate.pipe";
+import { I18nService } from "../../../I18n/i18n.service";
+import { TranslationKey } from "../../../I18n/fr";
 
 type EditableField = "username" | "email" | "sexe" | "age";
 
-const LABELS: Record<EditableField, string> = {
-  username: "Nom d'utilisateur",
-  email: "E-mail",
-  sexe: "Sexe",
-  age: "Âge",
+const LABELS: Record<EditableField, TranslationKey> = {
+  username: "auth.username",
+  email: "auth.email",
+  sexe: "account.sexe",
+  age: "account.age",
 };
+
+/** Valeurs enregistrées pour « sexe » (codes neutres, traduits à l'affichage). */
+const SEXES = ["", "male", "female", "other"] as const;
+/** Anciennes valeurs enregistrées en français. */
+const LEGACY_SEXES: Record<string, string> = { homme: "male", femme: "female", autre: "other" };
 
 @Component({
   selector: "app-account-section",
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, TranslatePipe],
   templateUrl: "./account-section.html",
   styleUrls: ["../settings-shared.css", "./account-section.css"],
 })
@@ -39,7 +47,8 @@ export class AccountSection {
 
   readonly labels = LABELS;
   readonly fields: EditableField[] = ["username", "email", "sexe", "age"];
-  readonly sexes = ["", "Homme", "Femme", "Autre"];
+  readonly sexes = SEXES;
+  private i18n = inject(I18nService);
 
   /** Champ en cours d'édition (un seul à la fois). */
   editing = signal<EditableField | null>(null);
@@ -73,15 +82,24 @@ export class AccountSection {
     const info = this.info();
     if (!info) return "";
     const value = info[field];
-    if (value === null || value === "") return "Non renseigné";
+    if (value === null || value === "") return this.i18n.t("account.not_set");
     if (field === "email" && !this.revealEmail()) return this.mask(String(value));
-    if (field === "age") return `${value} ans`;
+    if (field === "age") return this.i18n.t("account.age_value", { n: value });
+    if (field === "sexe") return this.sexLabel(String(value));
     return String(value);
+  }
+
+  sexLabel(value: string): string {
+    if (!value) return this.i18n.t("account.not_set");
+    const code = LEGACY_SEXES[value.toLowerCase()] ?? value;
+    const key = `account.sexe.${code}`;
+    return this.i18n.has(key) ? this.i18n.t(key) : value;
   }
 
   startEdit(field: EditableField): void {
     const value = this.info()?.[field];
     this.draft = value === null || value === undefined ? "" : String(value);
+    if (field === "sexe") this.draft = LEGACY_SEXES[String(this.draft).toLowerCase()] ?? this.draft;
     this.editError.set(null);
     this.editing.set(field);
   }
@@ -93,11 +111,11 @@ export class AccountSection {
 
     let value: string | number | null = raw;
     if (field === "username" && raw.length < 3) {
-      this.editError.set("Le nom d'utilisateur doit faire au moins 3 caractères.");
+      this.editError.set(this.i18n.t("account.error.username"));
       return;
     }
     if (field === "email" && !raw) {
-      this.editError.set("L'e-mail est requis.");
+      this.editError.set(this.i18n.t("account.error.email"));
       return;
     }
     if (field === "age") {
@@ -105,7 +123,7 @@ export class AccountSection {
       else {
         const n = Number(raw);
         if (!Number.isInteger(n) || n < 1 || n > 120) {
-          this.editError.set("L'âge doit être un nombre entre 1 et 120.");
+          this.editError.set(this.i18n.t("account.error.age"));
           return;
         }
         value = n;
@@ -118,7 +136,7 @@ export class AccountSection {
       await firstValueFrom(this.profiles.update({ info: { [field]: value } as Partial<IProfile["info"]> }));
       this.editing.set(null);
     } catch (err) {
-      this.editError.set(firstApiError((err as HttpErrorResponse).error));
+      this.editError.set(this.apiMessage(err as HttpErrorResponse));
     } finally {
       this.saving.set(false);
     }
@@ -134,7 +152,7 @@ export class AccountSection {
 
     const invalid = checkImageFile(file);
     if (invalid) {
-      this.pfpError.set(invalid);
+      this.pfpError.set(this.i18n.t(invalid));
       return;
     }
 
@@ -145,7 +163,7 @@ export class AccountSection {
       await firstValueFrom(this.profiles.uploadImage("pfp", image));
     } catch (err) {
       this.pfpError.set(
-        err instanceof HttpErrorResponse ? firstApiError(err.error) : "Impossible de lire cette image.",
+        err instanceof HttpErrorResponse ? this.apiMessage(err) : this.i18n.t("image.error.read"),
       );
     } finally {
       this.pfpLoading.set(false);
@@ -155,8 +173,14 @@ export class AccountSection {
   removePfp(): void {
     this.pfpError.set(null);
     this.profiles.update({ perso: { pfp: null } }).subscribe({
-      error: (err: HttpErrorResponse) => this.pfpError.set(firstApiError(err.error)),
+      error: (err: HttpErrorResponse) => this.pfpError.set(this.apiMessage(err)),
     });
+  }
+
+  /** Erreur Django traduite si on la connaît. */
+  private apiMessage(err: HttpErrorResponse): string {
+    const raw = firstApiError(err.error);
+    return raw ? this.i18n.apiError(raw) : this.i18n.t("common.save_failed");
   }
 
   /* Divers */

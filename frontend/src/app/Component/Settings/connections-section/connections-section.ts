@@ -1,4 +1,5 @@
 import { Component, computed, signal } from '@angular/core';
+import { TranslatePipe } from '../../../I18n/translate.pipe';
 
 interface Provider {
   id: string;
@@ -9,6 +10,7 @@ interface Provider {
 
 @Component({
   selector: 'app-connections-section',
+  imports: [TranslatePipe],
   templateUrl: './connections-section.html',
   styleUrls: ['../settings-shared.css', './connections-section.css'],
 })

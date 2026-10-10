@@ -1,6 +1,7 @@
 <div class="register-page">
   <div class="register-card">
-    <h1 class="register-title">Créer un compte</h1>
+    <div class="lang-corner"><app-language-switch [compact]="true" /></div>
+    <h1 class="register-title">{{ 'register.title' | t }}</h1>
 
     <form
       class="register-form"
@@ -8,7 +9,7 @@
       (ngSubmit)="onSubmit()"
     >
       <div class="register-field">
-        <label for="username" class="register-label">Nom d'utilisateur</label>
+        <label for="username" class="register-label">{{ 'auth.username' | t }}</label>
         <input
           id="username"
           name="username"
@@ -23,7 +24,7 @@
       </div>
 
       <div class="register-field">
-        <label for="email" class="register-label">E-mail</label>
+        <label for="email" class="register-label">{{ 'auth.email' | t }}</label>
         <input
           id="email"
           name="email"
@@ -38,7 +39,7 @@
       </div>
 
       <div class="register-field">
-        <label for="password" class="register-label">Mot de passe</label>
+        <label for="password" class="register-label">{{ 'auth.password' | t }}</label>
         <input
           id="password"
           name="password"
@@ -53,9 +54,7 @@
       </div>
 
       <div class="register-field">
-        <label for="confirmPassword" class="register-label"
-          >Confirmer le mot de passe</label
-        >
+        <label for="confirmPassword" class="register-label">{{ 'register.confirm' | t }}</label>
         <input
           id="confirmPassword"
           name="confirmPassword"
@@ -75,7 +74,7 @@
             registerForm.get('confirmPassword')?.touched
           "
         >
-          Les mots de passe ne correspondent pas
+          {{ 'register.mismatch' | t }}
         </p>
       </div>
 
@@ -90,10 +89,10 @@
             [attr.aria-invalid]="isFieldInvalid('terms')"
           />
           <label for="terms">
-            J'accepte les
-            <a routerLink="/terms" target="_blank" rel="noopener" class="link">conditions d'utilisation</a>
-            et la
-            <a routerLink="/terms" target="_blank" rel="noopener" class="link">politique de confidentialité</a>
+            {{ 'register.accept.before' | t }}
+            <a routerLink="/terms" target="_blank" rel="noopener" class="link">{{ 'register.accept.terms' | t }}</a>
+            {{ 'register.accept.and' | t }}
+            <a routerLink="/terms" target="_blank" rel="noopener" class="link">{{ 'register.accept.privacy' | t }}</a>
           </label>
         </div>
         <p id="terms-error" class="field-error" *ngIf="isFieldInvalid('terms')">
@@ -106,11 +105,11 @@
         class="btn btn-primary"
         [disabled]="registerForm.invalid"
       >
-        S'inscrire
+        {{ 'register.submit' | t }}
       </button>
 
       <p class="register-footer">
-        Déjà un compte ? <a href="/login" class="link">Connecte-toi</a>
+        {{ 'register.have_account' | t }} <a href="/login" class="link">{{ 'register.login' | t }}</a>
       </p>
     </form>
   </div>

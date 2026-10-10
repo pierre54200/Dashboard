@@ -18,6 +18,8 @@ export interface IProfile {
     background_dim: number;
     /** 85, 100, 115 ou 130 % */
     text_scale: number;
+    /** Langue de l'interface */
+    language: "fr" | "en";
   };
 }
 

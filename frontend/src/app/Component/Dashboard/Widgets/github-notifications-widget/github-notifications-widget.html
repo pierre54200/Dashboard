@@ -1,6 +1,6 @@
 @if (data(); as notifications) {
   @if (notifications.length) {
-    <p class="section-label">{{ unread() }} non lue{{ unread() > 1 ? 's' : '' }} sur {{ notifications.length }}</p>
+    <p class="section-label">{{ i18n.plural('notif.unread', unread(), { total: notifications.length }) }}</p>
 
     <ul class="list">
       @for (n of notifications; track n.id) {
@@ -14,23 +14,23 @@
             </span>
 
             @if (n.unread) {
-              <span class="unread-dot" aria-label="Non lue"></span>
+              <span class="unread-dot" [attr.aria-label]="'notif.unread_label' | t"></span>
             }
           </a>
         </li>
       }
     </ul>
   } @else {
-    <div class="state">Aucune notification, tout est à jour.</div>
+    <div class="state">{{ 'notif.empty' | t }}</div>
   }
 } @else if (error()) {
   <div class="state error" role="alert">
     <span>{{ error() }}</span>
-    <button type="button" class="retry" (click)="load(true)">Réessayer</button>
+    <button type="button" class="retry" (click)="load(true)">{{ 'common.retry' | t }}</button>
   </div>
 } @else {
   <div class="state" aria-live="polite">
     <span class="spinner" aria-hidden="true"></span>
-    <span>Chargement des notifications...</span>
+    <span>{{ 'notif.loading' | t }}</span>
   </div>
 }

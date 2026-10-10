@@ -1,9 +1,11 @@
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { CdkDragHandle } from '@angular/cdk/drag-drop';
+import { I18nService } from '../../../../I18n/i18n.service';
+import { TranslatePipe } from '../../../../I18n/translate.pipe';
 
 @Component({
   selector: 'app-widget-card',
-  imports: [CdkDragHandle],
+  imports: [CdkDragHandle, TranslatePipe],
   templateUrl: './widget-card.html',
   styleUrl: './widget-card.css',
 })
@@ -23,12 +25,16 @@ export class WidgetCard {
   });
   loading = input(false);
 
+  protected i18n = inject(I18nService);
+
   refreshLabel = computed(() => {
     const s = this.refreshRate();
-    if (s < 60) return `toutes les ${s} s`;
+    if (s < 60) return this.i18n.t('card.refresh_seconds', { n: s });
     const m = Math.round(s / 60);
-    return m === 1 ? 'toutes les minutes' : `toutes les ${m} min`;
+    return m === 1 ? this.i18n.t('card.refresh_minute') : this.i18n.t('card.refresh_minutes', { n: m });
   });
+
+  updatedAt = computed(() => this.lastUpdate()?.toLocaleTimeString(this.i18n.locale()) ?? '');
 
   refresh = output<void>();
   configure = output<void>();

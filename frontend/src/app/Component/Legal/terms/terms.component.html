@@ -1,24 +1,199 @@
 <div class="terms-page">
   <article class="terms-card">
     <header class="terms-header">
-      <a routerLink="/register" class="back link">&larr; Retour à l'inscription</a>
-      <h1 class="terms-title">Conditions d'utilisation et confidentialité</h1>
+      <a routerLink="/register" class="back link">&larr; {{ 'terms.back' | t }}</a>
+      <div class="terms-lang"><app-language-switch [compact]="true" /></div>
+      <h1 class="terms-title">{{ 'terms.title' | t }}</h1>
       <p class="terms-meta">
-        Dernière mise à jour : {{ legal.updatedAt }} · Version {{ version }}
+        {{ 'terms.updated' | t: { date: i18n.lang() === 'en' ? legal.updatedAtEn : legal.updatedAt, version: version } }}
       </p>
     </header>
 
-    <nav class="toc" aria-label="Sommaire">
-      <h2 class="toc-title">Sommaire</h2>
+    <nav class="toc" [attr.aria-label]="'terms.toc' | t">
+      <h2 class="toc-title">{{ 'terms.toc' | t }}</h2>
       <ol>
         @for (item of toc; track item.id) {
           <li>
-            <button type="button" class="toc-link" (click)="scrollTo(item.id)">{{ item.label }}</button>
+            <button type="button" class="toc-link" (click)="scrollTo(item.id)">{{ item.label | t }}</button>
           </li>
         }
       </ol>
     </nav>
 
+    @if (i18n.lang() === 'en') {
+    <!-- ============ Terms of use ============ -->
+    <section id="cgu" tabindex="-1" aria-labelledby="cgu-title">
+      <h2 id="cgu-title" class="section-title">1. Terms of use</h2>
+
+      <h3>1.1 Purpose</h3>
+      <p>
+        {{ legal.appName }} is an application for building a personal dashboard out of widgets (weather,
+        RSS feeds, online services...). These terms govern access to and use of the application, published by
+        {{ legal.editorEn }}.
+      </p>
+
+      <h3>1.2 Acceptance</h3>
+      <p>
+        Creating an account requires accepting these terms and the privacy policy below. If you do not accept
+        them, you cannot use the application.
+      </p>
+
+      <h3>1.3 User account</h3>
+      <ul>
+        <li>You must provide a valid email address and keep your credentials confidential.</li>
+        <li>You are responsible for any action taken from your account.</li>
+        <li>Registration is limited to people aged 15 or over, in accordance with French law.</li>
+        <li>You can delete your account at any time from Settings &gt; My account.</li>
+      </ul>
+
+      <h3>1.4 Acceptable use</h3>
+      <p>You agree not to:</p>
+      <ul>
+        <li>attempt to access other users' accounts or data;</li>
+        <li>disrupt the application (overloading it, attacking it, bypassing security measures);</li>
+        <li>upload unlawful content, including as a background image.</li>
+      </ul>
+      <p>Any breach may lead to the suspension or deletion of the account.</p>
+
+      <h3>1.5 Third-party services</h3>
+      <p>
+        Some widgets display data from external services (GitHub, weather providers, RSS feeds...). These
+        services have their own terms, which you accept when you connect your account to them.
+        {{ legal.appName }} is not responsible for their content or availability.
+      </p>
+
+      <h3>1.6 Availability and liability</h3>
+      <p>
+        The application is provided as is, as part of a student project. We do our best to keep it working
+        properly, but cannot guarantee continuous availability or the accuracy of the data shown by widgets.
+      </p>
+
+      <h3>1.7 Changes to these terms</h3>
+      <p>
+        These terms may change. In the event of a significant change, you will be informed and may be asked
+        to accept them again.
+      </p>
+
+      <h3>1.8 Governing law</h3>
+      <p>These terms are governed by French law.</p>
+    </section>
+
+    <!-- ============ Privacy (GDPR) ============ -->
+    <section id="rgpd" tabindex="-1" aria-labelledby="rgpd-title">
+      <h2 id="rgpd-title" class="section-title">2. Privacy policy (GDPR)</h2>
+      <p>
+        This policy explains which personal data we process, why, for how long, and how to exercise your
+        rights, in accordance with the General Data Protection Regulation (GDPR, EU Regulation 2016/679) and
+        the French Data Protection Act (loi Informatique et Libertés).
+      </p>
+      <p>
+        <strong>Data controller:</strong> {{ legal.editorEn }}.
+        Contact: <a class="link" [href]="'mailto:' + legal.contactEmail">{{ legal.contactEmail }}</a>
+      </p>
+    </section>
+
+    <section id="donnees" tabindex="-1" aria-labelledby="donnees-title">
+      <h3 id="donnees-title" class="section-subtitle">2.1 Data collected</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th scope="col">Category</th><th scope="col">Data</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Account</td><td>Username, email address, password (stored only in hashed, irreversible form), registration date</td></tr>
+            <tr><td>Consent</td><td>Version of the terms accepted and date of acceptance</td></tr>
+            <tr><td>Dashboard</td><td>Widgets added and their settings (for example the city chosen for the weather), position, refresh interval</td></tr>
+            <tr><td>Preferences</td><td>Language, theme, glass effect, text size, uploaded profile picture and background image</td></tr>
+            <tr><td>Connected services</td><td>Access tokens provided by the services you connect (stored encrypted), name of the linked account</td></tr>
+            <tr><td>Technical data</td><td>Session and security cookies, IP address in the server logs</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>We do not collect any sensitive data and do no advertising profiling.</p>
+    </section>
+
+    <section id="finalites" tabindex="-1" aria-labelledby="finalites-title">
+      <h3 id="finalites-title" class="section-subtitle">2.2 Purposes and legal bases</h3>
+      <ul>
+        <li><strong>Creating and managing your account, displaying your dashboard:</strong> performance of the contract (GDPR article 6.1.b).</li>
+        <li><strong>Connecting your external accounts:</strong> your consent (article 6.1.a), which you can withdraw at any time from Settings &gt; Connections.</li>
+        <li><strong>Securing the application</strong> (abuse prevention, technical logs): legitimate interest (article 6.1.f).</li>
+        <li><strong>Proving your acceptance of the terms:</strong> obligation to be able to demonstrate consent (article 7.1).</li>
+      </ul>
+      <p>Your data is never sold, rented or used for advertising.</p>
+    </section>
+
+    <section id="conservation" tabindex="-1" aria-labelledby="conservation-title">
+      <h3 id="conservation-title" class="section-subtitle">2.3 Retention period</h3>
+      <ul>
+        <li>Account, dashboard and preference data: as long as your account exists. It is deleted as soon as you delete your account.</li>
+        <li>Connected service tokens: until the service is disconnected or the account is deleted.</li>
+        <li>Server technical logs: 6 months maximum.</li>
+      </ul>
+    </section>
+
+    <section id="tiers" tabindex="-1" aria-labelledby="tiers-title">
+      <h3 id="tiers-title" class="section-subtitle">2.4 Third-party services and recipients</h3>
+      <p>
+        Your data is accessible only to the project team. To display your widgets, our server queries external
+        services and sends them only what is strictly necessary: for example the name of a city for the weather,
+        or your access token for a service you have connected. Your browser never contacts these services directly.
+      </p>
+      <p>
+        Some of these services (such as GitHub) are located outside the European Union. These transfers only
+        take place if you connect the service concerned, and are covered by the safeguards provided for by the
+        GDPR (adequacy decision or standard contractual clauses).
+      </p>
+    </section>
+
+    <section id="cookies" tabindex="-1" aria-labelledby="cookies-title">
+      <h3 id="cookies-title" class="section-subtitle">2.5 Cookies</h3>
+      <p>The application only uses cookies that are strictly necessary for it to work. Your preferences (language, theme...) are saved on your account, not in your browser.</p>
+      <ul>
+        <li><strong>sessionid</strong>: cookie that keeps you logged in;</li>
+        <li><strong>csrftoken</strong>: security cookie against cross-site request forgery;</li>
+      </ul>
+      <p>
+        No advertising or audience measurement cookies are used. Since these cookies are essential, they do not
+        require prior consent (article 82 of the French Data Protection Act).
+      </p>
+    </section>
+
+    <section id="securite" tabindex="-1" aria-labelledby="securite-title">
+      <h3 id="securite-title" class="section-subtitle">2.6 Security</h3>
+      <ul>
+        <li>Passwords are hashed: no one, including the team, can read them.</li>
+        <li>Connected service tokens are encrypted before being stored.</li>
+        <li>API keys stay on the server and are never sent to the browser.</li>
+        <li>Forms are protected against CSRF attacks and submitted data is validated.</li>
+      </ul>
+      <p>In the event of a data breach that puts you at risk, you will be informed as soon as possible.</p>
+    </section>
+
+    <section id="droits" tabindex="-1" aria-labelledby="droits-title">
+      <h3 id="droits-title" class="section-subtitle">2.7 Your rights</h3>
+      <p>You have the following rights over your data:</p>
+      <ul>
+        <li><strong>Access</strong>: obtain a copy of your data;</li>
+        <li><strong>Rectification</strong>: change your information, directly in Settings &gt; My account;</li>
+        <li><strong>Erasure</strong>: delete your account and all your data, directly in Settings &gt; My account;</li>
+        <li><strong>Portability</strong>: receive your data in a machine-readable format;</li>
+        <li><strong>Objection and restriction</strong> of processing;</li>
+        <li><strong>Withdrawal of consent</strong> at any time, without affecting processing already carried out.</li>
+      </ul>
+      <p>
+        To exercise these rights, write to
+        <a class="link" [href]="'mailto:' + legal.contactEmail">{{ legal.contactEmail }}</a>.
+        We reply within one month.
+      </p>
+      <p>
+        If you believe your rights are not being respected, you can lodge a complaint with the CNIL, the French
+        data protection authority
+        (<a class="link" href="https://www.cnil.fr" target="_blank" rel="noopener">www.cnil.fr</a>).
+      </p>
+    </section>
+
+    } @else {
     <!-- ============ CGU ============ -->
     <section id="cgu" tabindex="-1" aria-labelledby="cgu-title">
       <h2 id="cgu-title" class="section-title">1. Conditions générales d'utilisation</h2>
@@ -102,7 +277,7 @@
             <tr><td>Compte</td><td>Nom d'utilisateur, adresse e-mail, mot de passe (stocké uniquement sous forme chiffrée et irréversible), date d'inscription</td></tr>
             <tr><td>Consentement</td><td>Version des conditions acceptée et date d'acceptation</td></tr>
             <tr><td>Dashboard</td><td>Widgets ajoutés et leurs réglages (par exemple la ville choisie pour la météo), position, fréquence d'actualisation</td></tr>
-            <tr><td>Préférences</td><td>Thème, effet verre, taille du texte, image d'arrière-plan importée</td></tr>
+            <tr><td>Préférences</td><td>Langue, thème, effet verre, taille du texte, photo de profil et image d'arrière-plan importées</td></tr>
             <tr><td>Services connectés</td><td>Jetons d'accès fournis par les services que vous connectez (stockés chiffrés), nom du compte lié</td></tr>
             <tr><td>Données techniques</td><td>Cookies de session et de sécurité, adresse IP dans les journaux du serveur</td></tr>
           </tbody>
@@ -128,7 +303,6 @@
         <li>Données du compte, du dashboard et des préférences : tant que votre compte existe. Elles sont supprimées dès que vous supprimez votre compte.</li>
         <li>Jetons des services connectés : jusqu'à la déconnexion du service ou la suppression du compte.</li>
         <li>Journaux techniques du serveur : 6 mois maximum.</li>
-        <li>Préférences stockées dans votre navigateur : jusqu'à ce que vous effaciez les données du site.</li>
       </ul>
     </section>
 
@@ -148,12 +322,12 @@
     </section>
 
     <section id="cookies" tabindex="-1" aria-labelledby="cookies-title">
-      <h3 id="cookies-title" class="section-subtitle">2.5 Cookies et stockage local</h3>
-      <p>L'application utilise uniquement des éléments strictement nécessaires à son fonctionnement :</p>
+      <h3 id="cookies-title" class="section-subtitle">2.5 Cookies</h3>
+      <p>L'application utilise uniquement des cookies strictement nécessaires à son fonctionnement. Vos préférences (langue, thème...) sont enregistrées sur votre compte, pas dans votre navigateur.</p>
       <ul>
         <li><strong>sessionid</strong> : cookie qui vous garde connecté ;</li>
         <li><strong>csrftoken</strong> : cookie de sécurité contre la falsification de requêtes ;</li>
-        <li><strong>stockage local du navigateur</strong> : vos préférences d'affichage, pour les appliquer dès l'ouverture de la page.</li>
+
       </ul>
       <p>
         Aucun cookie publicitaire ni de mesure d'audience n'est utilisé. Ces éléments étant indispensables,
@@ -194,8 +368,10 @@
       </p>
     </section>
 
+    }
+
     <footer class="terms-footer">
-      <a routerLink="/register" class="btn btn-primary">Retour à l'inscription</a>
+      <a routerLink="/register" class="btn btn-primary">{{ 'terms.back' | t }}</a>
     </footer>
   </article>
 </div>

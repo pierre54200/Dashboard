@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { WidgetService } from '../../../Service/Widget/widget.service';
 import { IIntegrations, IIntegrationsUpdate } from '../../../Interface/Widget/widget.interface';
+import { TranslatePipe } from '../../../I18n/translate.pipe';
+import { I18nService } from '../../../I18n/i18n.service';
 
 type ServiceId = 'weather' | 'steam' | 'github';
 
@@ -20,12 +22,13 @@ interface ServiceItem {
 
 @Component({
   selector: 'app-services-section',
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   templateUrl: './services-section.html',
   styleUrls: ['../settings-shared.css', './services-section.css'],
 })
 export class ServicesSection implements OnInit {
   private api = inject(WidgetService);
+  protected i18n = inject(I18nService);
 
   /** Ce que Django renvoie (sans les secrets). */
   info = signal<IIntegrations | null>(null);
@@ -37,17 +40,17 @@ export class ServicesSection implements OnInit {
     return [
       {
         id: 'weather',
-        name: 'Météo',
-        description: 'Température et prévisions pour une ville (Open-Meteo)',
+        name: this.i18n.t('service.weather'),
+        description: this.i18n.t('services.weather.desc'),
         widgets: 1,
         byDefault: true,
         configured: true,
-        account: i?.weather_city ? `Ville par défaut : ${i.weather_city}` : undefined,
+        account: i?.weather_city ? this.i18n.t('services.weather.account', { city: i.weather_city }) : undefined,
       },
       {
         id: 'steam',
         name: 'Steam',
-        description: 'Activité de tes amis et mises à jour de tes jeux',
+        description: this.i18n.t('services.steam.desc'),
         widgets: 2,
         byDefault: false,
         configured: steamOk,
@@ -56,11 +59,11 @@ export class ServicesSection implements OnInit {
       {
         id: 'github',
         name: 'GitHub',
-        description: 'Notifications de tes dépôts : pull requests, issues, mentions',
+        description: this.i18n.t('services.github.desc'),
         widgets: 1,
         byDefault: false,
         configured: !!i?.has_github_token,
-        account: i?.has_github_token ? 'Token enregistré' : undefined,
+        account: i?.has_github_token ? this.i18n.t('services.github.account') : undefined,
       },
     ];
   });
@@ -94,7 +97,7 @@ export class ServicesSection implements OnInit {
   ngOnInit(): void {
     this.api.getIntegrations().subscribe({
       next: (data) => this.info.set(data),
-      error: () => this.loadError.set('Impossible de charger ta configuration. Es-tu bien connecté ?'),
+      error: () => this.loadError.set(this.i18n.t('services.error.load')),
     });
   }
 
@@ -122,15 +125,15 @@ export class ServicesSection implements OnInit {
       const id = this.steamId.trim();
       const key = this.steamKey.trim();
       if (!/^\d{17}$/.test(id)) {
-        this.formError.set('Le Steam ID doit faire 17 chiffres (il commence par 7656119).');
+        this.formError.set(this.i18n.t('services.error.steam_id'));
         return;
       }
       if (!key && !i?.has_steam_friends_api_key) {
-        this.formError.set('La clé d’API Steam est requise.');
+        this.formError.set(this.i18n.t('services.error.steam_key_required'));
         return;
       }
       if (key && !/^[0-9A-Fa-f]{32}$/.test(key)) {
-        this.formError.set('Une clé d’API Steam fait 32 caractères (chiffres et lettres A à F).');
+        this.formError.set(this.i18n.t('services.error.steam_key_format'));
         return;
       }
       changes.steam_id = id;
@@ -140,7 +143,7 @@ export class ServicesSection implements OnInit {
     if (s.id === 'github') {
       const token = this.githubToken.trim();
       if (!token) {
-        this.formError.set('Le token GitHub est requis.');
+        this.formError.set(this.i18n.t('services.error.github_required'));
         return;
       }
       changes.github_token = token;
@@ -179,14 +182,14 @@ export class ServicesSection implements OnInit {
 
   /** DRF renvoie { champ: ["message"] } ou { detail: "..." }. */
   private messageFrom(err: HttpErrorResponse): string {
-    if (err.status === 0) return 'Le serveur est injoignable.';
-    if (err.status === 403) return 'Session expirée ou jeton CSRF manquant, reconnecte-toi.';
+    if (err.status === 0) return this.i18n.t('widget.error.server');
+    if (err.status === 403) return this.i18n.t('services.error.session');
     const body = err.error;
     if (body && typeof body === 'object') {
       const first = Object.values(body)[0];
-      if (Array.isArray(first)) return String(first[0]);
-      if (typeof first === 'string') return first;
+      if (Array.isArray(first)) return this.i18n.apiError(String(first[0]));
+      if (typeof first === 'string') return this.i18n.apiError(first);
     }
-    return 'L’enregistrement a échoué.';
+    return this.i18n.t('common.save_failed');
   }
 }

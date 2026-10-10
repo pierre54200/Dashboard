@@ -227,6 +227,7 @@ class ProfilePersoSerializer(serializers.Serializer):
     glass = serializers.BooleanField(required=False)
     background_dim = serializers.IntegerField(min_value=0, max_value=80, required=False)
     text_scale = serializers.ChoiceField(choices=[85, 100, 115, 130], required=False)
+    language = serializers.ChoiceField(choices=["fr", "en"], required=False)
 
 
 class ProfileSerializer(serializers.Serializer):

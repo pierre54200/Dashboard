@@ -28,6 +28,10 @@ import { IUser } from "../../Interface/Auth/auth.interface";
 import { WidgetService } from "../../Service/Widget/widget.service";
 import { IAvatars } from "../../Interface/Widget/widget.interface";
 import { ProfileService } from "../../Service/Profile/profile.service";
+import { I18nService } from "../../I18n/i18n.service";
+import { TranslatePipe } from "../../I18n/translate.pipe";
+import { fr, TranslationKey } from "../../I18n/fr";
+import { en } from "../../I18n/en";
 import { TitleCasePipe } from "@angular/common";
 
 export type WidgetType =
@@ -41,6 +45,7 @@ export type WidgetType =
 export interface WidgetConfig {
   id: number;
   type: WidgetType;
+  /** Nom choisi par l'utilisateur ; vide = nom par défaut, traduit dans la langue courante. */
   title: string;
 
   cols: number;
@@ -51,22 +56,23 @@ export interface WidgetConfig {
 
 interface WidgetDefinition {
   type: WidgetType;
-  service: string;
-  title: string;
-  description: string;
+  /** Clés de traduction */
+  service: TranslationKey;
+  title: TranslationKey;
+  description: TranslationKey;
   cols: number;
   rows: number;
   refreshRate: number;
   params: Record<string, string | number>;
-  count?: { label: string; min: number; max: number };
+  count?: { label: TranslationKey; min: number; max: number };
 }
 
 export const WIDGET_CATALOG: WidgetDefinition[] = [
   {
     type: "weather",
-    service: "Météo",
-    title: "Météo",
-    description: "Température, ressenti, humidité et vent d'une ville.",
+    service: "service.weather",
+    title: "widget.weather.title",
+    description: "widget.weather.desc",
     cols: 1,
     rows: 1,
     refreshRate: 600,
@@ -74,9 +80,9 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
   },
   {
     type: "steam_friends",
-    service: "Steam",
-    title: "Amis Steam",
-    description: "Qui est en ligne et à quoi jouent vos amis.",
+    service: "service.steam",
+    title: "widget.steam_friends.title",
+    description: "widget.steam_friends.desc",
     cols: 1,
     rows: 2,
     refreshRate: 60,
@@ -84,9 +90,9 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
   },
   {
     type: "steam_updates",
-    service: "Steam",
-    title: "Mises à jour Steam",
-    description: "Dernières annonces des jeux auxquels vous avez joué récemment.",
+    service: "service.steam",
+    title: "widget.steam_updates.title",
+    description: "widget.steam_updates.desc",
     cols: 2,
     rows: 2,
     refreshRate: 900,
@@ -94,20 +100,20 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
   },
   {
     type: "steam_playtime",
-    service: "Steam",
-    title: "Temps de jeu du mois",
-    description: "Vos jeux les plus joués depuis le début du mois.",
+    service: "service.steam",
+    title: "widget.steam_playtime.title",
+    description: "widget.steam_playtime.desc",
     cols: 1,
     rows: 2,
     refreshRate: 600,
     params: { count: 3 },
-    count: { label: "Nombre de jeux", min: 1, max: 10 },
+    count: { label: "widget.count.games", min: 1, max: 10 },
   },
   {
     type: "github_notifications",
-    service: "GitHub",
-    title: "Notifications GitHub",
-    description: "Pull requests, issues et mentions qui vous concernent.",
+    service: "service.github",
+    title: "widget.github_notifications.title",
+    description: "widget.github_notifications.desc",
     cols: 2,
     rows: 1,
     refreshRate: 120,
@@ -115,22 +121,22 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
   },
   {
     type: "github_commits",
-    service: "GitHub",
-    title: "Commits récents",
-    description: "Derniers commits d'un dépôt (public, ou privé avec ton token).",
+    service: "service.github",
+    title: "widget.github_commits.title",
+    description: "widget.github_commits.desc",
     cols: 2,
     rows: 2,
     refreshRate: 120,
     params: { repo: "", count: 5 },
-    count: { label: "Nombre de commits", min: 1, max: 20 },
+    count: { label: "widget.count.commits", min: 1, max: 20 },
   },
 ];
 
 const REPO_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
 const DEFAULT_LAYOUT: WidgetConfig[] = [
-  { id: 1, type: "weather", title: "Météo", cols: 1, rows: 1, refreshRate: 600, params: { city: "Nancy" } },
-  { id: 2, type: "weather", title: "Météo", cols: 1, rows: 1, refreshRate: 600, params: { city: "Paris" } },
+  { id: 1, type: "weather", title: "", cols: 1, rows: 1, refreshRate: 600, params: { city: "Nancy" } },
+  { id: 2, type: "weather", title: "", cols: 1, rows: 1, refreshRate: 600, params: { city: "Paris" } },
 ];
 
 const VALID_TYPES = new Set<string>(WIDGET_CATALOG.map((d) => d.type));
@@ -150,6 +156,7 @@ const VALID_TYPES = new Set<string>(WIDGET_CATALOG.map((d) => d.type));
     SteamPlaytimeWidget,
     GithubCommitsWidget,
     TitleCasePipe,
+    TranslatePipe,
   ],
   templateUrl: "./dashboard.component.html",
   styleUrl: "./dashboard.component.css",
@@ -162,16 +169,10 @@ export class DashboardComponent implements OnInit {
   username = computed(() => this.profiles.profile()?.info.username ?? this.user()?.username ?? "");
   pfp = computed(() => this.profiles.profile()?.perso.pfp ?? null);
 
+  private i18n = inject(I18nService);
+
   readonly catalog = WIDGET_CATALOG;
-  readonly refreshChoices = [
-    { value: 30, label: "Toutes les 30 secondes" },
-    { value: 60, label: "Toutes les minutes" },
-    { value: 120, label: "Toutes les 2 minutes" },
-    { value: 300, label: "Toutes les 5 minutes" },
-    { value: 600, label: "Toutes les 10 minutes" },
-    { value: 900, label: "Toutes les 15 minutes" },
-    { value: 1800, label: "Toutes les 30 minutes" },
-  ];
+  readonly refreshChoices = [30, 60, 120, 300, 600, 900, 1800];
 
   constructor(
     private router: Router,
@@ -252,11 +253,32 @@ export class DashboardComponent implements OnInit {
   editingId = signal<number | null>(null);
 
   /** Choix d'actualisation, plus la valeur actuelle si elle n'est pas dans la liste. */
+  /** Choix d'actualisation, plus la valeur actuelle si elle n'est pas dans la liste. */
   refreshOptions(): { value: number; label: string }[] {
-    if (this.refreshChoices.some((r) => r.value === this.newRefresh)) return this.refreshChoices;
-    return [...this.refreshChoices, { value: this.newRefresh, label: `Toutes les ${this.newRefresh} secondes` }]
-      .sort((a, b) => a.value - b.value);
+    const values = this.refreshChoices.includes(this.newRefresh)
+      ? this.refreshChoices
+      : [...this.refreshChoices, this.newRefresh].sort((a, b) => a - b);
+    return values.map((value) => ({ value, label: this.refreshLabel(value) }));
   }
+
+  refreshLabel(seconds: number): string {
+    if (seconds < 60) return this.i18n.t("refresh.every_seconds", { n: seconds });
+    const minutes = Math.round(seconds / 60);
+    return minutes === 1 ? this.i18n.t("refresh.every_minute") : this.i18n.t("refresh.every_minutes", { n: minutes });
+  }
+
+  /** Nom affiché : celui choisi par l'utilisateur, sinon le nom par défaut dans la langue courante. */
+  titleOf(w: WidgetConfig): string {
+    return this.isDefaultTitle(w) ? this.i18n.t(this.definition(w.type).title) : w.title;
+  }
+
+  /** Vide, ou identique au nom par défaut en français ou en anglais (anciennes dispositions). */
+  private isDefaultTitle(w: WidgetConfig): boolean {
+    const key = this.definition(w.type).title;
+    const title = w.title.trim();
+    return !title || title === fr[key] || title === en[key];
+  }
+
 
   openAddDialog(): void {
     this.editingId.set(null);
@@ -270,7 +292,8 @@ export class DashboardComponent implements OnInit {
     const def = this.definition(w.type);
     this.editingId.set(w.id);
     this.selectedType.set(w.type);
-    this.newTitle = w.title;
+    // Nom par défaut : champ vide, le nom traduit s'affiche en placeholder
+    this.newTitle = this.isDefaultTitle(w) ? "" : w.title;
     this.newCity = String(w.params["city"] ?? "");
     this.newRepo = String(w.params["repo"] ?? "");
     this.newCount = Number(w.params["count"] ?? def.params["count"] ?? 5);
@@ -305,7 +328,7 @@ export class DashboardComponent implements OnInit {
     if (def.type === "weather") {
       const city = this.newCity.trim();
       if (!city) {
-        this.addError.set("La ville est requise.");
+        this.addError.set(this.i18n.t("dialog.error.city"));
         return null;
       }
       params["city"] = city;
@@ -313,7 +336,7 @@ export class DashboardComponent implements OnInit {
     if (def.type === "github_commits") {
       const repo = this.newRepo.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$|\/$/g, "");
       if (!REPO_RE.test(repo)) {
-        this.addError.set("Le dépôt doit être au format propriétaire/nom, par exemple pierre54200/Dashboard.");
+        this.addError.set(this.i18n.t("dialog.error.repo"));
         return null;
       }
       params["repo"] = repo;
@@ -321,7 +344,9 @@ export class DashboardComponent implements OnInit {
     if (def.count) {
       const n = Math.round(Number(this.newCount));
       if (!(n >= def.count.min && n <= def.count.max)) {
-        this.addError.set(`${def.count.label} : entre ${def.count.min} et ${def.count.max}.`);
+        this.addError.set(
+          this.i18n.t("dialog.error.count", { label: this.i18n.t(def.count.label), min: def.count.min, max: def.count.max }),
+        );
         return null;
       }
       params["count"] = n;
@@ -336,7 +361,9 @@ export class DashboardComponent implements OnInit {
 
     const editing = this.editingId();
     if (editing !== null) {
-      const title = this.newTitle.trim() || def.title;
+      // Vide ou égal au nom par défaut : on garde "" pour que le nom suive la langue
+      const typed = this.newTitle.trim();
+      const title = typed === fr[def.title] || typed === en[def.title] ? "" : typed;
       this.widgets.update((list) =>
         list.map((w) => (w.id === editing ? { ...w, title, refreshRate: this.newRefresh, params } : w)),
       );
@@ -351,7 +378,7 @@ export class DashboardComponent implements OnInit {
       {
         id,
         type: def.type,
-        title: def.title,
+        title: "",
         cols: def.cols,
         rows: def.rows,
         refreshRate: this.newRefresh,
@@ -490,7 +517,7 @@ export class DashboardComponent implements OnInit {
   }
 
   serviceOf(w: WidgetConfig): string {
-    return this.definition(w.type).service;
+    return this.i18n.t(this.definition(w.type).service);
   }
 
   subtitleOf(w: WidgetConfig): string {
