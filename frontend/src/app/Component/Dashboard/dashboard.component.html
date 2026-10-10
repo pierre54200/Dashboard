@@ -35,6 +35,7 @@
             [refreshRate]="w.refreshRate"
             [lastUpdate]="lastUpdates()[w.id] ?? null"
             (refresh)="refresh(w)"
+            (configure)="openEditDialog(w)"
             (remove)="remove(w)"
           >
             @switch (w.type) {
@@ -120,13 +121,24 @@
 
 <!-- Fenêtre d'ajout d'un widget -->
 <dialog #addDialog class="add-dialog" aria-labelledby="add-title" (click)="onDialogClick($event)">
-  <form class="dialog-inner" (ngSubmit)="addWidget()">
+  <form class="dialog-inner" (ngSubmit)="submitDialog()">
     <header class="dialog-header">
-      <h2 id="add-title">Ajouter un widget</h2>
-      <p>Choisis un widget et règle son actualisation.</p>
+      @if (editingId() === null) {
+        <h2 id="add-title">Ajouter un widget</h2>
+        <p>Choisis un widget et règle son actualisation.</p>
+      } @else {
+        <h2 id="add-title">Modifier le widget</h2>
+        <p>{{ definition(selectedType()).description }}</p>
+      }
     </header>
 
     <div class="dialog-body">
+      @if (editingId() !== null) {
+        <label class="field">
+          <span class="label">Nom affiché</span>
+          <input class="input" type="text" name="title" [(ngModel)]="newTitle" maxlength="60" [placeholder]="definition(selectedType()).title" autocomplete="off" />
+        </label>
+      } @else {
       <fieldset class="type-list">
         <legend class="label">Widget</legend>
         @for (d of catalog; track d.type) {
@@ -146,6 +158,7 @@
           </label>
         }
       </fieldset>
+      }
 
       @if (selectedType() === 'weather') {
         <label class="field">
@@ -176,7 +189,7 @@
       <label class="field">
         <span class="label">Actualisation</span>
         <select class="input" name="refresh" [(ngModel)]="newRefresh">
-          @for (r of refreshChoices; track r.value) {
+          @for (r of refreshOptions(); track r.value) {
             <option [ngValue]="r.value">{{ r.label }}</option>
           }
         </select>
@@ -189,7 +202,7 @@
     <footer class="dialog-footer">
       <button type="button" class="btn-cancel" (click)="closeAddDialog()">Annuler</button>
       <button type="submit" class="btn btn-primary" [disabled]="(selectedType() === 'weather' && !newCity.trim()) || (selectedType() === 'github_commits' && !newRepo.trim())">
-        Ajouter au dashboard
+        {{ editingId() === null ? 'Ajouter au dashboard' : 'Enregistrer' }}
       </button>
     </footer>
   </form>

@@ -16,11 +16,12 @@ export class WidgetCard {
 
   refreshLabel = computed(() => {
     const s = this.refreshRate();
-    if (s < 60) return `${s} s`;
+    if (s < 60) return `toutes les ${s} s`;
     const m = Math.round(s / 60);
-    return m === 1 ? 'minutes' : `${m} min`;
+    return m === 1 ? 'toutes les minutes' : `toutes les ${m} min`;
   });
 
   refresh = output<void>();
+  configure = output<void>();
   remove = output<void>();
 }

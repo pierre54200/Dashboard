@@ -217,7 +217,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  /* Ajout d'un widget */
+  /* Ajout et modification d'un widget (même fenêtre) */
 
   private addDialog = viewChild<ElementRef<HTMLDialogElement>>("addDialog");
   selectedType = signal<WidgetType>("weather");
@@ -225,12 +225,36 @@ export class DashboardComponent implements OnInit {
   newRepo = "";
   newCount = 5;
   newRefresh = 600;
+  newTitle = "";
   addError = signal<string | null>(null);
+  /** Widget en cours de modification, null en mode ajout. */
+  editingId = signal<number | null>(null);
+
+  /** Choix d'actualisation, plus la valeur actuelle si elle n'est pas dans la liste. */
+  refreshOptions(): { value: number; label: string }[] {
+    if (this.refreshChoices.some((r) => r.value === this.newRefresh)) return this.refreshChoices;
+    return [...this.refreshChoices, { value: this.newRefresh, label: `Toutes les ${this.newRefresh} secondes` }]
+      .sort((a, b) => a.value - b.value);
+  }
 
   openAddDialog(): void {
+    this.editingId.set(null);
     this.selectType("weather");
     this.newCity = "";
     this.newRepo = "";
+    this.addDialog()?.nativeElement.showModal();
+  }
+
+  openEditDialog(w: WidgetConfig): void {
+    const def = this.definition(w.type);
+    this.editingId.set(w.id);
+    this.selectedType.set(w.type);
+    this.newTitle = w.title;
+    this.newCity = String(w.params["city"] ?? "");
+    this.newRepo = String(w.params["repo"] ?? "");
+    this.newCount = Number(w.params["count"] ?? def.params["count"] ?? 5);
+    this.newRefresh = w.refreshRate;
+    this.addError.set(null);
     this.addDialog()?.nativeElement.showModal();
   }
 
@@ -254,19 +278,22 @@ export class DashboardComponent implements OnInit {
     return WIDGET_CATALOG.find((d) => d.type === type)!;
   }
 
-  addWidget(): void {
-    const def = this.definition(this.selectedType());
+  /** Vérifie le formulaire et renvoie les paramètres du widget, ou null en cas d'erreur. */
+  private buildParams(def: WidgetDefinition): Record<string, string | number> | null {
     const params = { ...def.params };
     if (def.type === "weather") {
       const city = this.newCity.trim();
-      if (!city) return;
+      if (!city) {
+        this.addError.set("La ville est requise.");
+        return null;
+      }
       params["city"] = city;
     }
     if (def.type === "github_commits") {
       const repo = this.newRepo.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$|\/$/g, "");
       if (!REPO_RE.test(repo)) {
         this.addError.set("Le dépôt doit être au format propriétaire/nom, par exemple pierre54200/Dashboard.");
-        return;
+        return null;
       }
       params["repo"] = repo;
     }
@@ -274,9 +301,27 @@ export class DashboardComponent implements OnInit {
       const n = Math.round(Number(this.newCount));
       if (!(n >= def.count.min && n <= def.count.max)) {
         this.addError.set(`${def.count.label} : entre ${def.count.min} et ${def.count.max}.`);
-        return;
+        return null;
       }
       params["count"] = n;
+    }
+    return params;
+  }
+
+  submitDialog(): void {
+    const def = this.definition(this.selectedType());
+    const params = this.buildParams(def);
+    if (!params) return;
+
+    const editing = this.editingId();
+    if (editing !== null) {
+      const title = this.newTitle.trim() || def.title;
+      this.widgets.update((list) =>
+        list.map((w) => (w.id === editing ? { ...w, title, refreshRate: this.newRefresh, params } : w)),
+      );
+      this.save();
+      this.closeAddDialog();
+      return;
     }
 
     const id = Math.max(0, ...this.widgets().map((w) => w.id)) + 1;

@@ -8,3 +8,5 @@ staticfiles
 
 # Database
 db.sqlite3
+
+edit.patch
