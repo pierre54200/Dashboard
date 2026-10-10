@@ -1,13 +1,13 @@
 <div class="dash">
   <header class="topbar">
     <div class="topbar-left">
-      <button class="logo" (click)="settings()"> {{ this.user()?.username.charAt(0).toUpperCase() }} </button>
+      <button class="logo" (click)="settings()" aria-label="Paramètres"> {{ this.user()?.username?.charAt(0)?.toUpperCase() }} </button>
       <div>
-        <h1 class="title">Bienvenu {{ this.user()?.username | titlecase }} </h1>
+        <h1 class="title">Bienvenue {{ this.user()?.username | titlecase }} </h1>
       </div>
     </div>
 
-    <button type="button" class="btn btn-primary add-btn">
+    <button type="button" class="btn btn-primary add-btn" (click)="openAddDialog()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
         <path d="M12 5v14M5 12h14" />
       </svg>
@@ -30,22 +30,47 @@
 
           <app-widget-card
             [title]="w.title"
-            [service]="w.type"
+            [service]="serviceOf(w)"
             [subtitle]="subtitleOf(w)"
             [refreshRate]="w.refreshRate"
-            [lastUpdate]="lastUpdate"
+            [lastUpdate]="lastUpdates()[w.id] ?? null"
             (refresh)="refresh(w)"
-            (configure)="configure(w)"
             (remove)="remove(w)"
           >
             @switch (w.type) {
               @case ('weather') {
-                <app-weather-widget [city]="$any(w.params['city'])" />
+                <app-weather-widget
+                  [city]="$any(w.params['city'])"
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                />
+              }
+              @case ('steam_friends') {
+                <app-steam-friends-widget
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                />
+              }
+              @case ('steam_updates') {
+                <app-steam-updates-widget
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                />
+              }
+              @case ('github_notifications') {
+                <app-github-notifications-widget
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                />
               }
             }
           </app-widget-card>
 
-          <!-- Redimmension -->
+          <!-- Redimension -->
           <div
             class="resize-grip"
             role="slider"
@@ -68,8 +93,71 @@
           }
         </div>
       } @empty {
-        <p class="empty">Ton dashboard est vide. Ajoute un widget pour commencer.</p>
+        @if (layoutLoaded()) {
+          <p class="empty">Ton dashboard est vide. Ajoute un widget pour commencer.</p>
+        }
       }
     </div>
   </main>
 </div>
+
+<!-- Fenêtre d'ajout d'un widget -->
+<dialog #addDialog class="add-dialog" aria-labelledby="add-title" (click)="onDialogClick($event)">
+  <form class="dialog-inner" (ngSubmit)="addWidget()">
+    <header class="dialog-header">
+      <h2 id="add-title">Ajouter un widget</h2>
+      <p>Choisis un widget et règle son actualisation.</p>
+    </header>
+
+    <div class="dialog-body">
+      <fieldset class="type-list">
+        <legend class="label">Widget</legend>
+        @for (d of catalog; track d.type) {
+          <label class="type-option" [class.selected]="selectedType() === d.type">
+            <input
+              type="radio"
+              name="widgetType"
+              [value]="d.type"
+              [checked]="selectedType() === d.type"
+              (change)="selectType(d.type)"
+            />
+            <span class="type-icon" [attr.data-service]="d.service">{{ d.service.charAt(0) }}</span>
+            <span class="type-text">
+              <span class="type-name">{{ d.title }}</span>
+              <span class="type-desc">{{ d.description }}</span>
+            </span>
+          </label>
+        }
+      </fieldset>
+
+      @if (selectedType() === 'weather') {
+        <label class="field">
+          <span class="label">Ville</span>
+          <input class="input" type="text" name="city" [(ngModel)]="newCity" placeholder="Ex : Nancy" required autocomplete="address-level2" />
+        </label>
+      } @else {
+        <p class="hint">
+          Ce widget utilise les informations enregistrées dans
+          <button type="button" class="link-btn" (click)="closeAddDialog(); settings()">Paramètres</button>
+          (Steam ID, clé d'API ou token GitHub).
+        </p>
+      }
+
+      <label class="field">
+        <span class="label">Actualisation</span>
+        <select class="input" name="refresh" [(ngModel)]="newRefresh">
+          @for (r of refreshChoices; track r.value) {
+            <option [ngValue]="r.value">{{ r.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <footer class="dialog-footer">
+      <button type="button" class="btn-cancel" (click)="closeAddDialog()">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="selectedType() === 'weather' && !newCity.trim()">
+        Ajouter au dashboard
+      </button>
+    </footer>
+  </form>
+</dialog>

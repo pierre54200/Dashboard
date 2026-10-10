@@ -1,6 +1,7 @@
 import {
   Component,
   ElementRef,
+  OnInit,
   input,
   signal,
   viewChild,
@@ -12,26 +13,89 @@ import {
   CdkDropList,
   moveItemInArray,
 } from "@angular/cdk/drag-drop";
+import { FormsModule } from "@angular/forms";
 import { WidgetCard } from "./Widgets/widget-card/widget-card";
 import { WeatherWidget } from "./Widgets/weather-widget/weather-widget";
+import { SteamFriendsWidget } from "./Widgets/steam-friends-widget/steam-friends-widget";
+import { SteamUpdatesWidget } from "./Widgets/steam-updates-widget/steam-updates-widget";
+import { GithubNotificationsWidget } from "./Widgets/github-notifications-widget/github-notifications-widget";
 import { Router } from "@angular/router";
 import { IUser } from "../../Interface/Auth/auth.interface";
-import { UserService } from "../../Service/User/user.service";
+import { WidgetService } from "../../Service/Widget/widget.service";
 import { TitleCasePipe } from "@angular/common";
 
-export type WidgetType = "weather";
+export type WidgetType = "weather" | "steam_friends" | "steam_updates" | "github_notifications";
 
 export interface WidgetConfig {
   id: number;
   type: WidgetType;
-  title: string;
-  /** Largeur en colonnes (1 à 4). */
+  title: string
   cols: number;
-  /** Hauteur en rangées (1 à 3). */
   rows: number;
   refreshRate: number;
   params: Record<string, string | number>;
 }
+
+interface WidgetDefinition {
+  type: WidgetType;
+  service: string;
+  title: string;
+  description: string;
+  cols: number;
+  rows: number;
+  refreshRate: number;
+  params: Record<string, string | number>;
+}
+
+export const WIDGET_CATALOG: WidgetDefinition[] = [
+  {
+    type: "weather",
+    service: "Météo",
+    title: "Météo",
+    description: "Température, ressenti, humidité et vent d'une ville.",
+    cols: 1,
+    rows: 1,
+    refreshRate: 600,
+    params: { city: "Paris" },
+  },
+  {
+    type: "steam_friends",
+    service: "Steam",
+    title: "Amis Steam",
+    description: "Qui est en ligne et à quoi jouent vos amis.",
+    cols: 1,
+    rows: 2,
+    refreshRate: 60,
+    params: {},
+  },
+  {
+    type: "steam_updates",
+    service: "Steam",
+    title: "Mises à jour Steam",
+    description: "Dernières annonces des jeux auxquels vous avez joué récemment.",
+    cols: 2,
+    rows: 2,
+    refreshRate: 900,
+    params: {},
+  },
+  {
+    type: "github_notifications",
+    service: "GitHub",
+    title: "Notifications GitHub",
+    description: "Pull requests, issues et mentions qui vous concernent.",
+    cols: 2,
+    rows: 1,
+    refreshRate: 120,
+    params: {},
+  },
+];
+
+const DEFAULT_LAYOUT: WidgetConfig[] = [
+  { id: 1, type: "weather", title: "Météo", cols: 1, rows: 1, refreshRate: 600, params: { city: "Nancy" } },
+  { id: 2, type: "weather", title: "Météo", cols: 1, rows: 1, refreshRate: 600, params: { city: "Paris" } },
+];
+
+const VALID_TYPES = new Set<string>(WIDGET_CATALOG.map((d) => d.type));
 
 @Component({
   selector: "app-homepage",
@@ -39,45 +103,137 @@ export interface WidgetConfig {
     CdkDropList,
     CdkDrag,
     CdkDragPlaceholder,
+    FormsModule,
     WidgetCard,
     WeatherWidget,
+    SteamFriendsWidget,
+    SteamUpdatesWidget,
+    GithubNotificationsWidget,
     TitleCasePipe,
   ],
   templateUrl: "./dashboard.component.html",
   styleUrl: "./dashboard.component.css",
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   user = input<IUser | null>(null);
+
+  readonly catalog = WIDGET_CATALOG;
+  readonly refreshChoices = [
+    { value: 30, label: "Toutes les 30 secondes" },
+    { value: 60, label: "Toutes les minutes" },
+    { value: 120, label: "Toutes les 2 minutes" },
+    { value: 300, label: "Toutes les 5 minutes" },
+    { value: 600, label: "Toutes les 10 minutes" },
+    { value: 900, label: "Toutes les 15 minutes" },
+    { value: 1800, label: "Toutes les 30 minutes" },
+  ];
 
   constructor(
     private router: Router,
-    private userService: UserService,
+    private widgetService: WidgetService,
   ) {}
 
-  widgets = signal<WidgetConfig[]>([
-    {
-      id: 1,
-      type: "weather",
-      title: "Météo",
-      cols: 1,
-      rows: 1,
-      refreshRate: 300,
-      params: { city: "Nancy" },
-    },
-    {
-      id: 2,
-      type: "weather",
-      title: "Météo",
-      cols: 1,
-      rows: 1,
-      refreshRate: 300,
-      params: { city: "Paris" },
-    },
-  ]);
+  widgets = signal<WidgetConfig[]>([]);
+  layoutLoaded = signal(false);
 
-  lastUpdate = new Date();
+  lastUpdates = signal<Record<number, Date>>({});
+  reloadKeys = signal<Record<number, number>>({});
 
-  /* Redimensionnement */
+  private storedSettings: Record<string, unknown> = {};
+
+  ngOnInit(): void {
+    this.widgetService.loadSettings().subscribe({
+      next: (settings) => {
+        this.storedSettings = settings ?? {};
+        const layout = this.parseLayout(this.storedSettings["layout"]);
+        this.widgets.set(layout ?? DEFAULT_LAYOUT);
+        this.layoutLoaded.set(true);
+      },
+      error: () => {
+        this.widgets.set(DEFAULT_LAYOUT);
+        this.layoutLoaded.set(true);
+      },
+    });
+  }
+
+
+  private parseLayout(value: unknown): WidgetConfig[] | null {
+    if (!Array.isArray(value)) return null;
+    const list = value.filter(
+      (w): w is WidgetConfig =>
+        !!w && typeof w === "object" && typeof w.id === "number" && VALID_TYPES.has(w.type),
+    );
+    return list.map((w) => ({
+      ...w,
+      cols: Math.min(this.MAX_COLS, Math.max(1, Number(w.cols) || 1)),
+      rows: Math.min(this.MAX_ROWS, Math.max(1, Number(w.rows) || 1)),
+      refreshRate: Math.max(15, Number(w.refreshRate) || 300),
+      params: w.params ?? {},
+    }));
+  }
+
+  private save(): void {
+    if (!this.layoutLoaded()) return;
+    this.storedSettings = { ...this.storedSettings, layout: this.widgets() };
+    this.widgetService.saveSettings(this.storedSettings).subscribe({
+      error: (err) => console.error("Sauvegarde du dashboard impossible", err),
+    });
+  }
+
+  private addDialog = viewChild<ElementRef<HTMLDialogElement>>("addDialog");
+  selectedType = signal<WidgetType>("weather");
+  newCity = "";
+  newRefresh = 600;
+
+  openAddDialog(): void {
+    this.selectType("weather");
+    this.newCity = "";
+    this.addDialog()?.nativeElement.showModal();
+  }
+
+  closeAddDialog(): void {
+    this.addDialog()?.nativeElement.close();
+  }
+
+  onDialogClick(event: MouseEvent): void {
+    if (event.target === this.addDialog()?.nativeElement) this.closeAddDialog();
+  }
+
+  selectType(type: WidgetType): void {
+    this.selectedType.set(type);
+    this.newRefresh = this.definition(type).refreshRate;
+  }
+
+  definition(type: WidgetType): WidgetDefinition {
+    return WIDGET_CATALOG.find((d) => d.type === type)!;
+  }
+
+  addWidget(): void {
+    const def = this.definition(this.selectedType());
+    const params = { ...def.params };
+    if (def.type === "weather") {
+      const city = this.newCity.trim();
+      if (!city) return;
+      params["city"] = city;
+    }
+
+    const id = Math.max(0, ...this.widgets().map((w) => w.id)) + 1;
+    this.widgets.update((list) => [
+      ...list,
+      {
+        id,
+        type: def.type,
+        title: def.title,
+        cols: def.cols,
+        rows: def.rows,
+        refreshRate: this.newRefresh,
+        params,
+      },
+    ]);
+    this.save();
+    this.closeAddDialog();
+  }
+
 
   readonly MAX_COLS = 4;
   readonly MAX_ROWS = 3;
@@ -118,7 +274,7 @@ export class DashboardComponent {
       grip.removeEventListener("pointerup", onUp);
       grip.removeEventListener("pointercancel", onUp);
       this.resizingId.set(null);
-      // Ici : sauvegarder la nouvelle taille côté Django
+      this.save();
     };
 
     grip.addEventListener("pointermove", onMove);
@@ -137,6 +293,7 @@ export class DashboardComponent {
     if (!move) return;
     event.preventDefault();
     this.setSize(w.id, w.cols + move[0], w.rows + move[1]);
+    this.save();
   }
 
   private setSize(id: number, cols: number, rows: number): void {
@@ -152,28 +309,32 @@ export class DashboardComponent {
   }
 
   drop(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) return;
     this.widgets.update((list) => {
       const copy = [...list];
       moveItemInArray(copy, event.previousIndex, event.currentIndex);
       return copy;
     });
+    this.save();
   }
 
   remove(w: WidgetConfig): void {
     this.widgets.update((list) => list.filter((x) => x.id !== w.id));
-  }
-
-  configure(w: WidgetConfig): void {
-    // A brancher sur ta modale de configuration
-    console.log("configurer", w);
+    this.save();
   }
 
   refresh(w: WidgetConfig): void {
-    // A brancher sur ton service de rafraîchissement
-    console.log("actualiser", w);
+    this.reloadKeys.update((keys) => ({ ...keys, [w.id]: (keys[w.id] ?? 0) + 1 }));
   }
 
-  /** Texte affiché sous le titre de la carte, ex : "Nancy". */
+  onLoaded(w: WidgetConfig, date: Date): void {
+    this.lastUpdates.update((map) => ({ ...map, [w.id]: date }));
+  }
+
+  serviceOf(w: WidgetConfig): string {
+    return this.definition(w.type).service;
+  }
+
   subtitleOf(w: WidgetConfig): string {
     return String(Object.values(w.params)[0] ?? "");
   }

@@ -1,0 +1,31 @@
+@if (data(); as news) {
+  @if (news.length) {
+    <ul class="list">
+      @for (n of news; track n.app_id) {
+        <li>
+          <a class="row news" [href]="n.url" target="_blank" rel="noopener noreferrer">
+            <img class="thumb" [src]="n.header_image" alt="" width="92" height="43" loading="lazy" (error)="hideImage($event)" />
+
+            <span class="row-main">
+              <span class="row-sub game">{{ n.game }} · {{ n.date | relativeTime }}</span>
+              <span class="row-title">{{ n.title }}</span>
+              <span class="summary">{{ clean(n.summary) }}</span>
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="state">Aucune actualité récente pour vos jeux.</div>
+  }
+} @else if (error()) {
+  <div class="state error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="retry" (click)="load()">Réessayer</button>
+  </div>
+} @else {
+  <div class="state" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>Recherche des mises à jour...</span>
+  </div>
+}

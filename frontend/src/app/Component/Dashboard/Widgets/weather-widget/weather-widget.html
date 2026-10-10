@@ -1,13 +1,35 @@
-<span class="value">{{ temperature }}<small>°C</small></span>
-<p class="description">{{ description }}</p>
+@if (data(); as w) {
+  @if (w.current; as c) {
+    <span class="value">{{ c.temperature_2m | number: '1.0-0' }}<small>°C</small></span>
+    <p class="description">
+      {{ description() }} · ressenti {{ c.apparent_temperature | number: '1.0-0' }}°C
+    </p>
 
-<dl class="meta">
-  <div>
-    <dt>Humidité</dt>
-    <dd>{{ humidity }} %</dd>
+    <dl class="meta">
+      @if (w.today; as t) {
+        <div>
+          <dt>Min / Max</dt>
+          <dd>{{ t.temp_min | number: '1.0-0' }}° / {{ t.temp_max | number: '1.0-0' }}°</dd>
+        </div>
+      }
+      <div>
+        <dt>Humidité</dt>
+        <dd>{{ c.relative_humidity_2m }} %</dd>
+      </div>
+      <div>
+        <dt>Vent</dt>
+        <dd>{{ c.wind_speed_10m | number: '1.0-0' }} km/h</dd>
+      </div>
+    </dl>
+  }
+} @else if (error()) {
+  <div class="state error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="retry" (click)="load()">Réessayer</button>
   </div>
-  <div>
-    <dt>Vent</dt>
-    <dd>{{ wind }} km/h</dd>
+} @else {
+  <div class="state" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>Chargement de la météo...</span>
   </div>
-</dl>
+}

@@ -34,7 +34,7 @@
   </div>
 
   <footer class="footer">
-    <span>Toutes les {{ refreshRate() }} s</span>
+    <span>Toutes les {{ refreshLabel() }}</span>
     @if (lastUpdate()) {
       <span>Mis à jour à {{ lastUpdate()!.toLocaleTimeString('fr-FR') }}</span>
     }

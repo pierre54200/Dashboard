@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { CdkDragHandle } from '@angular/cdk/drag-drop';
 
 @Component({
@@ -13,6 +13,13 @@ export class WidgetCard {
   subtitle = input('');
   refreshRate = input(60);
   lastUpdate = input<Date | null>(null);
+
+  refreshLabel = computed(() => {
+    const s = this.refreshRate();
+    if (s < 60) return `${s} s`;
+    const m = Math.round(s / 60);
+    return m === 1 ? 'minutes' : `${m} min`;
+  });
 
   refresh = output<void>();
   remove = output<void>();

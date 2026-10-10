@@ -1,28 +1,32 @@
 <h1 class="page-title">Services</h1>
 <p class="page-intro">
-  Abonne-toi aux services pour débloquer leurs widgets.
+  Configure les services pour débloquer leurs widgets.
   {{ subscribedCount() }} sur {{ services().length }} actifs.
 </p>
+
+@if (loadError()) {
+  <p class="error" role="alert">{{ loadError() }}</p>
+}
 
 <!-- Filtres -->
 <div class="tabs" role="tablist">
   <button type="button" role="tab" class="tab" [class.active]="filter() === 'all'" [attr.aria-selected]="filter() === 'all'" (click)="filter.set('all')">Tous</button>
-  <button type="button" role="tab" class="tab" [class.active]="filter() === 'subscribed'" [attr.aria-selected]="filter() === 'subscribed'" (click)="filter.set('subscribed')">Abonnés</button>
-  <button type="button" role="tab" class="tab" [class.active]="filter() === 'available'" [attr.aria-selected]="filter() === 'available'" (click)="filter.set('available')">Disponibles</button>
+  <button type="button" role="tab" class="tab" [class.active]="filter() === 'subscribed'" [attr.aria-selected]="filter() === 'subscribed'" (click)="filter.set('subscribed')">Actifs</button>
+  <button type="button" role="tab" class="tab" [class.active]="filter() === 'available'" [attr.aria-selected]="filter() === 'available'" (click)="filter.set('available')">À configurer</button>
 </div>
 
 <ul class="service-list">
   @for (s of filtered(); track s.id) {
-    <li class="service" [class.is-on]="s.subscribed">
+    <li class="service" [class.is-on]="s.configured">
       <div class="service-main">
         <span class="service-icon">{{ s.name.charAt(0) }}</span>
 
         <div class="service-info">
           <div class="service-name">
             {{ s.name }}
-            @if (s.auth === 'none') {
+            @if (s.byDefault) {
               <span class="pill pill-default">Par défaut</span>
-            } @else if (s.subscribed) {
+            } @else if (s.configured) {
               <span class="pill pill-on">Connecté</span>
             } @else {
               <span class="pill pill-off">Non connecté</span>
@@ -33,54 +37,86 @@
             {{ s.widgets }} widget{{ s.widgets > 1 ? 's' : '' }}
             @if (s.account) { · {{ s.account }} }
           </p>
+          @if (saved() === s.id) {
+            <p class="success" role="status">Enregistré.</p>
+          }
         </div>
 
         <div class="service-action">
-          @if (s.auth === 'none') {
-            <span class="hint">Aucun compte requis</span>
-          } @else if (s.subscribed) {
-            <button type="button" class="btn-sm btn-outline-danger" (click)="confirmUnsub.set(s.id)">Se déconnecter</button>
-          } @else if (s.auth === 'oauth') {
-            <button type="button" class="btn btn-primary btn-sm" (click)="connectOAuth(s)">Connecter avec {{ s.name }}</button>
+          @if (s.configured && !s.byDefault) {
+            <button type="button" class="btn-sm btn-grey" [attr.aria-expanded]="openForm() === s.id" (click)="toggleForm(s)">
+              {{ openForm() === s.id ? 'Annuler' : 'Modifier' }}
+            </button>
+            <button type="button" class="btn-sm btn-outline-danger" (click)="openForm.set(null); confirmUnsub.set(s.id)">Se déconnecter</button>
           } @else {
             <button type="button" class="btn btn-primary btn-sm" [attr.aria-expanded]="openForm() === s.id" (click)="toggleForm(s)">
-              {{ openForm() === s.id ? 'Annuler' : 'S’abonner' }}
+              {{ openForm() === s.id ? 'Annuler' : (s.byDefault ? 'Modifier' : 'Configurer') }}
             </button>
           }
         </div>
       </div>
 
-      <!-- Formulaire d'identifiants -->
+      <!-- Formulaire de configuration -->
       @if (openForm() === s.id) {
-        <form class="service-panel" (ngSubmit)="submitCredentials(s)" novalidate>
-          <div class="field">
-            <label class="label" [for]="'key-' + s.id">Clé d’API {{ s.name }}</label>
-            <input
-              class="input"
-              type="password"
-              name="apiKey"
-              autocomplete="off"
-              [id]="'key-' + s.id"
-              [(ngModel)]="apiKey"
-              [attr.aria-invalid]="!!formError()"
-            />
-            @if (formError()) {
-              <p class="error" role="alert">{{ formError() }}</p>
+        <form class="service-panel" (ngSubmit)="submit(s)" novalidate>
+          @switch (s.id) {
+            @case ('weather') {
+              <div class="field">
+                <label class="label" for="cfg-city">Ville par défaut</label>
+                <input class="input" id="cfg-city" type="text" name="city" [(ngModel)]="city" placeholder="Ex : Paris" autocomplete="address-level2" />
+                <p class="field-hint">Utilisée par les widgets météo qui n’ont pas de ville propre.</p>
+              </div>
             }
-          </div>
+            @case ('steam') {
+              <div class="field">
+                <label class="label" for="cfg-steam-id">Steam ID</label>
+                <input class="input" id="cfg-steam-id" type="text" name="steamId" inputmode="numeric" maxlength="17" [(ngModel)]="steamId" placeholder="76561198XXXXXXXXX" autocomplete="off" />
+                <p class="field-hint">Le nombre de 17 chiffres dans l’URL de ton profil Steam, ou via steamid.io.</p>
+              </div>
+              <div class="field">
+                <label class="label" for="cfg-steam-key">Clé d’API Steam</label>
+                <input
+                  class="input"
+                  id="cfg-steam-key"
+                  type="password"
+                  name="steamKey"
+                  autocomplete="off"
+                  [(ngModel)]="steamKey"
+                  [placeholder]="info()?.has_steam_friends_api_key ? 'Clé enregistrée, laisser vide pour la conserver' : '32 caractères'"
+                />
+                <p class="field-hint">À créer sur steamcommunity.com/dev/apikey.</p>
+              </div>
+            }
+            @case ('github') {
+              <div class="field">
+                <label class="label" for="cfg-gh">Personal access token</label>
+                <input class="input" id="cfg-gh" type="password" name="githubToken" autocomplete="off" [(ngModel)]="githubToken" placeholder="ghp_..." />
+                <p class="field-hint">Token classique avec le scope « notifications ».</p>
+              </div>
+            }
+          }
+
+          @if (formError()) {
+            <p class="error" role="alert">{{ formError() }}</p>
+          }
           <div class="actions">
-            <button type="submit" class="btn btn-primary btn-sm">Valider</button>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving()">
+              {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
           </div>
         </form>
       }
 
-      <!-- Confirmation de désinscription -->
+      <!-- Confirmation de déconnexion -->
       @if (confirmUnsub() === s.id) {
         <div class="service-panel danger" role="alertdialog" [attr.aria-label]="'Se déconnecter de ' + s.name">
-          <p>Les widgets {{ s.name }} de ton dashboard seront supprimés.</p>
+          <p>Les identifiants {{ s.name }} seront effacés et ses widgets n’afficheront plus de données.</p>
+          @if (formError()) {
+            <p class="error" role="alert">{{ formError() }}</p>
+          }
           <div class="actions">
             <button type="button" class="btn-link" (click)="confirmUnsub.set(null)">Annuler</button>
-            <button type="button" class="btn btn-danger btn-sm" (click)="unsubscribe(s)">Se déconnecter</button>
+            <button type="button" class="btn btn-danger btn-sm" [disabled]="saving()" (click)="unsubscribe(s)">Se déconnecter</button>
           </div>
         </div>
       }

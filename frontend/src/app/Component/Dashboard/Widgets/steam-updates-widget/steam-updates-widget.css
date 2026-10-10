@@ -1,0 +1,51 @@
+:host {
+  display: block;
+}
+
+.row.news {
+  align-items: flex-start;
+  padding: 8px;
+}
+
+.thumb {
+  flex-shrink: 0;
+  width: 92px;
+  height: 43px;
+  border-radius: 4px;
+  object-fit: cover;
+  background-color: var(--bg-input);
+}
+
+.row-title,
+.row-sub {
+  display: block;
+}
+
+.row-sub.game {
+  font-weight: 600;
+  color: var(--link);
+}
+
+.row-title {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.summary {
+  display: -webkit-box;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+@container (max-width: 260px) {
+  .thumb { display: none; }
+}

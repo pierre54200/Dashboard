@@ -204,3 +204,199 @@
 .cdk-drop-list-dragging .slot:not(.cdk-drag-placeholder) {
   transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
 }
+/* ---------- Fenêtre d'ajout ---------- */
+
+.add-dialog {
+  /* Tailwind remet margin à 0 sur tous les éléments, ce qui casse le centrage natif du <dialog> */
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(480px, calc(100vw - 32px));
+  height: fit-content;
+  max-height: calc(100vh - 32px);
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--bg);
+  color: var(--text);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.add-dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.dialog-inner {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 32px);
+}
+
+.dialog-header {
+  padding: 24px 16px 8px;
+  text-align: center;
+}
+
+.dialog-header h2 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.dialog-header p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.label {
+  display: block;
+  margin: 0 0 8px;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.type-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--bg-elevated);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.type-option:hover {
+  background-color: var(--bg-hover);
+}
+
+.type-option.selected {
+  border-color: var(--blue);
+  background-color: rgba(88, 101, 242, 0.12);
+}
+
+.type-option:has(input:focus-visible) {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+.type-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.type-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: var(--blue);
+  color: #fff;
+  font-weight: 700;
+}
+
+.type-icon[data-service="Steam"] { background-color: #1b2838; }
+.type-icon[data-service="GitHub"] { background-color: #24292f; }
+
+.type-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.type-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.type-desc {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--bg-input);
+  color: var(--text-input);
+  font-size: 1rem;
+}
+
+.input:focus {
+  outline: 2px solid var(--blue);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  background-color: var(--bg-elevated);
+}
+
+.btn-cancel {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  text-decoration: underline;
+}

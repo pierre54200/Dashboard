@@ -144,3 +144,19 @@
     padding-left: 60px;
   }
 }
+.service-action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.field-hint {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.service-info .success {
+  margin: 4px 0 0;
+}

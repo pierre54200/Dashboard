@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_not_required
-from drf_spectacular.utils import OpenApiExample, extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -44,7 +44,9 @@ def _run(fn):
 @extend_schema(
     tags=WIDGETS,
     summary="Current weather and today's high/low",
-    description="Uses the saved weather city (Open-Meteo). Cached 10 min.",
+    description="Uses the `city` query parameter, or the saved weather city (Open-Meteo). Cached 10 min.",
+    parameters=[OpenApiParameter("city", str, OpenApiParameter.QUERY, required=False,
+                                 description="City for this widget instance")],
     responses={200: WeatherResponseSerializer, 400: ErrorSerializer, 502: ErrorSerializer},
     examples=[
         OpenApiExample(
@@ -79,7 +81,9 @@ def _run(fn):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def widget_weather(request):
-    return _run(lambda: integrations.get_weather(_info(request).weather_city))
+    # A widget instance can ask for its own city; otherwise use the saved one.
+    city = request.query_params.get("city", "").strip()[:100]
+    return _run(lambda: integrations.get_weather(city or _info(request).weather_city))
 
 
 @login_not_required

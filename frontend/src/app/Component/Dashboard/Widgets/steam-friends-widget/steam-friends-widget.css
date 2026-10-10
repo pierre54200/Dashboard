@@ -1,0 +1,57 @@
+:host {
+  display: block;
+}
+
+.row-title,
+.row-sub {
+  display: block;
+}
+
+.row-title.offline {
+  color: var(--text-muted);
+}
+
+.row-sub.game {
+  color: var(--green);
+  font-weight: 500;
+}
+
+
+.avatar {
+  --dot: #80848e;
+  position: relative;
+  flex-shrink: 0;
+  width: 80px;
+  height: 45px;
+}
+
+.avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: var(--bg-input);
+}
+
+.avatar::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: -2px;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--bg-elevated);
+  border-radius: 50%;
+  box-sizing: border-box;
+  background-color: var(--dot);
+}
+
+.avatar.online,
+.avatar.in-game { --dot: var(--green); }
+.avatar.away { --dot: #f0b232; }
+.avatar.busy { --dot: var(--red); }
+
+.avatar.offline img {
+  opacity: 0.5;
+}

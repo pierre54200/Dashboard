@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+.row-title,
+.row-sub {
+  display: block;
+}
+
+.row-title.read {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.badge {
+  --c: var(--btn-grey);
+  flex-shrink: 0;
+  min-width: 44px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-sizing: border-box;
+  background-color: color-mix(in srgb, var(--c) 20%, transparent);
+  color: var(--c);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.badge.pr { --c: var(--green); }
+.badge.issue { --c: #f0b232; }
+.badge.release { --c: var(--blue); }
+.badge.discussion { --c: var(--link); }
+.badge.ci { --c: var(--red); }
+.badge.other,
+.badge.commit { --c: var(--text-muted); }
+
+.unread-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--blue);
+}
