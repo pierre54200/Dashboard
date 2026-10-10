@@ -722,3 +722,25 @@ class GithubFromServicesTests(TestCase):
         self.assertEqual(r["Location"], "http://localhost:4200/dashboard/settings?service_linked=github")
         self.assertEqual(UserApiInfo.objects.get(user=self.user).github_token, "gho_token")
         self.assertTrue(self.client.get("/api/users/me/integrations").data["github_oauth_available"])
+
+
+class AdminTests(TestCase):
+    def test_admin_pages_open_and_hide_secrets(self):
+        admin_user = User.objects.create_superuser("root", "root@example.com", "Motdepasse!42")
+        user = User.objects.create_user("lena", "lena@example.com", "Motdepasse!42", is_active=False)
+        UserProfile.objects.create(user=user)
+        info = UserApiInfo.objects.create(user=user, steam_id="76561198000000000", github_token="ghp_SECRET_TOKEN")
+        SocialAccount.objects.create(user=user, provider="github", uid="1", login="lena-gh")
+        client = APIClient(SERVER_NAME="localhost")
+        client.force_login(admin_user)
+        for url in ("/admin/", "/admin/auth/user/", f"/admin/auth/user/{user.pk}/change/",
+                    "/admin/api/userapiinfo/", f"/admin/api/userapiinfo/{info.pk}/change/",
+                    "/admin/api/userwidgetsettings/", "/admin/api/socialaccount/",
+                    "/admin/api/steamplaytimesnapshot/"):
+            r = client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+            self.assertNotIn("ghp_SECRET_TOKEN", r.content.decode(), url)
+        self.assertIn("waiting for confirmation", client.get("/admin/auth/user/").content.decode())
+        client.post("/admin/auth/user/", {"action": "activate", "_selected_action": [user.pk]})
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)

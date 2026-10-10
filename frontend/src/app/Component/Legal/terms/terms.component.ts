@@ -6,7 +6,7 @@ import { I18nService } from "../../../I18n/i18n.service";
 import { TranslationKey } from "../../../I18n/fr";
 import { LanguageSwitch } from "../../Shared/language-switch/language-switch";
 
-export const TERMS_VERSION = "2026-09-30";
+export const TERMS_VERSION = "2026-10-10";
 
 export const LEGAL = {
   appName: "Dashboard",

@@ -42,7 +42,7 @@
   <ul class="linked-list">
     @for (p of linked(); track p.id) {
       <li class="linked">
-        <span class="provider-icon">{{ p.name.charAt(0) }}</span>
+        <span class="provider-icon" [class]="'provider-icon ' + p.id" aria-hidden="true">{{ p.id === 'github' ? 'GH' : p.name.charAt(0) }}</span>
         <div class="linked-info">
           <span class="linked-name">{{ p.account }}</span>
           <span class="linked-provider">
@@ -73,6 +73,6 @@
   }
 
   @if (!hasPassword()) {
-    <p class="hint below">{{ 'connections.no_password' | t }}</p>
+    <p class="hint note">{{ 'connections.no_password' | t }}</p>
   }
 }

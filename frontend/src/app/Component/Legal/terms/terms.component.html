@@ -28,7 +28,7 @@
       <h3>1.1 Purpose</h3>
       <p>
         {{ legal.appName }} is an application for building a personal dashboard out of widgets (weather,
-        RSS feeds, online services...). These terms govern access to and use of the application, published by
+        Steam, GitHub, Spotify). These terms govern access to and use of the application, published by
         {{ legal.editorEn }}.
       </p>
 
@@ -40,7 +40,8 @@
 
       <h3>1.3 User account</h3>
       <ul>
-        <li>You must provide a valid email address and keep your credentials confidential.</li>
+        <li>You must provide a valid email address and keep your credentials confidential. Your address is confirmed by a link sent at sign-up, valid for 3 days.</li>
+        <li>You can also sign in with your Google or GitHub account: we then receive the account identifier, its verified email address and its name.</li>
         <li>You are responsible for any action taken from your account.</li>
         <li>Registration is limited to people aged 15 or over, in accordance with French law.</li>
         <li>You can delete your account at any time from Settings &gt; My account.</li>
@@ -57,8 +58,8 @@
 
       <h3>1.5 Third-party services</h3>
       <p>
-        Some widgets display data from external services (GitHub, weather providers, RSS feeds...). These
-        services have their own terms, which you accept when you connect your account to them.
+        Some widgets display data from external services (Open-Meteo, Steam, GitHub, Spotify). Signing in can
+        also go through Google or GitHub. These services have their own terms, which you accept when you connect your account to them.
         {{ legal.appName }} is not responsible for their content or availability.
       </p>
 
@@ -100,11 +101,13 @@
             <tr><th scope="col">Category</th><th scope="col">Data</th></tr>
           </thead>
           <tbody>
-            <tr><td>Account</td><td>Username, email address, password (stored only in hashed, irreversible form), registration date</td></tr>
+            <tr><td>Account</td><td>Username, email address and whether it is confirmed, password (stored only in hashed, irreversible form), registration date</td></tr>
+            <tr><td>Sign-in with Google or GitHub</td><td>Account identifier at the provider, verified email address, account name</td></tr>
             <tr><td>Consent</td><td>Version of the terms accepted and date of acceptance</td></tr>
             <tr><td>Dashboard</td><td>Widgets added and their settings (for example the city chosen for the weather), position, refresh interval</td></tr>
             <tr><td>Preferences</td><td>Language, theme, glass effect, text size, uploaded profile picture and background image</td></tr>
-            <tr><td>Connected services</td><td>Access tokens provided by the services you connect (stored encrypted), name of the linked account</td></tr>
+            <tr><td>Connected services</td><td>Steam ID and Steam API key, GitHub token, Spotify tokens and account name and picture. These secrets stay on the server and are never sent back to your browser</td></tr>
+            <tr><td>Steam playtime</td><td>Total playtime of each game, recorded once a day to compute the playtime of the month</td></tr>
             <tr><td>Technical data</td><td>Session and security cookies, IP address in the server logs</td></tr>
           </tbody>
         </table>
@@ -116,7 +119,8 @@
       <h3 id="finalites-title" class="section-subtitle">2.2 Purposes and legal bases</h3>
       <ul>
         <li><strong>Creating and managing your account, displaying your dashboard:</strong> performance of the contract (GDPR article 6.1.b).</li>
-        <li><strong>Connecting your external accounts:</strong> your consent (article 6.1.a), which you can withdraw at any time from Settings &gt; Connections.</li>
+        <li><strong>Sending the email that confirms your address:</strong> performance of the contract (article 6.1.b).</li>
+        <li><strong>Connecting your external accounts</strong> (Steam, GitHub, Spotify, Google): your consent (article 6.1.a), which you can withdraw at any time from Settings &gt; Services or Settings &gt; Connections.</li>
         <li><strong>Securing the application</strong> (abuse prevention, technical logs): legitimate interest (article 6.1.f).</li>
         <li><strong>Proving your acceptance of the terms:</strong> obligation to be able to demonstrate consent (article 7.1).</li>
       </ul>
@@ -127,7 +131,8 @@
       <h3 id="conservation-title" class="section-subtitle">2.3 Retention period</h3>
       <ul>
         <li>Account, dashboard and preference data: as long as your account exists. It is deleted as soon as you delete your account.</li>
-        <li>Connected service tokens: until the service is disconnected or the account is deleted.</li>
+        <li>Connected service tokens and keys: until the service is disconnected or the account is deleted.</li>
+        <li>Email confirmation link: valid for 3 days, then unusable.</li>
         <li>Server technical logs: 6 months maximum.</li>
       </ul>
     </section>
@@ -136,11 +141,18 @@
       <h3 id="tiers-title" class="section-subtitle">2.4 Third-party services and recipients</h3>
       <p>
         Your data is accessible only to the project team. To display your widgets, our server queries external
-        services and sends them only what is strictly necessary: for example the name of a city for the weather,
-        or your access token for a service you have connected. Your browser never contacts these services directly.
+        services and sends them only what is strictly necessary. Your browser never contacts these services directly.
       </p>
+      <ul>
+        <li><strong>Open-Meteo</strong>: the name of the city of a weather widget;</li>
+        <li><strong>Steam</strong> (Valve): your Steam ID and the API key, the name of a game you follow;</li>
+        <li><strong>GitHub</strong>: your token, the name of a repository you follow, and your identity if you sign in with GitHub;</li>
+        <li><strong>Spotify</strong>: your Spotify tokens;</li>
+        <li><strong>Google</strong>: only when you sign in with Google;</li>
+        <li><strong>The email sending service</strong>: your email address and username, for the confirmation email.</li>
+      </ul>
       <p>
-        Some of these services (such as GitHub) are located outside the European Union. These transfers only
+        Some of these services (Steam, GitHub, Google) are located outside the European Union. These transfers only
         take place if you connect the service concerned, and are covered by the safeguards provided for by the
         GDPR (adequacy decision or standard contractual clauses).
       </p>
@@ -163,7 +175,8 @@
       <h3 id="securite-title" class="section-subtitle">2.6 Security</h3>
       <ul>
         <li>Passwords are hashed: no one, including the team, can read them.</li>
-        <li>Connected service tokens are encrypted before being stored.</li>
+        <li>Tokens and API keys of connected services stay on the server and are never sent back to the browser. They are not yet encrypted in the database: this is a planned improvement.</li>
+        <li>Signing in with Google, GitHub, Steam or Spotify is protected against forged requests (random state checked on return), and a Steam identity is always confirmed with Steam.</li>
         <li>API keys stay on the server and are never sent to the browser.</li>
         <li>Forms are protected against CSRF attacks and submitted data is validated.</li>
       </ul>
@@ -201,7 +214,7 @@
       <h3>1.1 Objet</h3>
       <p>
         {{ legal.appName }} est une application qui permet de composer un tableau de bord personnel à partir
-        de widgets (météo, flux RSS, services en ligne...). Les présentes conditions encadrent l'accès et
+        de widgets (météo, Steam, GitHub, Spotify). Les présentes conditions encadrent l'accès et
         l'utilisation de l'application, éditée par {{ legal.editor }}.
       </p>
 
@@ -213,7 +226,8 @@
 
       <h3>1.3 Compte utilisateur</h3>
       <ul>
-        <li>Vous devez fournir une adresse e-mail valide et garder vos identifiants confidentiels.</li>
+        <li>Vous devez fournir une adresse e-mail valide et garder vos identifiants confidentiels. Votre adresse est confirmée par un lien envoyé à l'inscription, valable 3 jours.</li>
+        <li>Vous pouvez aussi vous connecter avec votre compte Google ou GitHub : nous recevons alors l'identifiant du compte, son adresse e-mail vérifiée et son nom.</li>
         <li>Vous êtes responsable des actions réalisées depuis votre compte.</li>
         <li>L'inscription est réservée aux personnes âgées d'au moins 15 ans, conformément à la loi française.</li>
         <li>Vous pouvez supprimer votre compte à tout moment depuis Paramètres &gt; Mon compte.</li>
@@ -230,8 +244,8 @@
 
       <h3>1.5 Services tiers</h3>
       <p>
-        Certains widgets affichent des données provenant de services externes (GitHub, fournisseurs météo, flux
-        RSS...). Ces services ont leurs propres conditions, que vous acceptez lorsque vous y connectez votre compte.
+        Certains widgets affichent des données provenant de services externes (Open-Meteo, Steam, GitHub, Spotify).
+        La connexion peut aussi passer par Google ou GitHub. Ces services ont leurs propres conditions, que vous acceptez lorsque vous y connectez votre compte.
         {{ legal.appName }} n'est pas responsable de leur contenu ni de leur disponibilité.
       </p>
 
@@ -274,11 +288,13 @@
             <tr><th scope="col">Catégorie</th><th scope="col">Données</th></tr>
           </thead>
           <tbody>
-            <tr><td>Compte</td><td>Nom d'utilisateur, adresse e-mail, mot de passe (stocké uniquement sous forme chiffrée et irréversible), date d'inscription</td></tr>
+            <tr><td>Compte</td><td>Nom d'utilisateur, adresse e-mail et sa confirmation, mot de passe (stocké uniquement sous forme hachée et irréversible), date d'inscription</td></tr>
+            <tr><td>Connexion avec Google ou GitHub</td><td>Identifiant du compte chez le fournisseur, adresse e-mail vérifiée, nom du compte</td></tr>
             <tr><td>Consentement</td><td>Version des conditions acceptée et date d'acceptation</td></tr>
             <tr><td>Dashboard</td><td>Widgets ajoutés et leurs réglages (par exemple la ville choisie pour la météo), position, fréquence d'actualisation</td></tr>
             <tr><td>Préférences</td><td>Langue, thème, effet verre, taille du texte, photo de profil et image d'arrière-plan importées</td></tr>
-            <tr><td>Services connectés</td><td>Jetons d'accès fournis par les services que vous connectez (stockés chiffrés), nom du compte lié</td></tr>
+            <tr><td>Services connectés</td><td>Steam ID et clé d'API Steam, token GitHub, jetons Spotify, nom et photo du compte Spotify. Ces secrets restent sur le serveur et ne sont jamais renvoyés à votre navigateur</td></tr>
+            <tr><td>Temps de jeu Steam</td><td>Temps de jeu total de chaque jeu, relevé une fois par jour pour calculer le temps de jeu du mois</td></tr>
             <tr><td>Données techniques</td><td>Cookies de session et de sécurité, adresse IP dans les journaux du serveur</td></tr>
           </tbody>
         </table>
@@ -290,7 +306,8 @@
       <h3 id="finalites-title" class="section-subtitle">2.2 Finalités et bases légales</h3>
       <ul>
         <li><strong>Créer et gérer votre compte, afficher votre dashboard :</strong> exécution du contrat (article 6.1.b du RGPD).</li>
-        <li><strong>Connecter vos comptes externes :</strong> votre consentement (article 6.1.a), que vous pouvez retirer à tout moment depuis Paramètres &gt; Connexions.</li>
+        <li><strong>Envoyer l'e-mail qui confirme votre adresse :</strong> exécution du contrat (article 6.1.b).</li>
+        <li><strong>Connecter vos comptes externes</strong> (Steam, GitHub, Spotify, Google) : votre consentement (article 6.1.a), que vous pouvez retirer à tout moment depuis Paramètres &gt; Services ou Paramètres &gt; Connexions.</li>
         <li><strong>Sécuriser l'application</strong> (prévention des abus, journaux techniques) : intérêt légitime (article 6.1.f).</li>
         <li><strong>Prouver votre acceptation des conditions :</strong> obligation de pouvoir démontrer le consentement (article 7.1).</li>
       </ul>
@@ -301,7 +318,8 @@
       <h3 id="conservation-title" class="section-subtitle">2.3 Durée de conservation</h3>
       <ul>
         <li>Données du compte, du dashboard et des préférences : tant que votre compte existe. Elles sont supprimées dès que vous supprimez votre compte.</li>
-        <li>Jetons des services connectés : jusqu'à la déconnexion du service ou la suppression du compte.</li>
+        <li>Jetons et clés des services connectés : jusqu'à la déconnexion du service ou la suppression du compte.</li>
+        <li>Lien de confirmation de l'adresse e-mail : valable 3 jours, inutilisable ensuite.</li>
         <li>Journaux techniques du serveur : 6 mois maximum.</li>
       </ul>
     </section>
@@ -310,12 +328,19 @@
       <h3 id="tiers-title" class="section-subtitle">2.4 Services tiers et destinataires</h3>
       <p>
         Vos données sont accessibles uniquement à l'équipe du projet. Pour afficher vos widgets, notre serveur
-        interroge des services externes en leur transmettant le strict nécessaire : par exemple le nom d'une ville
-        pour la météo, ou votre jeton d'accès pour un service que vous avez connecté. Votre navigateur ne contacte
+        interroge des services externes en leur transmettant le strict nécessaire. Votre navigateur ne contacte
         jamais directement ces services.
       </p>
+      <ul>
+        <li><strong>Open-Meteo</strong> : le nom de la ville d'un widget météo ;</li>
+        <li><strong>Steam</strong> (Valve) : votre Steam ID et la clé d'API, le nom d'un jeu suivi ;</li>
+        <li><strong>GitHub</strong> : votre token, le nom d'un dépôt suivi, et votre identité si vous vous connectez avec GitHub ;</li>
+        <li><strong>Spotify</strong> : vos jetons Spotify ;</li>
+        <li><strong>Google</strong> : uniquement si vous vous connectez avec Google ;</li>
+        <li><strong>Le service d'envoi d'e-mails</strong> : votre adresse e-mail et votre nom d'utilisateur, pour l'e-mail de confirmation.</li>
+      </ul>
       <p>
-        Certains de ces services (comme GitHub) sont situés hors de l'Union européenne. Ces transferts ont lieu
+        Certains de ces services (Steam, GitHub, Google) sont situés hors de l'Union européenne. Ces transferts ont lieu
         uniquement si vous connectez le service concerné, et sont encadrés par les garanties prévues par le RGPD
         (décision d'adéquation ou clauses contractuelles types).
       </p>
@@ -339,7 +364,8 @@
       <h3 id="securite-title" class="section-subtitle">2.6 Sécurité</h3>
       <ul>
         <li>Les mots de passe sont hachés : personne, y compris l'équipe, ne peut les lire.</li>
-        <li>Les jetons des services connectés sont chiffrés avant d'être enregistrés.</li>
+        <li>Les jetons et clés d'API des services connectés restent sur le serveur et ne sont jamais renvoyés au navigateur. Ils ne sont pas encore chiffrés dans la base : c'est une amélioration prévue.</li>
+        <li>La connexion avec Google, GitHub, Steam ou Spotify est protégée contre les requêtes falsifiées (valeur aléatoire vérifiée au retour), et une identité Steam est toujours confirmée auprès de Steam.</li>
         <li>Les clés d'API restent côté serveur et ne sont jamais envoyées au navigateur.</li>
         <li>Les formulaires sont protégés contre les attaques CSRF et les données saisies sont validées.</li>
       </ul>

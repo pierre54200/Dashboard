@@ -160,3 +160,20 @@
   content: "\00b7";
   margin: 0 6px;
 }
+
+/* Message sous la liste des comptes liés (et non collé à la dernière carte) */
+.hint.note {
+  display: block;
+  margin: 16px 0 0;
+}
+
+/* Icônes distinctes : Google et GitHub commençaient tous les deux par « G » */
+.provider-icon.google {
+  background-color: #4285f4;
+}
+
+.provider-icon.github {
+  background-color: #24292f;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.875rem;
+}
