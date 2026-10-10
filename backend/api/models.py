@@ -28,3 +28,29 @@ class UserWidgetSettings(models.Model):
 
     def __str__(self):
         return f"Widget settings for user {self.user_id}"
+
+class SteamPlaytimeSnapshot(models.Model):
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="steam_snapshots")
+    app_id = models.PositiveIntegerField()
+    name = models.CharField(max_length=255, blank=True, default="")
+    playtime_forever = models.PositiveIntegerField()  # minutes
+    date = models.DateField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "app_id", "date"], name="uniq_user_app_day"),
+        ]
+        indexes = [models.Index(fields=["user", "date"])]
+
+class UserProfile(models.Model):
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    sexe = models.CharField(max_length=20, blank=True, default="")
+    age = models.PositiveSmallIntegerField(null=True, blank=True)
+    background = models.ImageField(upload_to="backgrounds/", null=True, blank=True)
+    pfp = models.ImageField(upload_to="pfp/", null=True, blank=True)
+    theme = models.PositiveSmallIntegerField(default=0)
+
+    def __str__(self):
+        return f"Profile of user {self.user_id}"

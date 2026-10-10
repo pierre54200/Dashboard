@@ -1,19 +1,26 @@
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    parser_classes,
+    permission_classes,
+)
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import UserApiInfo, UserWidgetSettings
+from .models import UserApiInfo, UserProfile, UserWidgetSettings
 from .serializer import (
     ApiInfoSerializer,
     ErrorSerializer,
     LoginSerializer,
+    ProfileSerializer,
     RegisterSerializer,
     UserSerializer,
 )
@@ -283,3 +290,109 @@ def login_user(request):
 def logout_user(request):
     logout(request)
     return Response(status=status.HTTP_200_OK)
+
+
+"""
+PROFILE
+"""
+def _profile_data(user, profile):
+    return {
+        "id": user.id,
+        "info": {
+            "username": user.username,
+            "email": user.email,
+            "sexe": profile.sexe,
+            "age": profile.age,
+        },
+        "perso": {
+            "background": profile.background,
+            "pfp": profile.pfp,
+            "theme": profile.theme,
+        },
+    }
+
+
+@login_not_required
+@extend_schema(
+    methods=["GET"],
+    tags=USERS,
+    summary="Get the current user's profile",
+    responses={200: ProfileSerializer},
+    examples=[OpenApiExample(
+        "Success",
+        value={
+            "id": 1,
+            "info": {"username": "alice", "email": "alice@example.com", "sexe": "female", "age": 24},
+            "perso": {
+                "background": "http://localhost:8080/media/backgrounds/bg.jpg",
+                "pfp": None,
+                "theme": 2,
+            },
+        },
+        response_only=True,
+    )],
+)
+@extend_schema(
+    methods=["PATCH"],
+    tags=USERS,
+    summary="Update the current user's profile",
+    description="Partial update, send only what changes. JSON for text fields, or multipart "
+                "(`info.username`, `perso.pfp`, `perso.background`, `perso.theme`...) when uploading images.",
+    request=ProfileSerializer,
+    responses={200: ProfileSerializer, 400: ProfileSerializer},
+    examples=[
+        OpenApiExample(
+            "Change username and theme",
+            value={"info": {"username": "alice2"}, "perso": {"theme": 3}},
+            request_only=True,
+        ),
+        OpenApiExample(
+            "Remove the profile picture",
+            value={"perso": {"pfp": None}},
+            request_only=True,
+        ),
+    ],
+)
+@api_view(["GET", "PATCH"])
+@parser_classes([JSONParser, MultiPartParser, FormParser])
+@permission_classes([IsAuthenticated])
+def users_me_profile(request):
+    user = request.user
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    context = {"request": request}
+
+    if request.method == "GET":
+        return Response(ProfileSerializer(_profile_data(user, profile), context=context).data)
+
+    serializer = ProfileSerializer(
+        _profile_data(user, profile), data=request.data, partial=True, context=context
+    )
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    info = data.get("info", {})
+    perso = data.get("perso", {})
+
+    try:
+        with transaction.atomic():
+            for field in ("username", "email"):
+                if field in info:
+                    setattr(user, field, info[field])
+            user.save()
+
+            for field in ("sexe", "age"):
+                if field in info:
+                    setattr(profile, field, info[field])
+            if "theme" in perso:
+                profile.theme = perso["theme"]
+            for field in ("background", "pfp"):
+                if field in perso:
+                    old = getattr(profile, field)
+                    if old:
+                        old.delete(save=False)  # remove the replaced/cleared file from disk
+                    setattr(profile, field, perso[field])
+            profile.save()
+    except IntegrityError:
+        return Response({"info": {"username": ["Username already taken."]}},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(ProfileSerializer(_profile_data(user, profile), context=context).data)

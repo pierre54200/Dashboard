@@ -9,8 +9,10 @@ from .integrations import IntegrationError
 from .models import UserApiInfo
 from .serializer import (
     ErrorSerializer,
+    GithubCommitSerializer,
     GithubNotificationSerializer,
     SteamFriendSerializer,
+    SteamMonthlyPlaytimeSerializer,
     SteamUpdateSerializer,
     WeatherResponseSerializer,
 )
@@ -19,7 +21,6 @@ WIDGETS = ["Widgets data"]
 
 
 def _errors(not_configured):
-    """Shared 400/502 examples."""
     return [
         OpenApiExample("Not configured", value={"error": not_configured},
                        response_only=True, status_codes=["400"]),
@@ -192,3 +193,55 @@ def widget_steam_updates(request):
 @permission_classes([IsAuthenticated])
 def widget_github_notifications(request):
     return _run(lambda: integrations.get_github_notifications(_info(request).github_token))
+
+
+def _int_param(request, name, default, lo, hi):
+    raw = request.query_params.get(name)
+    if raw in (None, ""):
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        raise IntegrationError(f"'{name}' must be an integer.", 400)
+    if not lo <= value <= hi:
+        raise IntegrationError(f"'{name}' must be between {lo} and {hi}.", 400)
+    return value
+
+
+@login_not_required
+@extend_schema(
+    tags=WIDGETS,
+    summary="Recent commits of a repository",
+    description="Params: `repo` (owner/name), `count` (1-20, default 5). Uses the saved GitHub token if any "
+                "(required for private repos). Cached 2 min.",
+    parameters=[
+        OpenApiParameter("repo", str, required=True, description="e.g. octocat/hello-world"),
+        OpenApiParameter("count", int, required=False, description="1-20, default 5"),
+    ],
+    responses={200: GithubCommitSerializer(many=True), 400: ErrorSerializer, 404: ErrorSerializer, 502: ErrorSerializer},
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def widget_github_commits(request):
+    def run():
+        count = _int_param(request, "count", 5, 1, 20)
+        return integrations.get_github_commits(_info(request), request.query_params.get("repo"), count)
+    return _run(run)
+
+
+@login_not_required
+@extend_schema(
+    tags=WIDGETS,
+    summary="Most played games this month",
+    description="Params: `count` (1-10, default 3). Playtime is computed from daily snapshots of lifetime "
+                "playtime, since Steam has no monthly endpoint. Needs public game details. Cached 10 min.",
+    parameters=[OpenApiParameter("count", int, required=False, description="1-10, default 3")],
+    responses={200: SteamMonthlyPlaytimeSerializer, 400: ErrorSerializer, 502: ErrorSerializer},
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def widget_steam_monthly_playtime(request):
+    def run():
+        count = _int_param(request, "count", 3, 1, 10)
+        return integrations.get_steam_monthly_playtime(_info(request), count)
+    return _run(run)

@@ -1,7 +1,11 @@
+import re
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from django.core.cache import cache
+from django.utils import timezone
+
+from .models import SteamPlaytimeSnapshot
 
 TIMEOUT = 8
 
@@ -15,9 +19,13 @@ TTL_GEOCODE = 60 * 60 * 24
 TTL_FRIENDS = 60
 TTL_STEAM_UPDATES = 900
 TTL_GITHUB = 60
+TTL_GITHUB_COMMITS = 120
+TTL_STEAM_MONTHLY = 600
 
 STEAM_LIBRARY_GAMES_CHECKED = 15
 STEAM_UPDATES_RETURNED = 10
+
+REPO_RE = re.compile(r"^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$")
 
 
 class IntegrationError(Exception):
@@ -36,6 +44,8 @@ def _get_json(url, params=None, headers=None):
         raise IntegrationError("Upstream service unreachable.")
     if r.status_code in (401, 403):
         raise IntegrationError("Upstream rejected the credentials, or the data is private.", 400)
+    if r.status_code == 404:
+        raise IntegrationError("Not found upstream (check the name, or the resource may be private).", 404)
     if r.status_code == 429:
         raise IntegrationError("Upstream rate limit reached, try again later.")
     if not r.ok:
@@ -186,7 +196,79 @@ def get_steam_updates(info):
     return _cached(f"steam_updates:{steam_id}", TTL_STEAM_UPDATES, fetch)
 
 
+# -------------------------------------------------
+def get_steam_monthly_playtime(info, count):
+    key = _require(info.steam_updates_api_key or info.steam_friends_api_key, "Steam API key")
+    steam_id = _require(info.steam_id, "Steam ID")
+    user = info.user
+
+    def fetch():
+        data = _get_json(f"{STEAM}/IPlayerService/GetOwnedGames/v1/", {
+            "key": key, "steamid": steam_id, "include_appinfo": 1,
+        })
+        games = data.get("response", {}).get("games")
+        if not games:
+            raise IntegrationError("Game library is empty or its details are private.", 400)
+
+        today = timezone.localdate()
+        month_start = today.replace(day=1)
+        snaps = SteamPlaytimeSnapshot.objects.filter(user=user)
+
+        had_history = snaps.exists()
+        tracked_since = snaps.order_by("date").values_list("date", flat=True).first() or today
+        before_month, in_month = {}, {}
+        for app_id, minutes in snaps.filter(date__lt=month_start).order_by("date") \
+                                    .values_list("app_id", "playtime_forever"):
+            before_month[app_id] = minutes
+        for app_id, minutes in snaps.filter(date__gte=month_start).order_by("-date") \
+                                    .values_list("app_id", "playtime_forever"):
+            in_month[app_id] = minutes
+
+        SteamPlaytimeSnapshot.objects.bulk_create(
+            [SteamPlaytimeSnapshot(user=user, app_id=g["appid"], name=g.get("name", ""),
+                                   playtime_forever=g.get("playtime_forever", 0), date=today)
+             for g in games],
+            update_conflicts=True,
+            unique_fields=["user", "app_id", "date"],
+            update_fields=["playtime_forever", "name"],
+        )
+
+        results = []
+        for g in games:
+            now = g.get("playtime_forever", 0)
+            base = before_month.get(g["appid"], in_month.get(g["appid"]))
+            if base is None:
+                base = 0 if had_history else now
+            minutes = max(now - base, 0)
+            if minutes:
+                results.append({
+                    "app_id": g["appid"],
+                    "name": g.get("name"),
+                    "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{g['appid']}/header.jpg",
+                    "minutes_this_month": minutes,
+                    "hours_this_month": round(minutes / 60, 1),
+                })
+        results.sort(key=lambda r: r["minutes_this_month"], reverse=True)
+        return {
+            "month": month_start.strftime("%Y-%m"),
+            "tracked_since": tracked_since.isoformat(),
+            "games": results[:count],
+        }
+
+    return _cached(f"steam_month:{user.id}:{count}", TTL_STEAM_MONTHLY, fetch)
+
+
 # ------------------------------------------------------------------
+def _github_headers(token):
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
 def _github_html_url(subject_type, api_url, repo_url):
     if api_url and subject_type in ("Issue", "PullRequest"):
         return (api_url
@@ -202,11 +284,7 @@ def get_github_notifications(token):
         data = _get_json(
             GITHUB_NOTIFICATIONS_URL,
             params={"per_page": 30},
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28",
-            },
+            headers=_github_headers(token),
         )
         return [
             {
@@ -224,3 +302,33 @@ def get_github_notifications(token):
         ]
 
     return _cached(f"github:{hash(token)}", TTL_GITHUB, fetch)
+
+
+def get_github_commits(info, repo, count):
+    repo = _require((repo or "").strip(), "Repository")
+    owner, _, name = repo.partition("/")
+    if not REPO_RE.match(repo) or owner in (".", "..") or name in (".", ".."):
+        raise IntegrationError("Repository must look like 'owner/name'.", 400)
+
+    def fetch():
+        data = _get_json(
+            f"https://api.github.com/repos/{repo}/commits",
+            params={"per_page": count},
+            headers=_github_headers(info.github_token),
+        )
+        out = []
+        for c in data:
+            commit = c["commit"]
+            gh_author = c.get("author") or {}
+            out.append({
+                "sha": c["sha"][:7],
+                "message": commit["message"].split("\n", 1)[0],
+                "author": commit["author"]["name"],
+                "author_login": gh_author.get("login"),
+                "avatar": gh_author.get("avatar_url"),
+                "url": c["html_url"],
+                "date": commit["author"]["date"],
+            })
+        return out
+
+    return _cached(f"github_commits:{info.user_id}:{repo.lower()}:{count}", TTL_GITHUB_COMMITS, fetch)

@@ -1,5 +1,5 @@
-from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth import authenticate
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -7,6 +7,8 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from .models import UserApiInfo
+
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 
 class UserSerializer(serializers.Serializer):
@@ -63,11 +65,6 @@ class ErrorSerializer(serializers.Serializer):
 
 
 class ApiInfoSerializer(serializers.ModelSerializer):
-    """
-    Secrets (keys/token) are write-only: they are never sent back.
-    The GET response only says whether each one is set.
-    Send an empty string to clear a value.
-    """
 
     has_steam_friends_api_key = serializers.SerializerMethodField()
     has_steam_updates_api_key = serializers.SerializerMethodField()
@@ -108,10 +105,6 @@ class ApiInfoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Must be a 17-digit SteamID64.")
         return value
 
-
-"""
-RESPONSE SHAPES (documentation only, used by drf-spectacular)
-"""
 class WeatherCurrentSerializer(serializers.Serializer):
     time = serializers.CharField()
     interval = serializers.IntegerField()
@@ -168,3 +161,65 @@ class GithubNotificationSerializer(serializers.Serializer):
     repo = serializers.CharField()
     url = serializers.URLField()
     updated_at = serializers.CharField()
+
+class GithubCommitSerializer(serializers.Serializer):
+    sha = serializers.CharField(help_text="Short (7 char) commit hash")
+    message = serializers.CharField(help_text="First line of the commit message")
+    author = serializers.CharField()
+    author_login = serializers.CharField(allow_null=True)
+    avatar = serializers.URLField(allow_null=True)
+    url = serializers.URLField()
+    date = serializers.CharField()
+
+
+class SteamMonthlyGameSerializer(serializers.Serializer):
+    app_id = serializers.IntegerField()
+    name = serializers.CharField()
+    header_image = serializers.URLField()
+    minutes_this_month = serializers.IntegerField()
+    hours_this_month = serializers.FloatField()
+
+
+class SteamMonthlyPlaytimeSerializer(serializers.Serializer):
+    month = serializers.CharField(help_text="YYYY-MM")
+    tracked_since = serializers.CharField(help_text="First day snapshots exist; figures may be partial before the month start")
+    games = SteamMonthlyGameSerializer(many=True)
+
+def _validate_image_size(file):
+    if file.size > MAX_IMAGE_BYTES:
+        raise serializers.ValidationError("Image must be 5 MB or less.")
+
+
+class ProfileInfoSerializer(serializers.Serializer):
+    username = serializers.CharField(
+        min_length=3, max_length=150, required=False,
+        validators=User._meta.get_field("username").validators,
+    )
+    email = serializers.EmailField(required=False)
+    sexe = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    age = serializers.IntegerField(min_value=1, max_value=120, required=False, allow_null=True)
+
+    def validate_username(self, value):
+        user = self.context["request"].user
+        if User.objects.filter(username__iexact=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError("Username already taken.")
+        return value
+
+    def validate_email(self, value):
+        user = self.context["request"].user
+        if User.objects.filter(email__iexact=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError("Email already in use.")
+        return value
+
+
+class ProfilePersoSerializer(serializers.Serializer):
+    background = serializers.ImageField(required=False, allow_null=True, validators=[_validate_image_size])
+    pfp = serializers.ImageField(required=False, allow_null=True, validators=[_validate_image_size])
+    theme = serializers.IntegerField(min_value=0, max_value=99, required=False)
+
+
+class ProfileSerializer(serializers.Serializer):
+
+    id = serializers.IntegerField(read_only=True)
+    info = ProfileInfoSerializer(required=False)
+    perso = ProfilePersoSerializer(required=False)
