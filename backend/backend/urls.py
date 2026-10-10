@@ -21,5 +21,6 @@ urlpatterns = [
 
     path('api/', include('api.urls')),
     path("csrf", csrf),
+    path("api/csrf", csrf),  # the front calls environment.apiUrl + "csrf"
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

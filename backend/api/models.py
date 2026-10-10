@@ -50,7 +50,10 @@ class UserProfile(models.Model):
     age = models.PositiveSmallIntegerField(null=True, blank=True)
     background = models.ImageField(upload_to="backgrounds/", null=True, blank=True)
     pfp = models.ImageField(upload_to="pfp/", null=True, blank=True)
-    theme = models.PositiveSmallIntegerField(default=0)
+    theme = models.PositiveSmallIntegerField(default=0)  # 0 dark, 1 light, 2 system
+    glass = models.BooleanField(default=False)
+    background_dim = models.PositiveSmallIntegerField(default=40)  # % of dark/light veil over the background
+    text_scale = models.PositiveSmallIntegerField(default=100)  # % of the base font size
 
     def __str__(self):
         return f"Profile of user {self.user_id}"

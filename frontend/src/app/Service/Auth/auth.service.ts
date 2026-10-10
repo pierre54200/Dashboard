@@ -5,6 +5,7 @@ import { Router } from "@angular/router";
 import { ILogin, IRegister, IUser } from "../../Interface/Auth/auth.interface";
 import { UserService } from "../User/user.service";
 import { ThemeService } from "../Theme/theme.service";
+import { ProfileService } from "../Profile/profile.service";
 
 @Injectable({ providedIn: "root" })
 export class AuthService {
@@ -15,6 +16,7 @@ export class AuthService {
     private userService: UserService,
     private router: Router,
     private themeService: ThemeService,
+    private profileService: ProfileService,
   ) {
     this.http.get(`${environment.apiUrl}csrf`).subscribe({
       error: (err) => console.error("CSRF", err),
@@ -55,6 +57,7 @@ export class AuthService {
   logout(): void {
     this.http.post(this.apiUrl + "logout", null).subscribe({
       next: (data) => {
+        this.profileService.clear();
         this.router.navigate(["/login"]);
       },
       error: (err) => {

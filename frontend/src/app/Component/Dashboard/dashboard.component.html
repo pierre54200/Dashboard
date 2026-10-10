@@ -1,9 +1,15 @@
 <div class="dash">
   <header class="topbar">
     <div class="topbar-left">
-      <button class="logo" (click)="settings()" aria-label="Paramètres"> {{ this.user()?.username?.charAt(0)?.toUpperCase() }} </button>
+      <button class="logo" [class.has-photo]="!!pfp()" (click)="settings()" aria-label="Paramètres">
+        @if (pfp()) {
+          <img [src]="pfp()" alt="" width="40" height="40" />
+        } @else {
+          {{ username().charAt(0).toUpperCase() }}
+        }
+      </button>
       <div>
-        <h1 class="title">Bienvenue {{ this.user()?.username | titlecase }} </h1>
+        <h1 class="title">Bienvenue {{ username() | titlecase }} </h1>
       </div>
     </div>
 

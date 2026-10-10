@@ -1,6 +1,8 @@
 import {
   Component,
+  computed,
   ElementRef,
+  inject,
   OnInit,
   input,
   signal,
@@ -25,6 +27,7 @@ import { Router } from "@angular/router";
 import { IUser } from "../../Interface/Auth/auth.interface";
 import { WidgetService } from "../../Service/Widget/widget.service";
 import { IAvatars } from "../../Interface/Widget/widget.interface";
+import { ProfileService } from "../../Service/Profile/profile.service";
 import { TitleCasePipe } from "@angular/common";
 
 export type WidgetType =
@@ -153,6 +156,11 @@ const VALID_TYPES = new Set<string>(WIDGET_CATALOG.map((d) => d.type));
 })
 export class DashboardComponent implements OnInit {
   user = input<IUser | null>(null);
+
+  /** Pseudo et photo à jour (le resolver ne connaît que le pseudo du chargement). */
+  private profiles = inject(ProfileService);
+  username = computed(() => this.profiles.profile()?.info.username ?? this.user()?.username ?? "");
+  pfp = computed(() => this.profiles.profile()?.perso.pfp ?? null);
 
   readonly catalog = WIDGET_CATALOG;
   readonly refreshChoices = [

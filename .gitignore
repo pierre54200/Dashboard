@@ -9,4 +9,7 @@ staticfiles
 # Database
 db.sqlite3
 
+# Uploaded files
+backend/media/
+
 edit.patch

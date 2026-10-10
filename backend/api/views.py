@@ -308,6 +308,9 @@ def _profile_data(user, profile):
             "background": profile.background,
             "pfp": profile.pfp,
             "theme": profile.theme,
+            "glass": profile.glass,
+            "background_dim": profile.background_dim,
+            "text_scale": profile.text_scale,
         },
     }
 
@@ -327,6 +330,9 @@ def _profile_data(user, profile):
                 "background": "http://localhost:8080/media/backgrounds/bg.jpg",
                 "pfp": None,
                 "theme": 2,
+                "glass": False,
+                "background_dim": 40,
+                "text_scale": 100,
             },
         },
         response_only=True,
@@ -382,8 +388,9 @@ def users_me_profile(request):
             for field in ("sexe", "age"):
                 if field in info:
                     setattr(profile, field, info[field])
-            if "theme" in perso:
-                profile.theme = perso["theme"]
+            for field in ("theme", "glass", "background_dim", "text_scale"):
+                if field in perso:
+                    setattr(profile, field, perso[field])
             for field in ("background", "pfp"):
                 if field in perso:
                     old = getattr(profile, field)
