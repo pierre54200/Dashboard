@@ -10,8 +10,8 @@ import { RelativeTimePipe } from "../../../../Pipe/relative-time.pipe";
   styleUrls: ["../widget-shared.css", "./steam-updates-widget.css"],
 })
 export class SteamUpdatesWidget extends PollingWidget<ISteamUpdate[]> {
-  protected fetch() {
-    return this.api.steamUpdates();
+  protected fetch(force: boolean) {
+    return this.api.steamUpdates(force);
   }
 
   /** Les annonces Steam contiennent du BBCode et des liens bruts : on garde le texte. */

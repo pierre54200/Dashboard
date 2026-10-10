@@ -21,11 +21,11 @@ export class GithubCommitsWidget extends PollingWidget<IGithubCommit[]> {
     this.count();
   }
 
-  protected fetch() {
+  protected fetch(force: boolean) {
     const repo = this.repo().trim();
     if (!repo) return of([]);
     const count = Math.min(20, Math.max(1, Math.round(Number(this.count()) || 5)));
-    return this.api.githubCommits(repo, count);
+    return this.api.githubCommits(repo, count, force);
   }
 
   repoUrl(): string {

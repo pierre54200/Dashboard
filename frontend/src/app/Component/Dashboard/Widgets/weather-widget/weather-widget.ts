@@ -76,7 +76,7 @@ export class WeatherWidget extends PollingWidget<IWeather> {
     this.city();
   }
 
-  protected fetch() {
-    return this.api.weather(this.city().trim() || undefined);
+  protected fetch(force: boolean) {
+    return this.api.weather(this.city().trim() || undefined, force);
   }
 }

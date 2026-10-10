@@ -21,6 +21,7 @@ export class WidgetCard {
     this.iconUrl();
     this.iconFailed.set(false);
   });
+  loading = input(false);
 
   refreshLabel = computed(() => {
     const s = this.refreshRate();

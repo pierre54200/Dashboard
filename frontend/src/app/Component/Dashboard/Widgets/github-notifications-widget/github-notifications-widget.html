@@ -26,7 +26,7 @@
 } @else if (error()) {
   <div class="state error" role="alert">
     <span>{{ error() }}</span>
-    <button type="button" class="retry" (click)="load()">Réessayer</button>
+    <button type="button" class="retry" (click)="load(true)">Réessayer</button>
   </div>
 } @else {
   <div class="state" aria-live="polite">

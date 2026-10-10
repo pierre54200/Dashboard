@@ -1,5 +1,8 @@
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 import requests
 from django.core.cache import cache
@@ -57,11 +60,31 @@ def _get_json(url, params=None, headers=None):
         raise IntegrationError("Upstream returned invalid JSON.")
 
 
-def _cached(key, ttl, fn):
-    value = cache.get(key)
-    if value is None:
-        value = fn()
-        cache.set(key, value, ttl)
+# Manual refresh from the dashboard: skip the cache, but never more often than
+# FORCED_REFRESH_MIN_AGE seconds per key, so spamming the button can't burn API quotas.
+FORCED_REFRESH_MIN_AGE = 10
+_force_refresh = ContextVar("force_refresh", default=False)
+
+
+@contextmanager
+def force_refresh(enabled=True):
+    token = _force_refresh.set(enabled)
+    try:
+        yield
+    finally:
+        _force_refresh.reset(token)
+
+
+def _cached(key, ttl, fn, forceable=True):
+    entry = cache.get(key)
+    # Entries are (stored_at, value); anything else is from an older format.
+    if isinstance(entry, tuple) and len(entry) == 2:
+        stored_at, value = entry
+        too_recent = time.time() - stored_at < FORCED_REFRESH_MIN_AGE
+        if not (forceable and _force_refresh.get()) or too_recent:
+            return value
+    value = fn()
+    cache.set(key, (time.time(), value), ttl)
     return value
 
 
@@ -82,7 +105,7 @@ def get_weather(city):
             raise IntegrationError(f"City '{city}' not found.", 400)
         return results[0]
 
-    place = _cached(f"geo:{city.strip().lower()}", TTL_GEOCODE, geocode)
+    place = _cached(f"geo:{city.strip().lower()}", TTL_GEOCODE, geocode, forceable=False)
 
     def forecast():
         data = _get_json(FORECAST_URL, {

@@ -23,8 +23,8 @@ export class SteamFriendsWidget extends PollingWidget<ISteamFriend[]> {
   inGame = computed(() => (this.data() ?? []).filter((f) => f.game).length);
   online = computed(() => (this.data() ?? []).filter((f) => f.status !== 0).length);
 
-  protected fetch() {
-    return this.api.steamFriends();
+  protected fetch(force: boolean) {
+    return this.api.steamFriends(force);
   }
 
   /** Couleur de la pastille, comme les statuts Discord. */

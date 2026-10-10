@@ -36,6 +36,7 @@
             [lastUpdate]="lastUpdates()[w.id] ?? null"
             [iconUrl]="iconOf(w)"
             [weather]="w.type === 'weather' ? (weatherScenes()[w.id] ?? null) : null"
+            [loading]="busy()[w.id] ?? false"
             (refresh)="refresh(w)"
             (configure)="openEditDialog(w)"
             (remove)="remove(w)"
@@ -48,6 +49,7 @@
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
                 />
               }
               @case ('steam_friends') {
@@ -55,6 +57,7 @@
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
                 />
               }
               @case ('steam_updates') {
@@ -62,6 +65,7 @@
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
                 />
               }
               @case ('steam_playtime') {
@@ -70,6 +74,7 @@
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
                 />
               }
               @case ('github_commits') {
@@ -79,6 +84,7 @@
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
                 />
               }
               @case ('github_notifications') {
@@ -86,6 +92,7 @@
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
                 />
               }
             }

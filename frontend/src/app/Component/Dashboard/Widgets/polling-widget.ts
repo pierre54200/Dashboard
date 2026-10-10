@@ -20,6 +20,8 @@ export abstract class PollingWidget<T> {
   reloadKey = input(0);
 
   loaded = output<Date>();
+  /** true pendant un chargement, pour faire tourner l'icône Actualiser de la carte. */
+  busy = output<boolean>();
 
   data = signal<T | null>(null);
   error = signal<string | null>(null);
@@ -27,14 +29,18 @@ export abstract class PollingWidget<T> {
 
   protected readonly api = inject(WidgetService);
   private sub?: Subscription;
+  private lastReloadKey = 0;
 
   constructor() {
     effect((onCleanup) => {
-      this.reloadKey();
+      const key = this.reloadKey();
       this.trackInputs();
       const seconds = Math.max(MIN_REFRESH_SECONDS, this.refreshRate());
 
-      untracked(() => this.load());
+      // reloadKey ne change que sur un clic sur Actualiser : on contourne alors le cache serveur
+      const manual = key !== this.lastReloadKey;
+      this.lastReloadKey = key;
+      untracked(() => this.load(manual));
       const id = setInterval(() => this.load(), seconds * 1000);
       onCleanup(() => clearInterval(id));
     });
@@ -42,24 +48,30 @@ export abstract class PollingWidget<T> {
     inject(DestroyRef).onDestroy(() => this.sub?.unsubscribe());
   }
 
-  protected abstract fetch(): Observable<T>;
+  /** `force` : actualisation manuelle, le backend doit ignorer son cache. */
+  protected abstract fetch(force: boolean): Observable<T>;
 
   protected trackInputs(): void {}
 
-  load(): void {
+  load(force = false): void {
     this.sub?.unsubscribe();
-    this.loading.set(true);
-    this.sub = this.fetch().subscribe({
+    this.setLoading(true);
+    this.sub = this.fetch(force).subscribe({
       next: (value) => {
         this.data.set(value);
         this.error.set(null);
-        this.loading.set(false);
+        this.setLoading(false);
         this.loaded.emit(new Date());
       },
       error: (err: HttpErrorResponse) => {
         this.error.set(err.error?.error ?? "Le serveur est injoignable.");
-        this.loading.set(false);
+        this.setLoading(false);
       },
     });
+  }
+
+  private setLoading(value: boolean): void {
+    this.loading.set(value);
+    this.busy.emit(value);
   }
 }

@@ -36,8 +36,8 @@ const TYPES: Record<string, { label: string; css: string }> = {
 export class GithubNotificationsWidget extends PollingWidget<IGithubNotification[]> {
   unread = computed(() => (this.data() ?? []).filter((n) => n.unread).length);
 
-  protected fetch() {
-    return this.api.githubNotifications();
+  protected fetch(force: boolean) {
+    return this.api.githubNotifications(force);
   }
 
   reason(n: IGithubNotification): string {

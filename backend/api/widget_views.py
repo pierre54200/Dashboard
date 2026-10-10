@@ -35,9 +35,12 @@ def _info(request):
     return info
 
 
-def _run(fn):
+def _run(request, fn):
+    """`?refresh=1` (manual refresh button) bypasses the server cache."""
+    forced = request.query_params.get("refresh") in ("1", "true")
     try:
-        return Response(fn())
+        with integrations.force_refresh(forced):
+            return Response(fn())
     except IntegrationError as e:
         return Response({"error": e.message}, status=e.status_code)
 
@@ -85,7 +88,7 @@ def _run(fn):
 def widget_weather(request):
     # A widget instance can ask for its own city; otherwise use the saved one.
     city = request.query_params.get("city", "").strip()[:100]
-    return _run(lambda: integrations.get_weather(city or _info(request).weather_city))
+    return _run(request, lambda: integrations.get_weather(city or _info(request).weather_city))
 
 
 @login_not_required
@@ -128,7 +131,7 @@ def widget_weather(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def widget_steam_friends(request):
-    return _run(lambda: integrations.get_steam_friends(_info(request)))
+    return _run(request, lambda: integrations.get_steam_friends(_info(request)))
 
 
 @login_not_required
@@ -160,7 +163,7 @@ def widget_steam_friends(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def widget_steam_updates(request):
-    return _run(lambda: integrations.get_steam_updates(_info(request)))
+    return _run(request, lambda: integrations.get_steam_updates(_info(request)))
 
 
 @login_not_required
@@ -193,7 +196,7 @@ def widget_steam_updates(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def widget_github_notifications(request):
-    return _run(lambda: integrations.get_github_notifications(_info(request).github_token))
+    return _run(request, lambda: integrations.get_github_notifications(_info(request).github_token))
 
 
 def _int_param(request, name, default, lo, hi):
@@ -227,7 +230,7 @@ def widget_github_commits(request):
     def run():
         count = _int_param(request, "count", 5, 1, 20)
         return integrations.get_github_commits(_info(request), request.query_params.get("repo"), count)
-    return _run(run)
+    return _run(request, run)
 
 
 @login_not_required
@@ -245,7 +248,7 @@ def widget_steam_monthly_playtime(request):
     def run():
         count = _int_param(request, "count", 3, 1, 10)
         return integrations.get_steam_monthly_playtime(_info(request), count)
-    return _run(run)
+    return _run(request, run)
 
 
 

@@ -28,8 +28,8 @@ export class SteamPlaytimeWidget extends PollingWidget<ISteamMonthlyPlaytime> {
     this.count();
   }
 
-  protected fetch() {
-    return this.api.steamMonthlyPlaytime(this.clampedCount());
+  protected fetch(force: boolean) {
+    return this.api.steamMonthlyPlaytime(this.clampedCount(), force);
   }
 
   private clampedCount(): number {

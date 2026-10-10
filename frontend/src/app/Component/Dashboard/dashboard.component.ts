@@ -175,6 +175,8 @@ export class DashboardComponent implements OnInit {
 
   lastUpdates = signal<Record<number, Date>>({});
   reloadKeys = signal<Record<number, number>>({});
+  /** Widgets en cours de chargement (icône Actualiser qui tourne). */
+  busy = signal<Record<number, boolean>>({});
 
   private storedSettings: Record<string, unknown> = {};
 
@@ -446,6 +448,10 @@ export class DashboardComponent implements OnInit {
 
   refresh(w: WidgetConfig): void {
     this.reloadKeys.update((keys) => ({ ...keys, [w.id]: (keys[w.id] ?? 0) + 1 }));
+  }
+
+  onBusy(w: WidgetConfig, value: boolean): void {
+    this.busy.update((map) => ({ ...map, [w.id]: value }));
   }
 
   onLoaded(w: WidgetConfig, date: Date): void {

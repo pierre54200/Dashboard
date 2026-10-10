@@ -22,28 +22,33 @@ export class WidgetService {
 
   constructor(private http: HttpClient) {}
 
-  weather(city?: string): Observable<IWeather> {
-    const params = city ? new HttpParams().set("city", city) : undefined;
-    return this.http.get<IWeather>(this.widgetsUrl + "weather", { params });
+  /**
+   * GET sur une route de widget.
+   * `force` (bouton Actualiser) ajoute ?refresh=1 pour que Django ignore son cache.
+   */
+  private widget<T>(path: string, values: Record<string, string | number | undefined>, force: boolean): Observable<T> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(values)) {
+      if (value !== undefined && value !== "") params = params.set(key, value);
+    }
+    if (force) params = params.set("refresh", 1);
+    return this.http.get<T>(this.widgetsUrl + path, { params });
   }
 
-  steamFriends(): Observable<ISteamFriend[]> {
-    return this.http.get<ISteamFriend[]>(this.widgetsUrl + "steam/friends");
+  weather(city?: string, force = false): Observable<IWeather> {
+    return this.widget<IWeather>("weather", { city }, force);
   }
 
-  steamUpdates(): Observable<ISteamUpdate[]> {
-    return this.http.get<ISteamUpdate[]>(this.widgetsUrl + "steam/updates");
+  steamFriends(force = false): Observable<ISteamFriend[]> {
+    return this.widget<ISteamFriend[]>("steam/friends", {}, force);
   }
 
-  steamMonthlyPlaytime(count?: number): Observable<ISteamMonthlyPlaytime> {
-    const params = count ? new HttpParams().set("count", count) : undefined;
-    return this.http.get<ISteamMonthlyPlaytime>(this.widgetsUrl + "steam/monthly-playtime", { params });
+  steamUpdates(force = false): Observable<ISteamUpdate[]> {
+    return this.widget<ISteamUpdate[]>("steam/updates", {}, force);
   }
 
-  githubCommits(repo: string, count?: number): Observable<IGithubCommit[]> {
-    let params = new HttpParams().set("repo", repo);
-    if (count) params = params.set("count", count);
-    return this.http.get<IGithubCommit[]>(this.widgetsUrl + "github/commits", { params });
+  steamMonthlyPlaytime(count?: number, force = false): Observable<ISteamMonthlyPlaytime> {
+    return this.widget<ISteamMonthlyPlaytime>("steam/monthly-playtime", { count }, force);
   }
 
   /** Photos de profil Steam et GitHub pour l'en-tête des cartes. */
@@ -51,8 +56,12 @@ export class WidgetService {
     return this.http.get<IAvatars>(this.widgetsUrl + "avatars");
   }
 
-  githubNotifications(): Observable<IGithubNotification[]> {
-    return this.http.get<IGithubNotification[]>(this.widgetsUrl + "github/notifications");
+  githubCommits(repo: string, count?: number, force = false): Observable<IGithubCommit[]> {
+    return this.widget<IGithubCommit[]>("github/commits", { repo, count }, force);
+  }
+
+  githubNotifications(force = false): Observable<IGithubNotification[]> {
+    return this.widget<IGithubNotification[]>("github/notifications", {}, force);
   }
 
 
