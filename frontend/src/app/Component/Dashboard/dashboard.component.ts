@@ -25,6 +25,9 @@ import { SteamPlaytimeWidget } from "./Widgets/steam-playtime-widget/steam-playt
 import { GithubCommitsWidget } from "./Widgets/github-commits-widget/github-commits-widget";
 import { SteamAchievementsWidget } from "./Widgets/steam-achievements-widget/steam-achievements-widget";
 import { SteamDealsWidget } from "./Widgets/steam-deals-widget/steam-deals-widget";
+import { SpotifyNowPlayingWidget } from "./Widgets/spotify-now-playing-widget/spotify-now-playing-widget";
+import { SpotifyTopWidget } from "./Widgets/spotify-top-widget/spotify-top-widget";
+import { SpotifyPlaylistsWidget } from "./Widgets/spotify-playlists-widget/spotify-playlists-widget";
 import { Router } from "@angular/router";
 import { IUser } from "../../Interface/Auth/auth.interface";
 import { WidgetService } from "../../Service/Widget/widget.service";
@@ -43,6 +46,9 @@ export type WidgetType =
   | "steam_playtime"
   | "steam_achievements"
   | "steam_deals"
+  | "spotify_now_playing"
+  | "spotify_top"
+  | "spotify_playlists"
   | "github_notifications"
   | "github_commits";
 
@@ -58,6 +64,12 @@ export interface WidgetConfig {
   params: Record<string, string | number>;
 }
 
+interface ChoiceDefinition {
+  param: string;
+  label: TranslationKey;
+  options: { value: string; label: TranslationKey }[];
+}
+
 interface WidgetDefinition {
   type: WidgetType;
   /** Clés de traduction */
@@ -70,8 +82,8 @@ interface WidgetDefinition {
   params: Record<string, string | number>;
   /** Champ numérique. `param` vaut "count" par défaut. */
   count?: { param?: string; label: TranslationKey; min: number; max: number };
-  /** Liste de choix (filtre). La première option est la valeur par défaut. */
-  choice?: { param: string; label: TranslationKey; options: { value: string; label: TranslationKey }[] };
+  /** Listes de choix (filtres). La première option de chaque liste est la valeur par défaut. */
+  choices?: ChoiceDefinition[];
   /** Champ texte (facultatif sauf si `required`). */
   text?: { param: string; label: TranslationKey; placeholder: TranslationKey; hint: TranslationKey; required?: boolean };
   /** Widget qui n'a besoin d'aucun compte (pas de renvoi vers les paramètres). */
@@ -99,7 +111,7 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
     refreshRate: 60,
     params: { limit: 10, show: "all" },
     count: { param: "limit", label: "widget.count.friends", min: 1, max: 50 },
-    choice: {
+    choices: [{
       param: "show",
       label: "widget.friends.show",
       options: [
@@ -107,7 +119,7 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
         { value: "online", label: "widget.friends.show.online" },
         { value: "in_game", label: "widget.friends.show.in_game" },
       ],
-    },
+    }],
   },
   {
     type: "steam_updates",
@@ -153,14 +165,14 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
       hint: "widget.achievements.game_hint",
       required: true,
     },
-    choice: {
+    choices: [{
       param: "show",
       label: "widget.achievements.show",
       options: [
         { value: "recent", label: "widget.achievements.show.recent" },
         { value: "locked", label: "widget.achievements.show.locked" },
       ],
-    },
+    }],
     count: { label: "widget.count.achievements", min: 1, max: 20 },
   },
   {
@@ -179,7 +191,7 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
       placeholder: "widget.deals.games_placeholder",
       hint: "widget.deals.games_hint",
     },
-    choice: {
+    choices: [{
       param: "country",
       label: "widget.deals.country",
       options: [
@@ -190,7 +202,7 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
         { value: "ca", label: "widget.deals.country.ca" },
         { value: "jp", label: "widget.deals.country.jp" },
       ],
-    },
+    }],
     count: { label: "widget.count.deals", min: 1, max: 10 },
   },
   {
@@ -203,7 +215,7 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
     refreshRate: 120,
     params: { count: 10, filter: "unread" },
     count: { label: "widget.count.notifications", min: 1, max: 50 },
-    choice: {
+    choices: [{
       param: "filter",
       label: "widget.notif.filter",
       options: [
@@ -211,7 +223,7 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
         { value: "all", label: "widget.notif.filter.all" },
         { value: "participating", label: "widget.notif.filter.participating" },
       ],
-    },
+    }],
   },
   {
     type: "github_commits",
@@ -223,6 +235,66 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
     refreshRate: 120,
     params: { repo: "", count: 5 },
     count: { label: "widget.count.commits", min: 1, max: 20 },
+  },
+  {
+    type: "spotify_now_playing",
+    service: "service.spotify",
+    title: "widget.spotify_now_playing.title",
+    description: "widget.spotify_now_playing.desc",
+    cols: 1,
+    rows: 2,
+    refreshRate: 30,
+    params: { history: 3 },
+    count: { param: "history", label: "widget.count.history", min: 0, max: 10 },
+  },
+  {
+    type: "spotify_top",
+    service: "service.spotify",
+    title: "widget.spotify_top.title",
+    description: "widget.spotify_top.desc",
+    cols: 1,
+    rows: 2,
+    refreshRate: 1800,
+    params: { type: "tracks", period: "short_term", count: 5 },
+    choices: [
+      {
+        param: "type",
+        label: "widget.spotify_top.type",
+        options: [
+          { value: "tracks", label: "widget.spotify_top.type.tracks" },
+          { value: "artists", label: "widget.spotify_top.type.artists" },
+        ],
+      },
+      {
+        param: "period",
+        label: "widget.spotify_top.period",
+        options: [
+          { value: "short_term", label: "widget.spotify_top.period.short" },
+          { value: "medium_term", label: "widget.spotify_top.period.medium" },
+          { value: "long_term", label: "widget.spotify_top.period.long" },
+        ],
+      },
+    ],
+    count: { label: "widget.count.items", min: 1, max: 20 },
+  },
+  {
+    type: "spotify_playlists",
+    service: "service.spotify",
+    title: "widget.spotify_playlists.title",
+    description: "widget.spotify_playlists.desc",
+    cols: 1,
+    rows: 2,
+    refreshRate: 600,
+    params: { owner: "all", count: 5 },
+    choices: [{
+      param: "owner",
+      label: "widget.spotify_playlists.owner",
+      options: [
+        { value: "all", label: "widget.spotify_playlists.owner.all" },
+        { value: "mine", label: "widget.spotify_playlists.owner.mine" },
+      ],
+    }],
+    count: { label: "widget.count.playlists", min: 1, max: 20 },
   },
 ];
 
@@ -251,6 +323,9 @@ const VALID_TYPES = new Set<string>(WIDGET_CATALOG.map((d) => d.type));
     GithubCommitsWidget,
     SteamAchievementsWidget,
     SteamDealsWidget,
+    SpotifyNowPlayingWidget,
+    SpotifyTopWidget,
+    SpotifyPlaylistsWidget,
     TitleCasePipe,
     TranslatePipe,
   ],
@@ -343,7 +418,7 @@ export class DashboardComponent implements OnInit {
   newRepo = "";
   newCount = 5;
   /** Valeur du filtre (liste de choix) et du texte facultatif du widget. */
-  newChoice = "";
+  newChoices: Record<string, string> = {};
   newText = "";
   newRefresh = 600;
   newTitle = "";
@@ -397,7 +472,9 @@ export class DashboardComponent implements OnInit {
     this.newRepo = String(w.params["repo"] ?? "");
     const countParam = def.count?.param ?? "count";
     this.newCount = Number(w.params[countParam] ?? def.params[countParam] ?? 5);
-    this.newChoice = def.choice ? String(w.params[def.choice.param] ?? def.choice.options[0].value) : "";
+    this.newChoices = Object.fromEntries(
+      (def.choices ?? []).map((c) => [c.param, String(w.params[c.param] ?? c.options[0].value)]),
+    );
     this.newText = def.text ? String(w.params[def.text.param] ?? "") : "";
     this.newRefresh = w.refreshRate;
     this.addError.set(null);
@@ -417,7 +494,7 @@ export class DashboardComponent implements OnInit {
     this.selectedType.set(type);
     this.newRefresh = def.refreshRate;
     this.newCount = Number(def.params[def.count?.param ?? "count"] ?? 5);
-    this.newChoice = def.choice?.options[0].value ?? "";
+    this.newChoices = Object.fromEntries((def.choices ?? []).map((c) => [c.param, c.options[0].value]));
     this.newText = "";
     this.addError.set(null);
   }
@@ -465,9 +542,10 @@ export class DashboardComponent implements OnInit {
       }
       params[def.count.param ?? "count"] = n;
     }
-    if (def.choice) {
-      const allowed = def.choice.options.map((o) => o.value);
-      params[def.choice.param] = allowed.includes(this.newChoice) ? this.newChoice : allowed[0];
+    for (const c of def.choices ?? []) {
+      const allowed = c.options.map((o) => o.value);
+      const value = this.newChoices[c.param];
+      params[c.param] = allowed.includes(value) ? value : allowed[0];
     }
     if (def.text) {
       const text = this.newText.trim().slice(0, def.text.param === "games" ? 300 : 100);
@@ -634,6 +712,10 @@ export class DashboardComponent implements OnInit {
         return a?.steam ?? null;
       case "github_notifications":
         return a?.github ?? null;
+      case "spotify_now_playing":
+      case "spotify_top":
+      case "spotify_playlists":
+        return a?.spotify ?? null;
       case "github_commits": {
         const owner = String(w.params["repo"] ?? "").split("/")[0];
         return owner ? `https://github.com/${encodeURIComponent(owner)}.png?size=64` : (a?.github ?? null);
@@ -652,10 +734,12 @@ export class DashboardComponent implements OnInit {
     const def = this.definition(w.type);
     const text = w.params["city"] ?? w.params["repo"] ?? (def.text ? w.params[def.text.param] : undefined);
     if (text) return String(text);
-    const choice = def.choice;
-    const value = choice ? w.params[choice.param] : undefined;
-    const option = choice?.options.find((o) => o.value === value);
-    return option && option !== choice!.options[0] ? this.i18n.t(option.label) : "";
+    // Choix différents de la valeur par défaut, par exemple « Artistes · 6 derniers mois »
+    return (def.choices ?? [])
+      .map((c) => c.options.find((o) => o.value === w.params[c.param]))
+      .filter((o, i) => o && o !== def.choices![i].options[0])
+      .map((o) => this.i18n.t(o!.label))
+      .join(" · ");
   }
 
   settings(): void {

@@ -23,6 +23,8 @@ const API_ERRORS: [RegExp, TranslationKey][] = [
   [/^Game '(.+)' not found in your library\.$/, "api.game_not_found"],
   [/^Game '(.+)' not found on the Steam store\.$/, "api.store_game_not_found"],
   [/^This game has no achievements\.$/, "api.no_achievements"],
+  [/^Spotify refused access: add your Spotify account to the app's users\.$/, "api.spotify_forbidden"],
+  [/^Achievements are private: set your Steam game details to public\.$/, "api.achievements_private"],
   [/^Game library is empty or its details are private\.$/, "api.library_private"],
   [/^Repository must look like 'owner\/name'\.$/, "api.repo_format"],
   // Validation des formulaires (serializers DRF)

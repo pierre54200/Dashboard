@@ -81,6 +81,33 @@ SERVICES = [
             },
         ],
     },
+    {
+        "name": "spotify",
+        "widgets": [
+            {
+                "name": "now_playing",
+                "description": "Track playing now, and the last tracks played",
+                "params": [{"name": "history", "type": "integer"}],
+            },
+            {
+                "name": "top_items",
+                "description": "Your most listened tracks or artists over a period",
+                "params": [
+                    {"name": "type", "type": "string"},
+                    {"name": "period", "type": "string"},
+                    {"name": "count", "type": "integer"},
+                ],
+            },
+            {
+                "name": "playlists",
+                "description": "Your playlists, or only the ones you created",
+                "params": [
+                    {"name": "owner", "type": "string"},
+                    {"name": "count", "type": "integer"},
+                ],
+            },
+        ],
+    },
 ]
 
 

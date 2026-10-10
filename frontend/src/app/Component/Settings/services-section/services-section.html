@@ -1,6 +1,10 @@
 <h1 class="page-title">{{ 'settings.nav.services' | t }}</h1>
 <p class="page-intro">{{ 'services.intro' | t: { n: subscribedCount(), total: services().length } }}</p>
 
+@if (notice(); as n) {
+  <p class="notice" [class.error-notice]="n.kind === 'error'" [attr.role]="n.kind === 'error' ? 'alert' : 'status'">{{ n.text }}</p>
+}
+
 @if (loadError()) {
   <p class="error" role="alert">{{ loadError() }}</p>
 }
@@ -34,17 +38,36 @@
             {{ i18n.plural('services.widgets', s.widgets) }}
             @if (s.account) { · {{ s.account }} }
           </p>
+          @if (s.oauth && !s.available && !s.configured) {
+            <p class="field-hint">{{ 'services.spotify.not_configured' | t }}</p>
+          }
           @if (saved() === s.id) {
             <p class="success" role="status">{{ 'common.saved' | t }}</p>
           }
         </div>
 
         <div class="service-action">
-          @if (s.configured && !s.byDefault) {
+          @if (s.oauth) {
+            @if (s.configured) {
+              <button type="button" class="btn-sm btn-outline-danger" (click)="openForm.set(null); confirmUnsub.set(s.id)">{{ 'services.disconnect' | t }}</button>
+            } @else {
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="!s.available" (click)="connect(s)"
+                [title]="s.available ? '' : ('services.spotify.not_configured' | t)">
+                {{ 'services.spotify.connect' | t }}
+              </button>
+            }
+          } @else if (s.configured && !s.byDefault) {
             <button type="button" class="btn-sm btn-grey" [attr.aria-expanded]="openForm() === s.id" (click)="toggleForm(s)">
               {{ (openForm() === s.id ? 'common.cancel' : 'common.edit') | t }}
             </button>
             <button type="button" class="btn-sm btn-outline-danger" (click)="openForm.set(null); confirmUnsub.set(s.id)">{{ 'services.disconnect' | t }}</button>
+          } @else if (s.signIn) {
+            <button type="button" class="btn btn-primary btn-sm" (click)="connect(s)">
+              {{ 'services.sign_in_with' | t: { name: s.name } }}
+            </button>
+            <button type="button" class="btn-sm btn-grey" [attr.aria-expanded]="openForm() === s.id" (click)="toggleForm(s)">
+              {{ (openForm() === s.id ? 'common.cancel' : (s.id === 'github' ? 'services.github.use_token' : 'services.manual')) | t }}
+            </button>
           } @else {
             <button type="button" class="btn btn-primary btn-sm" [attr.aria-expanded]="openForm() === s.id" (click)="toggleForm(s)">
               {{ (openForm() === s.id ? 'common.cancel' : (s.byDefault ? 'common.edit' : 'services.configure')) | t }}
@@ -79,9 +102,9 @@
                   name="steamKey"
                   autocomplete="off"
                   [(ngModel)]="steamKey"
-                  [placeholder]="(info()?.has_steam_friends_api_key ? 'services.steam.key_saved' : 'services.steam.key_placeholder') | t"
+                  [placeholder]="(info()?.has_steam_friends_api_key ? 'services.steam.key_saved' : (info()?.steam_server_key ? 'services.steam.key_optional' : 'services.steam.key_placeholder')) | t"
                 />
-                <p class="field-hint">{{ 'services.steam.key_hint' | t }}</p>
+                <p class="field-hint">{{ (info()?.steam_server_key ? 'services.steam.key_hint_server' : 'services.steam.key_hint') | t }}</p>
               </div>
             }
             @case ('github') {

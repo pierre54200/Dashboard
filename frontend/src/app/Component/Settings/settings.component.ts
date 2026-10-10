@@ -22,7 +22,9 @@ export class SettingsComponent {
   section = signal<Section>(
     this.query.has('oauth_linked') || this.query.has('oauth_error')
       ? 'connections'
-      : 'account',
+      : this.query.has('service_linked') || this.query.has('service_error')
+        ? 'services'
+        : 'account',
   );
 
   readonly nav: { id: Section; label: TranslationKey }[] = [

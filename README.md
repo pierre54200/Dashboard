@@ -42,7 +42,11 @@ Un seul écran pour suivre ce qui vous intéresse, au lieu d'ouvrir dix onglets.
 **Services**
 
 - La météo est disponible par défaut, sans compte externe.
-- Steam et GitHub s'activent en renseignant ses identifiants dans **Paramètres > Services** (Steam ID et clé d'API Steam, token GitHub). Les secrets ne sont jamais renvoyés au navigateur.
+- Spotify s'active en liant son compte (OAuth) dans **Paramètres > Services**.
+- Steam et GitHub se connectent dans **Paramètres > Services**, au choix :
+  - par une fenêtre de connexion : **Se connecter avec Steam** (le Steam ID est vérifié par Steam, la clé d'API du serveur est utilisée) ou **Se connecter avec GitHub** (le token obtenu sert aux widgets) ;
+  - à la main : Steam ID et clé d'API Steam, ou token GitHub.
+- Les secrets ne sont jamais renvoyés au navigateur.
 
 **Dashboard**
 
@@ -78,10 +82,13 @@ Un seul écran pour suivre ce qui vous intéresse, au lieu d'ouvrir dix onglets.
 | Steam | `deals` | Meilleures promos du magasin Steam, ou prix et réduction des jeux surveillés | `games` (string, facultatif : jusqu'à 5 noms séparés par des virgules), `country` (string : `fr`, `us`, `gb`, `ch`, `ca` ou `jp`), `count` (integer, 1 à 10) | Aucun (API publique du magasin) |
 | GitHub | `notifications` | Notifications : pull requests, issues, mentions | `count` (integer, 1 à 50), `filter` (string : `unread`, `all` ou `participating`) | Token GitHub (scope `notifications`) ou connexion avec GitHub |
 | GitHub | `recent_commits` | Derniers commits d'un dépôt | `repo` (string), `count` (integer, 1 à 20) | Aucun pour un dépôt public, token pour un dépôt privé |
+| Spotify | `now_playing` | Morceau en cours (avec sa progression) et derniers morceaux écoutés | `history` (integer, 0 à 10) | Compte Spotify lié dans Paramètres > Services |
+| Spotify | `top_items` | Titres ou artistes les plus écoutés | `type` (string : `tracks` ou `artists`), `period` (string : `short_term`, `medium_term` ou `long_term`), `count` (integer, 1 à 20) | Compte Spotify lié |
+| Spotify | `playlists` | Playlists du compte, ou seulement celles créées par l'utilisateur | `owner` (string : `all` ou `mine`), `count` (integer, 1 à 20) | Compte Spotify lié |
 
 Tous les widgets ont aussi une fréquence d'actualisation (de 30 secondes à 30 minutes) et un nom affiché personnalisable.
 
-Sources des données : [Open-Meteo](https://open-meteo.com) pour la météo, la [Steam Web API](https://steamcommunity.com/dev) et l'API du magasin Steam et l'[API REST de GitHub](https://docs.github.com/rest).
+Sources des données : [Open-Meteo](https://open-meteo.com) pour la météo, la [Steam Web API](https://steamcommunity.com/dev) l'API du magasin Steam, l'[API REST de GitHub](https://docs.github.com/rest) et la [Web API de Spotify](https://developer.spotify.com/documentation/web-api).
 
 ## Installation
 
@@ -114,6 +121,9 @@ Puis remplir `.env` :
 | `DEFAULT_FROM_EMAIL` | Expéditeur des e-mails, par exemple `Dashboard <noreply@exemple.fr>` |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Facultatif : active « Continuer avec Google » |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Facultatif : active « Continuer avec GitHub » |
+| `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` | Facultatif : active le service Spotify et ses widgets |
+| `STEAM_API_KEY` | Facultatif : clé d'API Steam du serveur. Avec elle, « Se connecter avec Steam » suffit, sans clé à saisir. Clé à créer sur [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) |
+| `SPOTIFY_REDIRECT_URI` | Facultatif : `http://127.0.0.1:8080/api/services/spotify/callback` par défaut |
 
 Le fichier `.env` est ignoré par Git : aucun secret ne doit apparaître dans le dépôt.
 
@@ -135,6 +145,22 @@ EMAIL_HOST_USER=ton.adresse@gmail.com
 EMAIL_HOST_PASSWORD=le-mot-de-passe-d-application
 DEFAULT_FROM_EMAIL=Dashboard <ton.adresse@gmail.com>
 ```
+
+#### Service Spotify (facultatif)
+
+Spotify impose trois contraintes pour une application en « Development Mode » :
+
+- le compte qui crée l'application doit avoir un abonnement **Premium** actif ;
+- seuls les comptes ajoutés dans **User Management** peuvent la lier (5 au maximum) ;
+- `localhost` est refusé comme adresse de retour : il faut l'adresse de bouclage `127.0.0.1`.
+
+Étapes :
+
+1. Sur le [dashboard développeur Spotify](https://developer.spotify.com/dashboard), cliquer sur **Create app**.
+2. Redirect URI : `http://127.0.0.1:8080/api/services/spotify/callback`. Cocher **Web API**.
+3. Dans **Settings > User Management**, ajouter le nom et l'adresse e-mail du compte Spotify de chaque membre du groupe.
+4. Copier le Client ID et le Client secret dans `SPOTIFY_CLIENT_ID` et `SPOTIFY_CLIENT_SECRET`, puis redémarrer le backend.
+5. Dans l'application : **Paramètres > Services > Se connecter avec Spotify**.
 
 #### Connexion avec Google et GitHub (facultatif)
 
@@ -253,6 +279,7 @@ La documentation complète et interactive est sur http://localhost:8080/api/docs
 | `GET /api/auth/providers` | Fournisseurs OAuth configurés |
 | `GET /api/auth/<google\|github>/login`, `/callback` | Connexion avec Google ou GitHub (navigation complète, pas d'appel AJAX) |
 | `GET /api/users/me/connections`, `DELETE /api/users/me/connections/<fournisseur>` | Comptes Google et GitHub liés |
+| `GET /api/services/spotify/connect`, `/callback`, `DELETE /api/services/spotify` | Liaison et déliaison du compte Spotify (navigation complète pour la liaison) |
 | `POST /api/users/me/password` | Changer son mot de passe, ou en définir un premier pour un compte créé avec Google ou GitHub |
 | `GET`, `PATCH /api/users/me/profile` | Profil et préférences (JSON, ou multipart pour les images) |
 | `GET`, `PATCH /api/users/me/integrations` | Identifiants des services (les secrets sont en écriture seule) |

@@ -1,0 +1,63 @@
+@if (data(); as d) {
+  @if (d.playing; as p) {
+    <a class="playing" [href]="p.url" target="_blank" rel="noopener noreferrer">
+      @if (p.image) {
+        <img class="cover" [src]="p.image" alt="" width="72" height="72" />
+      } @else {
+        <span class="cover" aria-hidden="true"></span>
+      }
+      <span class="row-main">
+        <span class="status" [class.paused]="!p.is_playing">
+          @if (p.is_playing) {
+            <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+          }
+          {{ (p.is_playing ? 'spotify.playing' : 'spotify.paused') | t }}
+        </span>
+        <span class="row-title big">{{ p.name }}</span>
+        <span class="row-sub">{{ p.artists }}</span>
+      </span>
+    </a>
+    @if (progress(); as pr) {
+      <div class="progress">
+        <span class="t">{{ time(pr.ms) }}</span>
+        <div class="bar" role="progressbar" [attr.aria-valuenow]="pr.percent.toFixed(0)" aria-valuemin="0" aria-valuemax="100">
+          <span class="fill" [style.width.%]="pr.percent"></span>
+        </div>
+        <span class="t">{{ time(p.duration_ms) }}</span>
+      </div>
+    }
+  } @else {
+    <div class="idle">{{ 'spotify.nothing' | t }}</div>
+  }
+
+  @if (d.recent.length) {
+    <p class="section-label">{{ 'spotify.recent' | t }}</p>
+    <ul class="list">
+      @for (t of d.recent; track t.played_at) {
+        <li>
+          <a class="item" [href]="t.url" target="_blank" rel="noopener noreferrer">
+            @if (t.image) {
+              <img class="thumb" [src]="t.image" alt="" width="36" height="36" loading="lazy" />
+            } @else {
+              <span class="thumb" aria-hidden="true"></span>
+            }
+            <span class="row-main">
+              <span class="row-title">{{ t.name }}</span>
+              <span class="row-sub">{{ t.artists }} · {{ t.played_at | relativeTime }}</span>
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+} @else if (error()) {
+  <div class="state error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="retry" (click)="load(true)">{{ 'common.retry' | t }}</button>
+  </div>
+} @else {
+  <div class="state" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>{{ 'spotify.loading' | t }}</span>
+  </div>
+}

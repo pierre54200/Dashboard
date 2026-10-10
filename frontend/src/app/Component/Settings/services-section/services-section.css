@@ -104,6 +104,10 @@
 }
 
 .service-action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -159,4 +163,19 @@
 
 .service-info .success {
   margin: 4px 0 0;
+}
+
+.notice {
+  margin: 0 0 20px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--green);
+  border-radius: 4px;
+  background-color: rgba(35, 165, 89, 0.12);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.notice.error-notice {
+  border-left-color: var(--red);
+  background-color: rgba(218, 55, 60, 0.12);
 }

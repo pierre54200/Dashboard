@@ -109,6 +109,36 @@
                   (busy)="onBusy(w, $event)"
                 />
               }
+              @case ('spotify_now_playing') {
+                <app-spotify-now-playing-widget
+                  [history]="$any(w.params['history'] ?? 3)"
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
+                />
+              }
+              @case ('spotify_top') {
+                <app-spotify-top-widget
+                  [type]="$any(w.params['type'] ?? 'tracks')"
+                  [period]="$any(w.params['period'] ?? 'short_term')"
+                  [count]="$any(w.params['count'] ?? 5)"
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
+                />
+              }
+              @case ('spotify_playlists') {
+                <app-spotify-playlists-widget
+                  [owner]="$any(w.params['owner'] ?? 'all')"
+                  [count]="$any(w.params['count'] ?? 5)"
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
+                />
+              }
               @case ('github_commits') {
                 <app-github-commits-widget
                   [repo]="$any(w.params['repo'])"
@@ -232,10 +262,10 @@
         </label>
       }
 
-      @if (definition(selectedType()).choice; as ch) {
+      @for (ch of definition(selectedType()).choices ?? []; track ch.param) {
         <label class="field">
           <span class="label">{{ ch.label | t }}</span>
-          <select class="input" name="choice" [(ngModel)]="newChoice">
+          <select class="input" [name]="'choice-' + ch.param" [(ngModel)]="newChoices[ch.param]">
             @for (o of ch.options; track o.value) {
               <option [ngValue]="o.value">{{ o.label | t }}</option>
             }

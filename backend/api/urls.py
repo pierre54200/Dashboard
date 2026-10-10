@@ -1,6 +1,8 @@
 from django.urls import path
 
 from .oauth import oauth_callback, oauth_login
+from .spotify import spotify_callback, spotify_connect
+from .steam_openid import steam_callback, steam_connect
 from .views import (
     oauth_providers,
     users_me_connection_delete,
@@ -22,6 +24,10 @@ from .widget_views import (
     widget_avatars,
     widget_github_commits,
     widget_github_notifications,
+    spotify_unlink,
+    widget_spotify_now_playing,
+    widget_spotify_playlists,
+    widget_spotify_top,
     widget_steam_achievements,
     widget_steam_deals,
     widget_steam_friends,
@@ -50,6 +56,14 @@ urlpatterns = [
     path('auth/<str:provider>/callback', oauth_callback, name='oauth_callback'),
     path('users/confirm/resend', resend_confirmation, name='resend_confirmation'),
 
+    path('services/steam/connect', steam_connect, name='steam_connect'),
+    path('services/steam/callback', steam_callback, name='steam_callback'),
+    path('services/spotify', spotify_unlink, name='spotify_unlink'),
+    path('services/spotify/connect', spotify_connect, name='spotify_connect'),
+    path('services/spotify/callback', spotify_callback, name='spotify_callback'),
+    path('widgets/spotify/now-playing', widget_spotify_now_playing, name='widget_spotify_now_playing'),
+    path('widgets/spotify/top', widget_spotify_top, name='widget_spotify_top'),
+    path('widgets/spotify/playlists', widget_spotify_playlists, name='widget_spotify_playlists'),
     path('widgets/avatars', widget_avatars, name='widget_avatars'),
     path('widgets/weather', widget_weather, name='widget_weather'),
     path('widgets/steam/friends', widget_steam_friends, name='widget_steam_friends'),

@@ -14,6 +14,15 @@ class UserApiInfo(models.Model):
 
     github_token = models.CharField(max_length=255, blank=True, default="")
 
+    # Spotify, linked with OAuth (Settings > Services). The access token lasts 1 hour and is
+    # renewed with the refresh token, see api/spotify.py.
+    spotify_access_token = models.CharField(max_length=512, blank=True, default="")
+    spotify_refresh_token = models.CharField(max_length=512, blank=True, default="")
+    spotify_token_expires = models.DateTimeField(null=True, blank=True)
+    spotify_user_id = models.CharField(max_length=128, blank=True, default="")
+    spotify_display_name = models.CharField(max_length=255, blank=True, default="")
+    spotify_avatar = models.URLField(max_length=500, blank=True, default="")
+
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

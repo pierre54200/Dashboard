@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from . import integrations
+from . import integrations, spotify
 from .integrations import IntegrationError
 from .models import UserApiInfo, UserProfile
 from .serializer import (
@@ -13,6 +13,9 @@ from .serializer import (
     GithubCommitSerializer,
     GithubNotificationSerializer,
     SteamFriendSerializer,
+    SpotifyNowPlayingSerializer,
+    SpotifyPlaylistSerializer,
+    SpotifyTopItemSerializer,
     SteamAchievementsSerializer,
     SteamDealSerializer,
     SteamMonthlyPlaytimeSerializer,
@@ -387,6 +390,87 @@ def widget_steam_deals(request):
         count = _int_param(request, "count", 5, 1, 10)
         return integrations.get_steam_deals(_text_param(request, "games", 300), country, count)
     return _run(request, run)
+
+
+@login_not_required
+@extend_schema(
+    tags=WIDGETS,
+    summary="Spotify: track playing now and last played",
+    description="Params: `history` (0-10, default 3): number of recently played tracks shown under the "
+                "current one. `playing` is null when nothing plays. Needs a linked Spotify account "
+                "(Settings > Services). Cached 10 s (playing) and 1 min (history).",
+    parameters=[OpenApiParameter("history", int, required=False, description="0-10, default 3")],
+    responses={200: SpotifyNowPlayingSerializer, 400: ErrorSerializer, 502: ErrorSerializer},
+    examples=_errors("Spotify account is not configured."),
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def widget_spotify_now_playing(request):
+    def run():
+        return spotify.get_now_playing(_info(request), _int_param(request, "history", 3, 0, 10))
+    return _run(request, run)
+
+
+@login_not_required
+@extend_schema(
+    tags=WIDGETS,
+    summary="Spotify: your top artists or tracks",
+    description="Params: `type` (`tracks` or `artists`, default `tracks`), `period` (`short_term` about "
+                "4 weeks, `medium_term` about 6 months, `long_term` about a year; default `short_term`), "
+                "`count` (1-20, default 5). Cached 30 min.",
+    parameters=[
+        OpenApiParameter("type", str, required=False, enum=list(spotify.TOP_TYPES), description="default tracks"),
+        OpenApiParameter("period", str, required=False, enum=list(spotify.TOP_PERIODS),
+                         description="default short_term"),
+        OpenApiParameter("count", int, required=False, description="1-20, default 5"),
+    ],
+    responses={200: SpotifyTopItemSerializer(many=True), 400: ErrorSerializer, 502: ErrorSerializer},
+    examples=_errors("Spotify account is not configured."),
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def widget_spotify_top(request):
+    def run():
+        kind = _choice_param(request, "type", spotify.TOP_TYPES)
+        period = _choice_param(request, "period", spotify.TOP_PERIODS)
+        return spotify.get_top(_info(request), kind, period, _int_param(request, "count", 5, 1, 20))
+    return _run(request, run)
+
+
+@login_not_required
+@extend_schema(
+    tags=WIDGETS,
+    summary="Spotify: your playlists",
+    description="Params: `owner` (`all`, or `mine` for the playlists you created; default `all`), "
+                "`count` (1-20, default 5). Cached 10 min.",
+    parameters=[
+        OpenApiParameter("owner", str, required=False, enum=list(spotify.PLAYLIST_OWNERS), description="default all"),
+        OpenApiParameter("count", int, required=False, description="1-20, default 5"),
+    ],
+    responses={200: SpotifyPlaylistSerializer(many=True), 400: ErrorSerializer, 502: ErrorSerializer},
+    examples=_errors("Spotify account is not configured."),
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def widget_spotify_playlists(request):
+    def run():
+        owner = _choice_param(request, "owner", spotify.PLAYLIST_OWNERS)
+        return spotify.get_playlists(_info(request), owner, _int_param(request, "count", 5, 1, 20))
+    return _run(request, run)
+
+
+@login_not_required
+@extend_schema(
+    tags=["Settings"],
+    summary="Unlink the Spotify account",
+    description="To link one, open GET /api/services/spotify/connect in the browser (full-page navigation).",
+    responses={204: None},
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def spotify_unlink(request):
+    spotify.unlink(_info(request))
+    return Response(status=204)
 
 
 @login_not_required

@@ -90,9 +90,11 @@ def oauth_login(request, provider):
         raise Http404
     creds = credentials(provider)
     linking = request.GET.get("mode") == "link"
+    # Linking from Settings > Services (GitHub): come back there, and use the token for the widgets
+    for_service = linking and request.GET.get("from") == "services"
     error_page = "/dashboard/settings" if linking else "/login"
     if not creds:
-        return _front(error_page, oauth_error="not_configured")
+        return _front(error_page, **{("service_error" if for_service else "oauth_error"): "not_configured"})
     if linking and not request.user.is_authenticated:
         return _front("/login", oauth_error="session_expired")
 
@@ -101,6 +103,7 @@ def oauth_login(request, provider):
         "provider": provider,
         "state": state,
         "link_user_id": request.user.pk if linking else None,
+        "for_service": for_service,
     }
     conf = PROVIDERS[provider]
     params = {
@@ -124,7 +127,9 @@ def oauth_callback(request, provider):
         raise Http404
     flow = request.session.pop(SESSION_KEY, None)
     linking = bool(flow and flow.get("link_user_id"))
+    for_service = bool(flow and flow.get("for_service"))
     error_page = "/dashboard/settings" if linking else "/login"
+    error_key = "service_error" if for_service else "oauth_error"
 
     # The state proves this callback answers a login *we* started (protection against CSRF)
     if not flow or flow.get("provider") != provider or not secrets.compare_digest(
@@ -133,9 +138,9 @@ def oauth_callback(request, provider):
         return _front("/login", oauth_error="invalid_state")
     if request.GET.get("error"):
         # The user clicked "Cancel" on the provider's page
-        return _front(error_page, oauth_error="cancelled")
+        return _front(error_page, **{error_key: "cancelled"})
     if not request.GET.get("code"):
-        return _front(error_page, oauth_error="failed")
+        return _front(error_page, **{error_key: "failed"})
 
     try:
         token = _exchange_code(provider, request.GET["code"])
@@ -143,14 +148,16 @@ def oauth_callback(request, provider):
         with transaction.atomic():
             user, created = _resolve_user(request, provider, identity, flow.get("link_user_id"))
         if provider == "github":
-            _save_github_token(user, token)
+            _save_github_token(user, token, replace=for_service)
     except OAuthError as e:
-        return _front(error_page, oauth_error=e.code)
+        return _front(error_page, **{error_key: e.code})
     except (requests.RequestException, ValueError, KeyError):
         logger.exception("OAuth %s failed", provider)
-        return _front(error_page, oauth_error="failed")
+        return _front(error_page, **{error_key: "failed"})
 
     login(request, user, backend=BACKEND)
+    if for_service:
+        return _front("/dashboard/settings", service_linked=provider)
     if linking:
         return _front("/dashboard/settings", oauth_linked=provider)
     return _front("/dashboard")
@@ -289,10 +296,10 @@ def _unique_username(hint):
     return candidate
 
 
-def _save_github_token(user, token):
+def _save_github_token(user, token, replace=False):
     """The OAuth token has the `notifications` scope: reuse it for the GitHub widgets
-    unless the user already saved a token by hand."""
+    unless the user already saved a token by hand (`replace`: connected from Settings > Services)."""
     info, _ = UserApiInfo.objects.get_or_create(user=user)
-    if not info.github_token:
+    if replace or not info.github_token:
         info.github_token = token
         info.save(update_fields=["github_token"])

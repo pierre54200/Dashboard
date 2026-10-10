@@ -237,6 +237,12 @@ Le `client_secret` ne quitte jamais le serveur, le `state` protège contre les c
 
 Pour GitHub, le scope `notifications` est demandé : le token obtenu est réutilisé par les widgets GitHub si l'utilisateur n'en a pas saisi un lui-même.
 
+**Steam (OpenID 2.0).** Steam n'a pas d'OAuth : « Se connecter avec Steam » utilise OpenID 2.0, qui prouve seulement quel compte s'est connecté, sans donner de clé d'API. Au retour, Django renvoie la réponse à Steam (`check_authentication`), qui confirme l'avoir signée : un Steam ID ne peut pas être inventé. Les widgets utilisent ensuite la clé d'API du serveur (`STEAM_API_KEY`), sauf si l'utilisateur a saisi la sienne. Avec la clé du serveur, Steam ne renvoie que les données publiques du profil.
+
+**GitHub depuis les services.** Le bouton « Se connecter avec GitHub » de Paramètres > Services reprend la liaison OAuth de GitHub (`mode=link&from=services`) : le compte est lié, et le token obtenu (scope `notifications`) remplace celui des widgets.
+
+**Spotify (OAuth 2.0 pour un service, pas pour la connexion).** Le compte Spotify n'ouvre pas de session sur le dashboard : il autorise seulement les widgets à lire les données de l'utilisateur. Spotify refuse `localhost` comme adresse de retour et impose `127.0.0.1`. Or le navigateur n'envoie pas à `127.0.0.1` le cookie de session de `localhost` : le callback ne peut donc pas savoir qui est connecté grâce à la session. Le paramètre `state` contient alors l'identifiant de l'utilisateur, signé avec la clé secrète de Django (`django.core.signing`), valable 10 minutes et utilisable une seule fois. Le jeton d'accès dure une heure ; `api/spotify.py` le renouvelle avec le refresh token, et efface la liaison si l'utilisateur a retiré l'accès depuis Spotify.
+
 ## Sécurité
 
 | Risque | Protection |
@@ -245,6 +251,7 @@ Pour GitHub, le scope `notifications` est demandé : le token obtenu est réutil
 | Inscription avec l'adresse d'un autre | Compte inactif tant que le lien envoyé à l'adresse n'a pas été ouvert |
 | Énumération des comptes | Mêmes réponses et même temps de réponse que l'adresse existe ou non (connexion et renvoi du lien) |
 | Mot de passe deviné depuis une session ouverte | Changement de mot de passe soumis au mot de passe actuel, bloqué 15 minutes après 5 erreurs ; validateurs de Django (longueur, mots de passe courants, proximité avec le pseudo) |
+| Steam ID usurpé | Réponse OpenID vérifiée auprès de Steam (`check_authentication`), nonce en session, identité limitée aux URL `steamcommunity.com/openid/id/7656119...` |
 | Usurpation par OAuth | Paramètre `state` vérifié, liaison automatique uniquement sur une adresse vérifiée par le fournisseur |
 | Vol de session par XSS | Cookie de session inaccessible au JavaScript, échappement automatique des templates Angular |
 | Falsification de requête (CSRF) | Jeton CSRF exigé pour toute requête qui modifie des données |

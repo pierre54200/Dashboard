@@ -100,6 +100,12 @@ def _cached(key, ttl, fn, forceable=True):
     return value
 
 
+def steam_key(info, *own):
+    """The user's own key if they saved one, otherwise the server key (STEAM_API_KEY)."""
+    from django.conf import settings
+    return next((k for k in own if k), "") or settings.STEAM_API_KEY
+
+
 def _require(value, label):
     if not value:
         raise IntegrationError(f"{label} is not configured.", 400)
@@ -154,7 +160,7 @@ FRIEND_FILTERS = ("all", "online", "in_game")
 def get_steam_friends(info, limit=10, show="all"):
     """`show`: all, online (not offline) or in_game. The full list is cached once,
     each widget instance then filters and cuts it."""
-    key = _require(info.steam_friends_api_key, "Steam friends API key")
+    key = _require(steam_key(info, info.steam_friends_api_key, info.steam_updates_api_key), "Steam API key")
     steam_id = _require(info.steam_id, "Steam ID")
 
     def fetch():
@@ -237,7 +243,7 @@ def _find_game(games, name):
 def get_steam_updates(info, count=5, game=""):
     """Without `game`: the newest announcement of each recently played game.
     With `game` (name or part of it): the `count` latest announcements of that game."""
-    key = _require(info.steam_updates_api_key or info.steam_friends_api_key, "Steam updates API key")
+    key = _require(steam_key(info, info.steam_updates_api_key, info.steam_friends_api_key), "Steam API key")
     steam_id = _require(info.steam_id, "Steam ID")
     game = (game or "").strip()
 
@@ -279,7 +285,7 @@ def get_steam_updates(info, count=5, game=""):
 
 # -------------------------------------------------
 def get_steam_monthly_playtime(info, count):
-    key = _require(info.steam_updates_api_key or info.steam_friends_api_key, "Steam API key")
+    key = _require(steam_key(info, info.steam_updates_api_key, info.steam_friends_api_key), "Steam API key")
     steam_id = _require(info.steam_id, "Steam ID")
     user = info.user
 
@@ -361,7 +367,7 @@ def _owned_games(key, steam_id):
 def get_steam_achievements(info, game, language="fr"):
     """Every achievement of one game of the library, with the user's progress.
     Names and descriptions come in the user's language when the game is translated."""
-    key = _require(info.steam_updates_api_key or info.steam_friends_api_key, "Steam API key")
+    key = _require(steam_key(info, info.steam_updates_api_key, info.steam_friends_api_key), "Steam API key")
     steam_id = _require(info.steam_id, "Steam ID")
     game = _require((game or "").strip(), "Game")
 
@@ -380,6 +386,10 @@ def get_steam_achievements(info, game, language="fr"):
             if e.message == "Upstream returned HTTP 400.":
                 # Steam answers 400 "Requested app has no stats"
                 raise IntegrationError("This game has no achievements.", 400)
+            if e.status_code == 400 and e.message.startswith("Upstream rejected"):
+                # Steam answers 403 "Profile is not public": unlike the library, achievements
+                # are only readable when the profile's game details are public, even with your own key
+                raise IntegrationError("Achievements are private: set your Steam game details to public.", 400)
             raise
         mine = {a["apiname"]: a for a in player.get("playerstats", {}).get("achievements") or []}
         if not mine:
@@ -572,9 +582,10 @@ def get_github_commits(info, repo, count):
 def get_avatars(info):
     """Profile pictures shown in the widget card headers. A service that is not
     configured, or that fails, simply returns null: the card falls back to a letter."""
-    out = {"steam": None, "steam_name": None, "github": None, "github_login": None}
+    out = {"steam": None, "steam_name": None, "github": None, "github_login": None,
+           "spotify": info.spotify_avatar or None}
 
-    key = info.steam_friends_api_key or info.steam_updates_api_key
+    key = steam_key(info, info.steam_friends_api_key, info.steam_updates_api_key)
     if key and info.steam_id:
         def steam():
             data = _get_json(f"{STEAM}/ISteamUser/GetPlayerSummaries/v2/", {

@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { WidgetService } from '../../../Service/Widget/widget.service';
@@ -7,7 +8,7 @@ import { TranslatePipe } from '../../../I18n/translate.pipe';
 import { I18nService } from '../../../I18n/i18n.service';
 import { WIDGET_CATALOG } from '../../Dashboard/dashboard.component';
 
-type ServiceId = 'weather' | 'steam' | 'github';
+type ServiceId = 'weather' | 'steam' | 'github' | 'spotify';
 
 /** Nombre de widgets de chaque service, d'après le catalogue du dashboard. */
 const widgetCount = (id: ServiceId) => WIDGET_CATALOG.filter((d) => d.service === `service.${id}`).length;
@@ -22,6 +23,12 @@ interface ServiceItem {
   configured: boolean;
   /** Résumé affiché sous la description. */
   account?: string;
+  /** Liaison seulement par fenêtre de connexion (Spotify). */
+  oauth?: boolean;
+  /** Pour un service OAuth : clés présentes dans le .env du serveur. */
+  available?: boolean;
+  /** Bouton « Se connecter avec ... » proposé en plus du formulaire (Steam, GitHub). */
+  signIn?: boolean;
 }
 
 @Component({
@@ -40,7 +47,9 @@ export class ServicesSection implements OnInit {
 
   services = computed<ServiceItem[]>(() => {
     const i = this.info();
-    const steamOk = !!i?.steam_id && !!(i?.has_steam_friends_api_key || i?.has_steam_updates_api_key);
+    // Avec la clé du serveur, le Steam ID (donné par la fenêtre Steam) suffit
+    const steamOk =
+      !!i?.steam_id && !!(i?.has_steam_friends_api_key || i?.has_steam_updates_api_key || i?.steam_server_key);
     return [
       {
         id: 'weather',
@@ -59,6 +68,7 @@ export class ServicesSection implements OnInit {
         byDefault: false,
         configured: steamOk,
         account: i?.steam_id ? `Steam ID ${i.steam_id}` : undefined,
+        signIn: true,
       },
       {
         id: 'github',
@@ -68,6 +78,18 @@ export class ServicesSection implements OnInit {
         byDefault: false,
         configured: !!i?.has_github_token,
         account: i?.has_github_token ? this.i18n.t('services.github.account') : undefined,
+        signIn: !!i?.github_oauth_available,
+      },
+      {
+        id: 'spotify',
+        name: 'Spotify',
+        description: this.i18n.t('services.spotify.desc'),
+        widgets: widgetCount('spotify'),
+        byDefault: false,
+        configured: !!i?.has_spotify,
+        account: i?.has_spotify ? this.i18n.t('services.spotify.account', { name: i.spotify_display_name }) : undefined,
+        oauth: true,
+        available: !!i?.spotify_available,
       },
     ];
   });
@@ -98,11 +120,38 @@ export class ServicesSection implements OnInit {
   steamKey = '';
   githubToken = '';
 
+  /** Retour de Spotify : succès ou erreur, d'après les paramètres de l'URL. */
+  notice = signal<{ kind: 'success' | 'error'; text: string } | null>(null);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
   ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const linked = params.get('service_linked');
+    const error = params.get('service_error');
+    if (linked || error) {
+      if (linked) {
+        const names: Record<string, string> = { steam: 'Steam', github: 'GitHub', spotify: 'Spotify' };
+        this.notice.set({ kind: 'success', text: this.i18n.t('services.linked', { name: names[linked] ?? linked }) });
+      } else {
+        // Codes communs à GitHub, Steam et Spotify, puis ceux propres à Spotify
+        const key = [`oauth.error.${error}`, `services.spotify.error.${error}`].find((k) => this.i18n.has(k));
+        this.notice.set({ kind: 'error', text: this.i18n.t((key ?? 'oauth.error.failed') as never) });
+      }
+      this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    }
+
     this.api.getIntegrations().subscribe({
       next: (data) => this.info.set(data),
       error: () => this.loadError.set(this.i18n.t('services.error.load')),
     });
+  }
+
+  /** Spotify : navigation vers Django, qui redirige vers la page d'autorisation de Spotify. */
+  connect(s: ServiceItem): void {
+    if (s.id === 'spotify' && s.available) this.api.spotifyConnect();
+    if (s.id === 'steam') this.api.steamConnect();
+    if (s.id === 'github') this.api.githubConnect();
   }
 
   toggleForm(s: ServiceItem): void {
@@ -132,7 +181,7 @@ export class ServicesSection implements OnInit {
         this.formError.set(this.i18n.t('services.error.steam_id'));
         return;
       }
-      if (!key && !i?.has_steam_friends_api_key) {
+      if (!key && !i?.has_steam_friends_api_key && !i?.steam_server_key) {
         this.formError.set(this.i18n.t('services.error.steam_key_required'));
         return;
       }
@@ -157,6 +206,21 @@ export class ServicesSection implements OnInit {
   }
 
   unsubscribe(s: ServiceItem): void {
+    if (s.id === 'spotify') {
+      this.saving.set(true);
+      this.api.spotifyUnlink().subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.confirmUnsub.set(null);
+          this.ngOnInit();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.saving.set(false);
+          this.formError.set(this.messageFrom(err));
+        },
+      });
+      return;
+    }
     const changes: IIntegrationsUpdate =
       s.id === 'steam'
         ? { steam_id: '', steam_friends_api_key: '', steam_updates_api_key: '' }

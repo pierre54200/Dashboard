@@ -48,6 +48,20 @@ OAUTH_CLIENTS = {
     },
 }
 
+# Spotify service (widgets). Spotify refuses "localhost" in redirect URIs: the loopback IP
+# 127.0.0.1 must be used, so the callback can't rely on the session cookie (see api/spotify.py).
+SPOTIFY_CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID", "")
+SPOTIFY_CLIENT_SECRET = os.environ.get("SPOTIFY_CLIENT_SECRET", "")
+SPOTIFY_REDIRECT_URI = (
+    os.environ.get("SPOTIFY_REDIRECT_URI")
+    or BACKEND_URL.replace("://localhost", "://127.0.0.1") + "/api/services/spotify/callback"
+)
+
+# Steam: optional server-wide Web API key. With it, users only sign in through Steam
+# (Settings > Services) to give their Steam ID, without pasting a key. Steam then only
+# returns their public data (game details must be public for library, playtime, achievements).
+STEAM_API_KEY = os.environ.get("STEAM_API_KEY", "")
+
 # Log in with the username or the email address
 AUTHENTICATION_BACKENDS = ["api.auth_backends.EmailOrUsernameBackend"]
 

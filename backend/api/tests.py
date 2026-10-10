@@ -1,4 +1,5 @@
 import re
+from datetime import timedelta
 from unittest import mock
 from urllib.parse import parse_qs, urlparse
 
@@ -6,6 +7,7 @@ from django.contrib.auth.models import User
 from django.core import mail
 from django.core.cache import cache
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from . import integrations
@@ -101,6 +103,10 @@ class FakeResponse:
     def __init__(self, data, status=200):
         self._data, self.status_code = data, status
         self.ok = status < 400
+
+    @property
+    def text(self):
+        return "" if self._data is None else str(self._data)
 
     def json(self):
         return self._data
@@ -386,6 +392,7 @@ class NewSteamWidgetsTests(TestCase):
     GAMES = [
         {"appid": 367520, "name": "Hollow Knight", "rtime_last_played": 10},
         {"appid": 570, "name": "Dota 2", "rtime_last_played": 20},
+        {"appid": 999, "name": "The Binding of Isaac: Rebirth", "rtime_last_played": 5},
     ]
 
     def setUp(self):
@@ -404,6 +411,8 @@ class NewSteamWidgetsTests(TestCase):
         if "GetPlayerAchievements" in url:
             if params["appid"] == 570:
                 raise integrations.IntegrationError("Upstream returned HTTP 400.")
+            if params["appid"] == 999:
+                raise integrations.IntegrationError("Upstream rejected the credentials, or the data is private.", 400)
             return {"playerstats": {"success": True, "achievements": [
                 {"apiname": "A", "achieved": 1, "unlocktime": 100, "name": "Premier", "description": "d"},
                 {"apiname": "B", "achieved": 0, "unlocktime": 0, "name": "Deuxième", "description": "d"},
@@ -458,6 +467,8 @@ class NewSteamWidgetsTests(TestCase):
                          "Game 'Portal 3' not found in your library.")
         self.assertEqual(self.get("/api/widgets/steam/achievements", game="dota").data["error"],
                          "This game has no achievements.")
+        self.assertEqual(self.get("/api/widgets/steam/achievements", game="isaac").data["error"],
+                         "Achievements are private: set your Steam game details to public.")
 
     def test_specials_sorted_deduplicated_and_cut(self):
         r = self.get("/api/widgets/steam/deals")
@@ -474,3 +485,240 @@ class NewSteamWidgetsTests(TestCase):
         self.assertEqual(self.get("/api/widgets/steam/deals", games="zzz").data["error"],
                          "Game 'zzz' not found on the Steam store.")
         self.assertEqual(self.get("/api/widgets/steam/deals", country="xx").status_code, 400)
+
+
+SPOTIFY = {"SPOTIFY_CLIENT_ID": "sid", "SPOTIFY_CLIENT_SECRET": "ssecret",
+           "SPOTIFY_REDIRECT_URI": "http://127.0.0.1:8080/api/services/spotify/callback"}
+
+
+@override_settings(**SPOTIFY)
+class SpotifyTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user("hana", "hana@example.com", "Motdepasse!42")
+        self.client = APIClient(SERVER_NAME="localhost")
+        self.client.force_login(self.user)
+        self.posts, self.gets = [], []
+        self.me_status = 200
+        self.playing = True
+
+    # ---- fake Spotify
+    def fake_post(self, url, data=None, auth=None, timeout=None):
+        self.posts.append(data)
+        assert auth == ("sid", "ssecret")
+        if data["grant_type"] == "authorization_code":
+            return FakeResponse({"access_token": "acc1", "refresh_token": "ref1", "expires_in": 3600})
+        if data["refresh_token"] == "revoked":
+            return FakeResponse({"error": "invalid_grant"}, 400)
+        return FakeResponse({"access_token": "acc2", "expires_in": 3600})
+
+    def fake_get(self, url, params=None, headers=None, timeout=None):
+        self.gets.append((url, params, headers))
+        img = [{"url": "https://i/640.jpg", "width": 640}, {"url": "https://i/64.jpg", "width": 64}]
+        track = lambda n: {"id": f"t{n}", "name": f"Titre {n}", "type": "track", "duration_ms": 200000,
+                           "artists": [{"name": "Artiste"}], "album": {"name": "Album", "images": img},
+                           "external_urls": {"spotify": f"https://open.spotify.com/track/t{n}"}}
+        if url.endswith("/me"):
+            return FakeResponse({"id": "hana_sp", "display_name": "Hana", "images": img}, self.me_status)
+        if url.endswith("/currently-playing"):
+            if not self.playing:
+                return FakeResponse(None, 204)
+            return FakeResponse({"is_playing": True, "progress_ms": 1000, "item": track(1)})
+        if url.endswith("/recently-played"):
+            return FakeResponse({"items": [{"track": track(i), "played_at": "2026-10-10T20:00:00Z"} for i in (1, 2, 3, 4)]})
+        if "/me/top/artists" in url:
+            return FakeResponse({"items": [{"id": f"a{i}", "name": f"Artiste {i}", "genres": ["rap", "pop", "rock"],
+                                            "images": img, "external_urls": {}} for i in range(8)]})
+        if "/me/top/tracks" in url:
+            return FakeResponse({"items": [track(i) for i in range(8)]})
+        if url.endswith("/me/playlists"):
+            return FakeResponse({"items": [
+                {"id": "p1", "name": "À moi", "owner": {"id": "hana_sp", "display_name": "Hana"},
+                 "items": {"total": 12}, "images": img, "public": True, "external_urls": {}},
+                {"id": "p2", "name": "Suivie", "owner": {"id": "autre", "display_name": "Autre"},
+                 "tracks": {"total": 40}, "images": None, "public": True, "external_urls": {}},
+            ]})
+        raise AssertionError(url)
+
+    def patched(self):
+        return mock.patch.multiple("api.spotify.requests", post=mock.DEFAULT, get=mock.DEFAULT)
+
+    def link(self):
+        r = self.client.get("/api/services/spotify/connect")
+        self.assertEqual(r.status_code, 302)
+        q = parse_qs(urlparse(r["Location"]).query)
+        self.assertEqual(q["redirect_uri"][0], SPOTIFY["SPOTIFY_REDIRECT_URI"])
+        # The callback comes back on 127.0.0.1: no session cookie, the signed state identifies the user
+        anonymous = APIClient(SERVER_NAME="127.0.0.1")
+        with self.patched() as m:
+            m["post"].side_effect, m["get"].side_effect = self.fake_post, self.fake_get
+            return anonymous.get("/api/services/spotify/callback", {"code": "c", "state": q["state"][0]}), q["state"][0]
+
+    def widget(self, path, **params):
+        with self.patched() as m:
+            m["post"].side_effect, m["get"].side_effect = self.fake_post, self.fake_get
+            return self.client.get(path, params)
+
+    # ---- tests
+    def test_link_stores_tokens_and_profile(self):
+        r, state = self.link()
+        self.assertEqual(r["Location"], "http://localhost:4200/dashboard/settings?service_linked=spotify")
+        info = UserApiInfo.objects.get(user=self.user)
+        self.assertEqual((info.spotify_access_token, info.spotify_refresh_token), ("acc1", "ref1"))
+        self.assertEqual((info.spotify_display_name, info.spotify_avatar), ("Hana", "https://i/640.jpg"))
+        data = self.client.get("/api/users/me/integrations").data
+        self.assertTrue(data["has_spotify"])
+        self.assertNotIn("spotify_access_token", data)
+        # The same callback URL can't be replayed
+        r = APIClient(SERVER_NAME="127.0.0.1").get("/api/services/spotify/callback", {"code": "c", "state": state})
+        self.assertIn("service_error=invalid_state", r["Location"])
+
+    def test_forged_state_and_not_allowed_user(self):
+        r = APIClient(SERVER_NAME="127.0.0.1").get("/api/services/spotify/callback", {"code": "c", "state": "x"})
+        self.assertIn("service_error=invalid_state", r["Location"])
+        self.me_status = 403
+        r, _ = self.link()
+        self.assertIn("service_error=not_allowed", r["Location"])
+        self.assertFalse(UserApiInfo.objects.get(user=self.user).spotify_refresh_token)
+
+    def test_not_configured(self):
+        with override_settings(SPOTIFY_CLIENT_ID=""):
+            r = self.client.get("/api/services/spotify/connect")
+        self.assertIn("service_error=not_configured", r["Location"])
+        self.assertEqual(self.widget("/api/widgets/spotify/top").data["error"], "Spotify account is not configured.")
+
+    def test_now_playing_history_and_token_refresh(self):
+        self.link()
+        info = UserApiInfo.objects.get(user=self.user)
+        info.spotify_token_expires = timezone.now() - timedelta(minutes=1)
+        info.save()
+        r = self.widget("/api/widgets/spotify/now-playing", history=2)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data["playing"]["name"], "Titre 1")
+        self.assertEqual(r.data["playing"]["image"], "https://i/64.jpg")
+        self.assertEqual([t["id"] for t in r.data["recent"]], ["t2", "t3"])  # the playing one isn't repeated
+        self.assertEqual(UserApiInfo.objects.get(user=self.user).spotify_access_token, "acc2")
+        cache.clear()
+        self.playing = False
+        r = self.widget("/api/widgets/spotify/now-playing", history=0)
+        self.assertEqual((r.data["playing"], r.data["recent"]), (None, []))
+
+    def test_revoked_access_unlinks(self):
+        self.link()
+        UserApiInfo.objects.filter(user=self.user).update(spotify_refresh_token="revoked", spotify_token_expires=None)
+        r = self.widget("/api/widgets/spotify/now-playing")
+        self.assertEqual(r.data["error"], "Spotify account is not configured.")
+        self.assertFalse(UserApiInfo.objects.get(user=self.user).spotify_refresh_token)
+
+    def test_top_and_playlists_params(self):
+        self.link()
+        r = self.widget("/api/widgets/spotify/top", type="artists", period="long_term", count=3)
+        self.assertEqual([a["name"] for a in r.data], ["Artiste 0", "Artiste 1", "Artiste 2"])
+        self.assertEqual(r.data[0]["subtitle"], "rap, pop")
+        self.assertEqual(self.gets[-1][1]["time_range"], "long_term")
+        self.assertEqual(len(self.widget("/api/widgets/spotify/top", count=6).data), 6)
+        self.assertEqual(self.widget("/api/widgets/spotify/top", period="forever").status_code, 400)
+        r = self.widget("/api/widgets/spotify/playlists")
+        self.assertEqual([(p["name"], p["tracks"]) for p in r.data], [("À moi", 12), ("Suivie", 40)])
+        r = self.widget("/api/widgets/spotify/playlists", owner="mine")
+        self.assertEqual([p["name"] for p in r.data], ["À moi"])
+
+    def test_unlink(self):
+        self.link()
+        self.assertEqual(self.client.delete("/api/services/spotify").status_code, 204)
+        self.assertFalse(self.client.get("/api/users/me/integrations").data["has_spotify"])
+
+
+class SteamSignInTests(TestCase):
+    """Settings > Services > Sign in through Steam (OpenID 2.0) and the server-wide key."""
+
+    STEAM_ID = "76561198350063134"
+
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user("ivan", "ivan@example.com", "Motdepasse!42")
+        self.client = APIClient(SERVER_NAME="localhost")
+        self.client.force_login(self.user)
+        self.checks = []
+
+    def start(self):
+        r = self.client.get("/api/services/steam/connect")
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r["Location"].startswith("https://steamcommunity.com/openid/login?"))
+        return parse_qs(urlparse(r["Location"]).query)["openid.return_to"][0]
+
+    def steam_reply(self, return_to, claimed=None, valid=True):
+        claimed = claimed or f"https://steamcommunity.com/openid/id/{self.STEAM_ID}"
+        params = {
+            "openid.ns": "http://specs.openid.net/auth/2.0", "openid.mode": "id_res",
+            "openid.op_endpoint": "https://steamcommunity.com/openid/login",
+            "openid.claimed_id": claimed, "openid.identity": claimed, "openid.return_to": return_to,
+            "openid.response_nonce": "2026-10-10T21:00:00Zabc", "openid.assoc_handle": "1234567890",
+            "openid.signed": "signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle",
+            "openid.sig": "c2lnbmF0dXJl",
+        }
+        nonce = parse_qs(urlparse(return_to).query)["nonce"][0]
+
+        def post(url, data=None, timeout=None):
+            self.checks.append(data)
+            body = "ns:http://specs.openid.net/auth/2.0\nis_valid:" + ("true" if valid else "false") + "\n"
+            return type("R", (), {"ok": True, "text": body})()
+
+        with mock.patch("api.steam_openid.requests.post", side_effect=post):
+            return self.client.get("/api/services/steam/callback", {"nonce": nonce, **params})
+
+    def test_sign_in_saves_the_verified_steam_id(self):
+        r = self.steam_reply(self.start())
+        self.assertEqual(r["Location"], "http://localhost:4200/dashboard/settings?service_linked=steam")
+        self.assertEqual(UserApiInfo.objects.get(user=self.user).steam_id, self.STEAM_ID)
+        self.assertEqual(self.checks[0]["openid.mode"], "check_authentication")
+
+    def test_forged_or_replayed_answers_are_refused(self):
+        return_to = self.start()
+        r = self.steam_reply(return_to, valid=False)
+        self.assertIn("service_error=failed", r["Location"])
+        # nonce already used
+        r = self.steam_reply(return_to)
+        self.assertIn("service_error=invalid_state", r["Location"])
+        # identity that isn't a Steam one
+        r = self.steam_reply(self.start(), claimed="https://evil.example/openid/id/76561198000000000")
+        self.assertIn("service_error=failed", r["Location"])
+        self.assertFalse(UserApiInfo.objects.filter(user=self.user).exclude(steam_id="").exists())
+
+    def test_server_key_is_used_without_a_personal_key(self):
+        UserApiInfo.objects.create(user=self.user, steam_id=self.STEAM_ID)
+        calls = []
+
+        def fake(url, params=None, headers=None):
+            calls.append(params)
+            return {"response": {"games": [{"appid": 1, "name": "Jeu", "playtime_forever": 60}]}}
+
+        with mock.patch("api.integrations._get_json", side_effect=fake):
+            r = self.client.get("/api/widgets/steam/monthly-playtime")
+            self.assertEqual(r.data["error"], "Steam API key is not configured.")
+            with override_settings(STEAM_API_KEY="serverkey"):
+                self.assertTrue(self.client.get("/api/users/me/integrations").data["steam_server_key"])
+                cache.clear()
+                r = self.client.get("/api/widgets/steam/monthly-playtime")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(calls[-1]["key"], "serverkey")
+
+
+@override_settings(OAUTH_CLIENTS=OAUTH)
+class GithubFromServicesTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("jade", "jade@example.com", "Motdepasse!42")
+        UserApiInfo.objects.create(user=self.user, github_token="ghp_old_manual")
+        self.client = APIClient(SERVER_NAME="localhost")
+        self.client.force_login(self.user)
+
+    def test_connect_from_services_replaces_the_token_and_comes_back_there(self):
+        r = self.client.get("/api/auth/github/login?mode=link&from=services")
+        state = parse_qs(urlparse(r["Location"]).query)["state"][0]
+        post, get = fake_github()
+        with mock.patch("api.oauth.requests.post", side_effect=post), \
+             mock.patch("api.oauth.requests.get", side_effect=get):
+            r = self.client.get("/api/auth/github/callback", {"code": "good-code", "state": state})
+        self.assertEqual(r["Location"], "http://localhost:4200/dashboard/settings?service_linked=github")
+        self.assertEqual(UserApiInfo.objects.get(user=self.user).github_token, "gho_token")
+        self.assertTrue(self.client.get("/api/users/me/integrations").data["github_oauth_available"])

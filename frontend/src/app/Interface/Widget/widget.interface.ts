@@ -4,6 +4,15 @@ export interface IIntegrations {
   has_steam_friends_api_key: boolean;
   has_steam_updates_api_key: boolean;
   has_github_token: boolean;
+  /** Le serveur a sa propre clé Steam : se connecter avec Steam suffit */
+  steam_server_key: boolean;
+  /** Clés OAuth GitHub présentes : on peut connecter GitHub sans coller de token */
+  github_oauth_available: boolean;
+  /** Un compte Spotify est lié */
+  has_spotify: boolean;
+  /** Clés Spotify présentes dans le .env du serveur (sinon la liaison est impossible) */
+  spotify_available: boolean;
+  spotify_display_name: string;
 }
 
 export interface IIntegrationsUpdate {
@@ -139,4 +148,48 @@ export interface IAvatars {
   steam_name: string | null;
   github: string | null;
   github_login: string | null;
+  /** Photo du profil Spotify, null si non lié */
+  spotify?: string | null;
+}
+
+/** Morceau ou épisode de podcast Spotify */
+export interface ISpotifyTrack {
+  id: string | null;
+  name: string;
+  artists: string;
+  album: string | null;
+  image: string | null;
+  url: string | null;
+  duration_ms: number | null;
+  type: "track" | "episode";
+}
+
+/** GET /api/widgets/spotify/now-playing */
+export interface ISpotifyNowPlaying {
+  /** null quand rien ne joue */
+  playing: (ISpotifyTrack & { is_playing: boolean; progress_ms: number | null }) | null;
+  recent: (ISpotifyTrack & { played_at: string })[];
+}
+
+/** GET /api/widgets/spotify/top */
+export interface ISpotifyTopItem {
+  id: string;
+  name: string;
+  /** Artistes d'un titre, ou genres d'un artiste */
+  subtitle: string;
+  image: string | null;
+  url: string | null;
+}
+
+/** GET /api/widgets/spotify/playlists */
+export interface ISpotifyPlaylist {
+  id: string;
+  name: string;
+  image: string | null;
+  url: string | null;
+  owner: string | null;
+  owner_id: string | null;
+  tracks: number | null;
+  public: boolean | null;
+  collaborative: boolean;
 }

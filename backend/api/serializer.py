@@ -97,6 +97,13 @@ class ApiInfoSerializer(serializers.ModelSerializer):
     has_steam_friends_api_key = serializers.SerializerMethodField()
     has_steam_updates_api_key = serializers.SerializerMethodField()
     has_github_token = serializers.SerializerMethodField()
+    has_spotify = serializers.SerializerMethodField(help_text="A Spotify account is linked")
+    steam_server_key = serializers.SerializerMethodField(
+        help_text="The server has its own Steam key: signing in with Steam is enough, the key is optional")
+    github_oauth_available = serializers.SerializerMethodField(
+        help_text="GitHub OAuth keys are set: the GitHub account can be connected without pasting a token")
+    spotify_available = serializers.SerializerMethodField(
+        help_text="Spotify keys are set in the server's .env (otherwise linking is impossible)")
 
     class Meta:
         model = UserApiInfo
@@ -109,11 +116,17 @@ class ApiInfoSerializer(serializers.ModelSerializer):
             "has_steam_friends_api_key",
             "has_steam_updates_api_key",
             "has_github_token",
+            "steam_server_key",
+            "github_oauth_available",
+            "has_spotify",
+            "spotify_available",
+            "spotify_display_name",
         ]
         extra_kwargs = {
             "steam_friends_api_key": {"write_only": True},
             "steam_updates_api_key": {"write_only": True},
             "github_token": {"write_only": True},
+            "spotify_display_name": {"read_only": True},
         }
 
     @extend_schema_field(bool)
@@ -127,6 +140,25 @@ class ApiInfoSerializer(serializers.ModelSerializer):
     @extend_schema_field(bool)
     def get_has_github_token(self, obj):
         return bool(obj.github_token)
+
+    @extend_schema_field(bool)
+    def get_steam_server_key(self, obj):
+        from django.conf import settings
+        return bool(settings.STEAM_API_KEY)
+
+    @extend_schema_field(bool)
+    def get_github_oauth_available(self, obj):
+        from .oauth import credentials
+        return credentials("github") is not None
+
+    @extend_schema_field(bool)
+    def get_has_spotify(self, obj):
+        return bool(obj.spotify_refresh_token)
+
+    @extend_schema_field(bool)
+    def get_spotify_available(self, obj):
+        from .spotify import credentials
+        return credentials() is not None
 
     def validate_steam_id(self, value):
         if value and not (value.isdigit() and len(value) == 17):
@@ -206,6 +238,52 @@ class AvatarsSerializer(serializers.Serializer):
     steam_name = serializers.CharField(allow_null=True)
     github = serializers.URLField(allow_null=True, help_text="GitHub avatar, null without a GitHub token")
     github_login = serializers.CharField(allow_null=True)
+    spotify = serializers.URLField(allow_null=True, help_text="Spotify profile picture, null if not linked")
+
+
+class SpotifyTrackSerializer(serializers.Serializer):
+    id = serializers.CharField(allow_null=True)
+    name = serializers.CharField()
+    artists = serializers.CharField(allow_blank=True)
+    album = serializers.CharField(allow_null=True)
+    image = serializers.URLField(allow_null=True)
+    url = serializers.URLField(allow_null=True)
+    duration_ms = serializers.IntegerField(allow_null=True)
+    type = serializers.CharField(help_text="track or episode (podcast)")
+
+
+class SpotifyPlayingSerializer(SpotifyTrackSerializer):
+    is_playing = serializers.BooleanField(help_text="False when paused")
+    progress_ms = serializers.IntegerField(allow_null=True)
+
+
+class SpotifyRecentSerializer(SpotifyTrackSerializer):
+    played_at = serializers.CharField(help_text="ISO date")
+
+
+class SpotifyNowPlayingSerializer(serializers.Serializer):
+    playing = SpotifyPlayingSerializer(allow_null=True)
+    recent = SpotifyRecentSerializer(many=True)
+
+
+class SpotifyTopItemSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    subtitle = serializers.CharField(allow_blank=True, help_text="Artists of a track, or genres of an artist")
+    image = serializers.URLField(allow_null=True)
+    url = serializers.URLField(allow_null=True)
+
+
+class SpotifyPlaylistSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    image = serializers.URLField(allow_null=True)
+    url = serializers.URLField(allow_null=True)
+    owner = serializers.CharField(allow_null=True)
+    owner_id = serializers.CharField(allow_null=True)
+    tracks = serializers.IntegerField(allow_null=True)
+    public = serializers.BooleanField(allow_null=True)
+    collaborative = serializers.BooleanField()
 
 
 class SteamMonthlyGameSerializer(serializers.Serializer):

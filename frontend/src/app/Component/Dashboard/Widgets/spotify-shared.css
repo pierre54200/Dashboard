@@ -1,0 +1,25 @@
+/* Styles communs aux widgets Spotify (vert Spotify pour les accents). */
+
+:host {
+  display: block;
+  --spotify: #1db954;
+}
+
+.row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.thumb {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  object-fit: cover;
+  background-color: var(--bg-input);
+}
+
+.thumb.round {
+  border-radius: 50%;
+}

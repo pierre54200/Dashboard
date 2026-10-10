@@ -1,0 +1,43 @@
+@if (data(); as playlists) {
+  @if (playlists.length) {
+    <ul class="list">
+      @for (p of playlists; track p.id) {
+        <li>
+          <a class="item" [href]="p.url" target="_blank" rel="noopener noreferrer">
+            @if (p.image) {
+              <img class="thumb big" [src]="p.image" alt="" width="44" height="44" loading="lazy" />
+            } @else {
+              <span class="thumb big note" aria-hidden="true">&#9835;</span>
+            }
+            <span class="row-main">
+              <span class="row-title">{{ p.name }}</span>
+              <span class="row-sub">
+                @if (p.tracks !== null) {
+                  {{ i18n.plural('spotify.tracks', p.tracks) }} ·
+                }
+                {{ 'spotify.by' | t: { owner: p.owner ?? '' } }}
+              </span>
+            </span>
+            @if (p.collaborative) {
+              <span class="tag">{{ 'spotify.collaborative' | t }}</span>
+            } @else if (p.public === false) {
+              <span class="tag">{{ 'spotify.private' | t }}</span>
+            }
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="state">{{ (owner() === 'mine' ? 'spotify.playlists.empty_mine' : 'spotify.playlists.empty') | t }}</div>
+  }
+} @else if (error()) {
+  <div class="state error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="retry" (click)="load(true)">{{ 'common.retry' | t }}</button>
+  </div>
+} @else {
+  <div class="state" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>{{ 'spotify.loading' | t }}</span>
+  </div>
+}
