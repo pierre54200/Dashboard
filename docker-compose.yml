@@ -1,4 +1,16 @@
 services:
+  db:
+    container_name: Dashboard-DB
+    image: postgres:17
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
   backend:
     container_name: Dashboard-Back
     build: ./backend
@@ -8,6 +20,9 @@ services:
       - ./backend:/app
     env_file:
       - .env
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
     container_name: Dashboard-Front
@@ -19,3 +34,6 @@ services:
       - /app/node_modules
     env_file:
       - .env
+
+volumes:
+  pgdata:
