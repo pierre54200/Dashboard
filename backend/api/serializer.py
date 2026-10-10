@@ -171,6 +171,7 @@ class SteamFriendSerializer(serializers.Serializer):
 
 
 class SteamUpdateSerializer(serializers.Serializer):
+    id = serializers.CharField(help_text="Unique per announcement (several can belong to the same game)")
     app_id = serializers.IntegerField()
     game = serializers.CharField()
     header_image = serializers.URLField()
@@ -213,6 +214,38 @@ class SteamMonthlyGameSerializer(serializers.Serializer):
     header_image = serializers.URLField()
     minutes_this_month = serializers.IntegerField()
     hours_this_month = serializers.FloatField()
+
+
+class SteamAchievementSerializer(serializers.Serializer):
+    api_name = serializers.CharField()
+    name = serializers.CharField()
+    description = serializers.CharField(allow_blank=True)
+    icon = serializers.URLField(allow_null=True, help_text="Colour icon if unlocked, grey otherwise")
+    unlocked = serializers.BooleanField()
+    unlock_time = serializers.IntegerField(allow_null=True, help_text="Unix timestamp")
+    hidden = serializers.BooleanField(help_text="Secret achievement (its description may be empty)")
+
+
+class SteamAchievementsSerializer(serializers.Serializer):
+    app_id = serializers.IntegerField()
+    game = serializers.CharField()
+    header_image = serializers.URLField()
+    total = serializers.IntegerField()
+    unlocked = serializers.IntegerField()
+    achievements = SteamAchievementSerializer(many=True)
+
+
+class SteamDealSerializer(serializers.Serializer):
+    app_id = serializers.IntegerField()
+    name = serializers.CharField()
+    image = serializers.URLField()
+    url = serializers.URLField()
+    currency = serializers.CharField(allow_null=True)
+    original_price = serializers.IntegerField(allow_null=True, help_text="In cents")
+    final_price = serializers.IntegerField(allow_null=True, help_text="In cents")
+    discount_percent = serializers.IntegerField()
+    discount_expiration = serializers.IntegerField(allow_null=True, help_text="Unix timestamp, specials only")
+    is_free = serializers.BooleanField()
 
 
 class SteamMonthlyPlaytimeSerializer(serializers.Serializer):

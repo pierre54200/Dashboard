@@ -1,3 +1,4 @@
+import hashlib
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -13,6 +14,7 @@ from .models import SteamPlaytimeSnapshot
 TIMEOUT = 8
 
 STEAM = "https://api.steampowered.com"
+STORE = "https://store.steampowered.com/api"
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 GITHUB_NOTIFICATIONS_URL = "https://api.github.com/notifications"
@@ -25,6 +27,16 @@ TTL_GITHUB = 60
 TTL_GITHUB_COMMITS = 120
 TTL_STEAM_MONTHLY = 600
 TTL_AVATARS = 60 * 60
+TTL_LIBRARY = 900
+TTL_ACHIEVEMENTS = 600
+TTL_STORE = 1800
+
+# Steam's language names, for achievement names and descriptions
+STEAM_LANGUAGES = {"fr": "french", "en": "english"}
+# Store countries offered in the widget (they set the currency)
+STORE_COUNTRIES = ("fr", "us", "gb", "ch", "ca", "jp")
+ACHIEVEMENT_FILTERS = ("recent", "locked")
+STORE_WATCHLIST_MAX = 5
 
 STEAM_LIBRARY_GAMES_CHECKED = 15
 STEAM_UPDATES_RETURNED = 10
@@ -136,7 +148,12 @@ def get_weather(city):
 
 
 # ------------------------------------------------------------
-def get_steam_friends(info):
+FRIEND_FILTERS = ("all", "online", "in_game")
+
+
+def get_steam_friends(info, limit=10, show="all"):
+    """`show`: all, online (not offline) or in_game. The full list is cached once,
+    each widget instance then filters and cuts it."""
     key = _require(info.steam_friends_api_key, "Steam friends API key")
     steam_id = _require(info.steam_id, "Steam ID")
 
@@ -169,38 +186,62 @@ def get_steam_friends(info):
         friends.sort(key=lambda f: (f["game"] is None, f["status"] == 0, -(f["last_logoff"] or 0)))
         return friends
 
-    return _cached(f"steam_friends:{steam_id}", TTL_FRIENDS, fetch)
+    friends = _cached(f"steam_friends:{steam_id}", TTL_FRIENDS, fetch)
+    if show == "online":
+        friends = [f for f in friends if f["status"] != 0]
+    elif show == "in_game":
+        friends = [f for f in friends if f["game"]]
+    return friends[:limit]
 
 
 # -------------------------------------------------
-def _latest_news(game):
+def _news(game, count=1):
     try:
         data = _get_json(f"{STEAM}/ISteamNews/GetNewsForApp/v2/", {
-            "appid": game["appid"], "count": 1, "maxlength": 300,
+            "appid": game["appid"], "count": count, "maxlength": 300,
             "feeds": "steam_community_announcements",
         })
     except IntegrationError:
-        return None
-    items = data.get("appnews", {}).get("newsitems", [])
-    if not items:
-        return None
-    n = items[0]
-    return {
-        "app_id": game["appid"],
-        "game": game.get("name"),
-        "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{game['appid']}/header.jpg",
-        "title": n.get("title"),
-        "summary": n.get("contents"),
-        "url": n.get("url"),
-        "date": n.get("date"),
-    }
+        return []
+    return [
+        {
+            "id": str(n.get("gid") or f"{game['appid']}-{n.get('date')}"),
+            "app_id": game["appid"],
+            "game": game.get("name"),
+            "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{game['appid']}/header.jpg",
+            "title": n.get("title"),
+            "summary": n.get("contents"),
+            "url": n.get("url"),
+            "date": n.get("date"),
+        }
+        for n in data.get("appnews", {}).get("newsitems", [])
+    ]
 
 
-def get_steam_updates(info):
+def _latest_news(game):
+    news = _news(game, 1)
+    return news[0] if news else None
+
+
+def _find_game(games, name):
+    """Exact name first, then the most recently played game whose name contains `name`."""
+    wanted = name.casefold()
+    exact = [g for g in games if (g.get("name") or "").casefold() == wanted]
+    if exact:
+        return exact[0]
+    partial = [g for g in games if wanted in (g.get("name") or "").casefold()]
+    partial.sort(key=lambda g: g.get("rtime_last_played", 0), reverse=True)
+    return partial[0] if partial else None
+
+
+def get_steam_updates(info, count=5, game=""):
+    """Without `game`: the newest announcement of each recently played game.
+    With `game` (name or part of it): the `count` latest announcements of that game."""
     key = _require(info.steam_updates_api_key or info.steam_friends_api_key, "Steam updates API key")
     steam_id = _require(info.steam_id, "Steam ID")
+    game = (game or "").strip()
 
-    def fetch():
+    def library():
         data = _get_json(f"{STEAM}/IPlayerService/GetOwnedGames/v1/", {
             "key": key, "steamid": steam_id,
             "include_appinfo": 1, "include_played_free_games": 1,
@@ -208,7 +249,23 @@ def get_steam_updates(info):
         games = data.get("response", {}).get("games")
         if not games:
             raise IntegrationError("Game library is empty or its details are private.", 400)
+        return games
 
+    if game:
+        def fetch_game():
+            found = _find_game(library(), game)
+            if found is None:
+                raise IntegrationError(f"Game '{game}' not found in your library.", 400)
+            return _news(found, STEAM_UPDATES_RETURNED)
+
+        news = _cached(
+            f"steam_updates:{steam_id}:{_key(game)}",
+            TTL_STEAM_UPDATES, fetch_game,
+        )
+        return news[:count]
+
+    def fetch():
+        games = library()
         games.sort(key=lambda g: g.get("rtime_last_played", 0), reverse=True)
         games = games[:STEAM_LIBRARY_GAMES_CHECKED]
 
@@ -217,7 +274,7 @@ def get_steam_updates(info):
         news.sort(key=lambda n: n["date"] or 0, reverse=True)
         return news[:STEAM_UPDATES_RETURNED]
 
-    return _cached(f"steam_updates:{steam_id}", TTL_STEAM_UPDATES, fetch)
+    return _cached(f"steam_updates:{steam_id}", TTL_STEAM_UPDATES, fetch)[:count]
 
 
 # -------------------------------------------------
@@ -282,6 +339,148 @@ def get_steam_monthly_playtime(info, count):
     return _cached(f"steam_month:{user.id}:{count}", TTL_STEAM_MONTHLY, fetch)
 
 
+# -------------------------------------------------
+def _key(text):
+    """Cache key part for free text (memcached refuses spaces and long keys)."""
+    return hashlib.sha1(text.casefold().encode()).hexdigest()
+
+
+def _owned_games(key, steam_id):
+    def fetch():
+        data = _get_json(f"{STEAM}/IPlayerService/GetOwnedGames/v1/", {
+            "key": key, "steamid": steam_id,
+            "include_appinfo": 1, "include_played_free_games": 1,
+        })
+        games = data.get("response", {}).get("games")
+        if not games:
+            raise IntegrationError("Game library is empty or its details are private.", 400)
+        return games
+    return _cached(f"steam_library:{steam_id}", TTL_LIBRARY, fetch, forceable=False)
+
+
+def get_steam_achievements(info, game, language="fr"):
+    """Every achievement of one game of the library, with the user's progress.
+    Names and descriptions come in the user's language when the game is translated."""
+    key = _require(info.steam_updates_api_key or info.steam_friends_api_key, "Steam API key")
+    steam_id = _require(info.steam_id, "Steam ID")
+    game = _require((game or "").strip(), "Game")
+
+    found = _find_game(_owned_games(key, steam_id), game)
+    if found is None:
+        raise IntegrationError(f"Game '{game}' not found in your library.", 400)
+    app_id = found["appid"]
+    lang = STEAM_LANGUAGES.get(language, "english")
+
+    def fetch():
+        try:
+            player = _get_json(f"{STEAM}/ISteamUserStats/GetPlayerAchievements/v1/", {
+                "key": key, "steamid": steam_id, "appid": app_id, "l": lang,
+            })
+        except IntegrationError as e:
+            if e.message == "Upstream returned HTTP 400.":
+                # Steam answers 400 "Requested app has no stats"
+                raise IntegrationError("This game has no achievements.", 400)
+            raise
+        mine = {a["apiname"]: a for a in player.get("playerstats", {}).get("achievements") or []}
+        if not mine:
+            raise IntegrationError("This game has no achievements.", 400)
+
+        # Icons only exist in the schema; without it the widget still works, without images
+        try:
+            schema = _get_json(f"{STEAM}/ISteamUserStats/GetSchemaForGame/v2/", {
+                "key": key, "appid": app_id, "l": lang,
+            })
+            definitions = schema.get("game", {}).get("availableGameStats", {}).get("achievements") or []
+        except IntegrationError:
+            definitions = []
+        defs = {d["name"]: d for d in definitions}
+        order = [d["name"] for d in definitions if d["name"] in mine] + [n for n in mine if n not in defs]
+
+        achievements = []
+        for name in order:
+            a, d = mine[name], defs.get(name, {})
+            unlocked = bool(a.get("achieved"))
+            achievements.append({
+                "api_name": name,
+                "name": a.get("name") or d.get("displayName") or name,
+                "description": a.get("description") or d.get("description") or "",
+                "icon": d.get("icon") if unlocked else (d.get("icongray") or d.get("icon")),
+                "unlocked": unlocked,
+                "unlock_time": a.get("unlocktime") or None if unlocked else None,
+                "hidden": bool(d.get("hidden")),
+            })
+        return {
+            "app_id": app_id,
+            "game": found.get("name"),
+            "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{app_id}/header.jpg",
+            "total": len(achievements),
+            "unlocked": sum(a["unlocked"] for a in achievements),
+            "achievements": achievements,
+        }
+
+    return _cached(f"steam_achievements:{steam_id}:{app_id}:{lang}", TTL_ACHIEVEMENTS, fetch)
+
+
+def _store_item(app_id, name, image, currency, initial, final, expiration=None, is_free=False):
+    discount = round((initial - final) * 100 / initial) if initial and final is not None and final < initial else 0
+    return {
+        "app_id": app_id,
+        "name": name,
+        "image": image,
+        "url": f"https://store.steampowered.com/app/{app_id}/",
+        "currency": currency,
+        "original_price": initial,  # cents, null for a free game
+        "final_price": final,
+        "discount_percent": discount,
+        "discount_expiration": expiration,
+        "is_free": is_free,
+    }
+
+
+def _store_price(name, country):
+    data = _get_json(f"{STORE}/storesearch/", {"term": name, "cc": country, "l": "english"})
+    items = [i for i in data.get("items") or [] if i.get("type", "app") == "app"]
+    if not items:
+        raise IntegrationError(f"Game '{name}' not found on the Steam store.", 400)
+    wanted = name.casefold()
+    item = next((i for i in items if (i.get("name") or "").casefold() == wanted), items[0])
+    price = item.get("price")
+    image = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{item['id']}/header.jpg"
+    if not price:
+        return _store_item(item["id"], item.get("name"), image, None, None, None, is_free=True)
+    return _store_item(item["id"], item.get("name"), image, price.get("currency"),
+                       price.get("initial"), price.get("final"))
+
+
+def get_steam_deals(games="", country="fr", count=5):
+    """Without `games`: the store's current specials. With `games` (names separated by
+    commas, up to 5): the price and discount of each of them. Public store API, no key."""
+    names = [g.strip() for g in (games or "").split(",") if g.strip()][:STORE_WATCHLIST_MAX]
+
+    if names:
+        return [
+            _cached(f"steam_price:{country}:{_key(name)}", TTL_STORE, lambda name=name: _store_price(name, country))
+            for name in names
+        ][:count]
+
+    def fetch():
+        data = _get_json(f"{STORE}/featuredcategories", {"cc": country, "l": "english"})
+        out, seen = [], set()
+        for i in data.get("specials", {}).get("items") or []:
+            if not i.get("discounted") or i["id"] in seen:
+                continue
+            seen.add(i["id"])
+            out.append(_store_item(
+                i["id"], i.get("name"), i.get("header_image") or i.get("large_capsule_image"),
+                i.get("currency"), i.get("original_price"), i.get("final_price"),
+                i.get("discount_expiration"),
+            ))
+        out.sort(key=lambda d: d["discount_percent"], reverse=True)
+        return out
+
+    return _cached(f"steam_specials:{country}", TTL_STORE, fetch)[:count]
+
+
 # ------------------------------------------------------------------
 def _github_headers(token):
     headers = {
@@ -301,13 +500,23 @@ def _github_html_url(subject_type, api_url, repo_url):
     return repo_url
 
 
-def get_github_notifications(token):
+NOTIFICATION_FILTERS = ("unread", "all", "participating")
+
+
+def get_github_notifications(token, count=10, filter="unread"):
+    """`filter`: unread (GitHub's default), all (read ones too) or participating
+    (only threads where you are directly involved: mention, review, assignment...)."""
     _require(token, "GitHub token")
+    params = {"per_page": 50}
+    if filter == "all":
+        params["all"] = "true"
+    elif filter == "participating":
+        params["participating"] = "true"
 
     def fetch():
         data = _get_json(
             GITHUB_NOTIFICATIONS_URL,
-            params={"per_page": 30},
+            params=params,
             headers=_github_headers(token),
         )
         return [
@@ -325,7 +534,7 @@ def get_github_notifications(token):
             for n in data
         ]
 
-    return _cached(f"github:{hash(token)}", TTL_GITHUB, fetch)
+    return _cached(f"github:{hash(token)}:{filter}", TTL_GITHUB, fetch)[:count]
 
 
 def get_github_commits(info, repo, count):

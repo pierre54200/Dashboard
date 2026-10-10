@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
+from . import integrations
 from .models import SocialAccount, UserApiInfo, UserProfile
 
 OAUTH = {
@@ -294,3 +295,182 @@ class PasswordChangeTests(TestCase):
         r = APIClient(SERVER_NAME="localhost").post(
             "/api/users/login", {"username": "octo@example.com", "password": "Premier-Mdp42!"}, format="json")
         self.assertEqual(r.status_code, 202)
+
+
+class WidgetParamsTests(TestCase):
+    """The three widgets that used to have no settings."""
+
+    FRIENDS = [
+        {"steamid": "1", "personaname": "Joueur", "personastate": 1, "gameextrainfo": "CS2", "lastlogoff": 5},
+        {"steamid": "2", "personaname": "EnLigne", "personastate": 1, "lastlogoff": 4},
+        {"steamid": "3", "personaname": "Absent", "personastate": 3, "lastlogoff": 3},
+        {"steamid": "4", "personaname": "Parti", "personastate": 0, "lastlogoff": 2},
+    ]
+    GAMES = [
+        {"appid": 730, "name": "Counter-Strike 2", "rtime_last_played": 10},
+        {"appid": 570, "name": "Dota 2", "rtime_last_played": 20},
+    ]
+
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user("dave", "dave@example.com", "Motdepasse!42")
+        UserApiInfo.objects.create(user=self.user, steam_id="76561198000000000",
+                                   steam_friends_api_key="k", github_token="t")
+        self.client = APIClient(SERVER_NAME="localhost")
+        self.client.force_login(self.user)
+        self.calls = []
+
+    def fake_get_json(self, url, params=None, headers=None):
+        self.calls.append((url, params or {}))
+        if "GetFriendList" in url:
+            return {"friendslist": {"friends": [{"steamid": f["steamid"]} for f in self.FRIENDS]}}
+        if "GetPlayerSummaries" in url:
+            return {"response": {"players": self.FRIENDS}}
+        if "GetOwnedGames" in url:
+            return {"response": {"games": [dict(g) for g in self.GAMES]}}
+        if "GetNewsForApp" in url:
+            return {"appnews": {"newsitems": [
+                {"gid": f"{params['appid']}-{i}", "title": f"News {i}", "contents": "x", "url": "https://s/x", "date": 100 - i}
+                for i in range(params["count"])
+            ]}}
+        if "notifications" in url:
+            n = {"id": "1", "unread": True, "reason": "mention", "updated_at": "2026-10-10T00:00:00Z",
+                 "subject": {"title": "T", "type": "Issue", "url": None},
+                 "repository": {"full_name": "a/b", "html_url": "https://github.com/a/b"}}
+            return [dict(n, id=str(i)) for i in range(20)]
+        raise AssertionError(url)
+
+    def get(self, url, **params):
+        with mock.patch("api.integrations._get_json", side_effect=self.fake_get_json):
+            return self.client.get(url, params)
+
+    def test_friends_filter_and_limit(self):
+        names = lambda r: [f["name"] for f in r.data]
+        self.assertEqual(names(self.get("/api/widgets/steam/friends")), ["Joueur", "EnLigne", "Absent", "Parti"])
+        self.assertEqual(names(self.get("/api/widgets/steam/friends", show="online")), ["Joueur", "EnLigne", "Absent"])
+        self.assertEqual(names(self.get("/api/widgets/steam/friends", show="in_game")), ["Joueur"])
+        self.assertEqual(names(self.get("/api/widgets/steam/friends", limit=2)), ["Joueur", "EnLigne"])
+        self.assertEqual(self.get("/api/widgets/steam/friends", show="nope").status_code, 400)
+        self.assertEqual(self.get("/api/widgets/steam/friends", limit=0).status_code, 400)
+
+    def test_updates_count_and_game(self):
+        r = self.get("/api/widgets/steam/updates", count=1)
+        self.assertEqual(len(r.data), 1)
+        r = self.get("/api/widgets/steam/updates", game="counter", count=3)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([n["app_id"] for n in r.data], [730, 730, 730])
+        self.assertEqual(len({n["id"] for n in r.data}), 3)
+        r = self.get("/api/widgets/steam/updates", game="Half-Life 3")
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.data["error"], "Game 'Half-Life 3' not found in your library.")
+
+    def test_notifications_count_and_filter(self):
+        r = self.get("/api/widgets/github/notifications", count=5)
+        self.assertEqual(len(r.data), 5)
+        self.get("/api/widgets/github/notifications", filter="all")
+        self.get("/api/widgets/github/notifications", filter="participating")
+        sent = [p for u, p in self.calls if "notifications" in u]
+        self.assertNotIn("all", sent[0])
+        self.assertEqual(sent[1].get("all"), "true")
+        self.assertEqual(sent[2].get("participating"), "true")
+        self.assertEqual(self.get("/api/widgets/github/notifications", filter="x").status_code, 400)
+
+    def test_about_json_lists_the_new_params(self):
+        services = {s["name"]: s for s in self.client.get("/about.json").json()["server"]["services"]}
+        for service in services.values():
+            for widget in service["widgets"]:
+                self.assertTrue(widget["params"], widget["name"])
+
+
+class NewSteamWidgetsTests(TestCase):
+    GAMES = [
+        {"appid": 367520, "name": "Hollow Knight", "rtime_last_played": 10},
+        {"appid": 570, "name": "Dota 2", "rtime_last_played": 20},
+    ]
+
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user("fred", "fred@example.com", "Motdepasse!42")
+        UserProfile.objects.create(user=self.user, language="fr")
+        UserApiInfo.objects.create(user=self.user, steam_id="76561198000000000", steam_friends_api_key="k")
+        self.client = APIClient(SERVER_NAME="localhost")
+        self.client.force_login(self.user)
+        self.calls = []
+
+    def fake(self, url, params=None, headers=None):
+        self.calls.append((url, params or {}))
+        if "GetOwnedGames" in url:
+            return {"response": {"games": [dict(g) for g in self.GAMES]}}
+        if "GetPlayerAchievements" in url:
+            if params["appid"] == 570:
+                raise integrations.IntegrationError("Upstream returned HTTP 400.")
+            return {"playerstats": {"success": True, "achievements": [
+                {"apiname": "A", "achieved": 1, "unlocktime": 100, "name": "Premier", "description": "d"},
+                {"apiname": "B", "achieved": 0, "unlocktime": 0, "name": "Deuxième", "description": "d"},
+                {"apiname": "C", "achieved": 1, "unlocktime": 300, "name": "Troisième", "description": "d"},
+            ]}}
+        if "GetSchemaForGame" in url:
+            return {"game": {"availableGameStats": {"achievements": [
+                {"name": n, "displayName": n, "icon": f"https://i/{n}.jpg", "icongray": f"https://i/{n}_g.jpg", "hidden": 0}
+                for n in ("A", "B", "C")
+            ]}}}
+        if "featuredcategories" in url:
+            return {"specials": {"items": [
+                {"id": 1, "name": "Petite promo", "discounted": True, "original_price": 1000, "final_price": 900,
+                 "currency": "EUR", "header_image": "https://h/1.jpg", "discount_expiration": 5},
+                {"id": 2, "name": "Grosse promo", "discounted": True, "original_price": 4000, "final_price": 1000,
+                 "currency": "EUR", "header_image": "https://h/2.jpg", "discount_expiration": 5},
+                {"id": 2, "name": "Grosse promo", "discounted": True, "original_price": 4000, "final_price": 1000,
+                 "currency": "EUR", "header_image": "https://h/2.jpg"},
+                {"id": 3, "name": "Pas en promo", "discounted": False, "original_price": 2000, "final_price": 2000,
+                 "currency": "EUR", "header_image": "https://h/3.jpg"},
+            ]}}
+        if "storesearch" in url:
+            term = params["term"].lower()
+            if "hollow" in term:
+                return {"items": [{"type": "app", "id": 367520, "name": "Hollow Knight",
+                                   "price": {"currency": "USD" if params["cc"] == "us" else "EUR", "initial": 1479, "final": 739}}]}
+            if "dota" in term:
+                return {"items": [{"type": "app", "id": 570, "name": "Dota 2"}]}
+            return {"total": 0, "items": []}
+        raise AssertionError(url)
+
+    def get(self, url, **params):
+        with mock.patch("api.integrations._get_json", side_effect=self.fake):
+            return self.client.get(url, params)
+
+    def test_achievements_recent_and_locked(self):
+        r = self.get("/api/widgets/steam/achievements", game="hollow")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual((r.data["total"], r.data["unlocked"]), (3, 2))
+        self.assertEqual([a["name"] for a in r.data["achievements"]], ["Troisième", "Premier"])
+        self.assertEqual(r.data["achievements"][0]["icon"], "https://i/C.jpg")
+        r = self.get("/api/widgets/steam/achievements", game="hollow", show="locked")
+        self.assertEqual([(a["name"], a["icon"]) for a in r.data["achievements"]], [("Deuxième", "https://i/B_g.jpg")])
+        r = self.get("/api/widgets/steam/achievements", game="hollow", count=1)
+        self.assertEqual(len(r.data["achievements"]), 1)
+        # Names asked in the user's language
+        self.assertEqual(next(p for u, p in self.calls if "GetPlayerAchievements" in u)["l"], "french")
+
+    def test_achievements_errors(self):
+        self.assertEqual(self.get("/api/widgets/steam/achievements").data["error"], "Game is not configured.")
+        self.assertEqual(self.get("/api/widgets/steam/achievements", game="Portal 3").data["error"],
+                         "Game 'Portal 3' not found in your library.")
+        self.assertEqual(self.get("/api/widgets/steam/achievements", game="dota").data["error"],
+                         "This game has no achievements.")
+
+    def test_specials_sorted_deduplicated_and_cut(self):
+        r = self.get("/api/widgets/steam/deals")
+        self.assertEqual([d["name"] for d in r.data], ["Grosse promo", "Petite promo"])
+        self.assertEqual(r.data[0]["discount_percent"], 75)
+        self.assertEqual(len(self.get("/api/widgets/steam/deals", count=1).data), 1)
+
+    def test_watchlist_prices(self):
+        r = self.get("/api/widgets/steam/deals", games="Hollow Knight, Dota 2", country="us")
+        self.assertEqual(r.status_code, 200)
+        hk, dota = r.data
+        self.assertEqual((hk["currency"], hk["final_price"], hk["discount_percent"]), ("USD", 739, 50))
+        self.assertTrue(dota["is_free"])
+        self.assertEqual(self.get("/api/widgets/steam/deals", games="zzz").data["error"],
+                         "Game 'zzz' not found on the Steam store.")
+        self.assertEqual(self.get("/api/widgets/steam/deals", country="xx").status_code, 400)

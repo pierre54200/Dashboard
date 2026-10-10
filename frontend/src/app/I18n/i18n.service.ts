@@ -20,6 +20,9 @@ const API_ERRORS: [RegExp, TranslationKey][] = [
   [/^Upstream returned invalid JSON\.$/, "api.invalid_json"],
   [/^(.+) is not configured\.$/, "api.not_configured"],
   [/^City '(.+)' not found\.$/, "api.city_not_found"],
+  [/^Game '(.+)' not found in your library\.$/, "api.game_not_found"],
+  [/^Game '(.+)' not found on the Steam store\.$/, "api.store_game_not_found"],
+  [/^This game has no achievements\.$/, "api.no_achievements"],
   [/^Game library is empty or its details are private\.$/, "api.library_private"],
   [/^Repository must look like 'owner\/name'\.$/, "api.repo_format"],
   // Validation des formulaires (serializers DRF)

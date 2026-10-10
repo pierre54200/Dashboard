@@ -71,15 +71,17 @@ Un seul écran pour suivre ce qui vous intéresse, au lieu d'ouvrir dix onglets.
 | Service | Widget (`about.json`) | Ce qu'il affiche | Paramètres du widget | Prérequis |
 | --- | --- | --- | --- | --- |
 | Météo | `current_weather` | Température, ressenti, minimum et maximum du jour, humidité, vent | `city` (string) | Aucun |
-| Steam | `friends_activity` | Amis en jeu, en ligne ou vus récemment | Aucun pour l'instant | Steam ID et clé d'API |
-| Steam | `latest_updates` | Dernières annonces des jeux joués récemment | Aucun pour l'instant | Steam ID et clé d'API |
+| Steam | `friends_activity` | Amis en jeu, en ligne ou vus récemment | `limit` (integer, 1 à 50), `show` (string : `all`, `online` ou `in_game`) | Steam ID et clé d'API |
+| Steam | `latest_updates` | Dernières annonces des jeux joués récemment, ou d'un jeu précis | `count` (integer, 1 à 10), `game` (string, facultatif : nom d'un jeu de la bibliothèque) | Steam ID et clé d'API |
 | Steam | `monthly_playtime` | Jeux les plus joués depuis le début du mois | `count` (integer, 1 à 10) | Steam ID et clé d'API, détails de jeu publics |
-| GitHub | `notifications` | Notifications : pull requests, issues, mentions | Aucun pour l'instant | Token GitHub (scope `notifications`) |
+| Steam | `achievements` | Progression des succès d'un jeu : derniers débloqués ou restants | `game` (string, obligatoire), `show` (string : `recent` ou `locked`), `count` (integer, 1 à 20) | Steam ID et clé d'API, détails de jeu publics |
+| Steam | `deals` | Meilleures promos du magasin Steam, ou prix et réduction des jeux surveillés | `games` (string, facultatif : jusqu'à 5 noms séparés par des virgules), `country` (string : `fr`, `us`, `gb`, `ch`, `ca` ou `jp`), `count` (integer, 1 à 10) | Aucun (API publique du magasin) |
+| GitHub | `notifications` | Notifications : pull requests, issues, mentions | `count` (integer, 1 à 50), `filter` (string : `unread`, `all` ou `participating`) | Token GitHub (scope `notifications`) ou connexion avec GitHub |
 | GitHub | `recent_commits` | Derniers commits d'un dépôt | `repo` (string), `count` (integer, 1 à 20) | Aucun pour un dépôt public, token pour un dépôt privé |
 
 Tous les widgets ont aussi une fréquence d'actualisation (de 30 secondes à 30 minutes) et un nom affiché personnalisable.
 
-Sources des données : [Open-Meteo](https://open-meteo.com) pour la météo, la [Steam Web API](https://steamcommunity.com/dev) et l'[API REST de GitHub](https://docs.github.com/rest).
+Sources des données : [Open-Meteo](https://open-meteo.com) pour la météo, la [Steam Web API](https://steamcommunity.com/dev) et l'API du magasin Steam et l'[API REST de GitHub](https://docs.github.com/rest).
 
 ## Installation
 

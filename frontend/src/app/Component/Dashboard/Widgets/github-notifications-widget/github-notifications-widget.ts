@@ -1,4 +1,4 @@
-import { Component, computed } from "@angular/core";
+import { Component, computed, input } from "@angular/core";
 import { PollingWidget } from "../polling-widget";
 import { IGithubNotification } from "../../../../Interface/Widget/widget.interface";
 import { RelativeTimePipe } from "../../../../Pipe/relative-time.pipe";
@@ -21,10 +21,21 @@ const TYPES: Record<string, { label: string; css: string }> = {
   styleUrls: ["../widget-shared.css", "./github-notifications-widget.css"],
 })
 export class GithubNotificationsWidget extends PollingWidget<IGithubNotification[]> {
+  /** Nombre de notifications (1 à 50). */
+  count = input<number>(10);
+  /** unread, all ou participating */
+  filter = input<"unread" | "all" | "participating">("unread");
+
   unread = computed(() => (this.data() ?? []).filter((n) => n.unread).length);
 
+  protected override trackInputs(): void {
+    this.count();
+    this.filter();
+  }
+
   protected fetch(force: boolean) {
-    return this.api.githubNotifications(force);
+    const count = Math.min(50, Math.max(1, Math.round(Number(this.count()) || 10)));
+    return this.api.githubNotifications(count, this.filter(), force);
   }
 
   reason(n: IGithubNotification): string {

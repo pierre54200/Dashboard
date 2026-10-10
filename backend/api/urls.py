@@ -22,6 +22,8 @@ from .widget_views import (
     widget_avatars,
     widget_github_commits,
     widget_github_notifications,
+    widget_steam_achievements,
+    widget_steam_deals,
     widget_steam_friends,
     widget_steam_monthly_playtime,
     widget_steam_updates,
@@ -54,5 +56,7 @@ urlpatterns = [
     path('widgets/steam/updates', widget_steam_updates, name='widget_steam_updates'),
     path('widgets/github/notifications', widget_github_notifications, name='widget_github_notifications'),
     path('widgets/github/commits', widget_github_commits, name='widget_github_commits'),
+    path('widgets/steam/achievements', widget_steam_achievements, name='widget_steam_achievements'),
+    path('widgets/steam/deals', widget_steam_deals, name='widget_steam_deals'),
     path('widgets/steam/monthly-playtime', widget_steam_monthly_playtime, name='widget_steam_monthly_playtime'),
 ]

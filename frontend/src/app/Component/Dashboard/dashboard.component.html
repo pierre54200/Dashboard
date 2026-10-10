@@ -60,6 +60,8 @@
               }
               @case ('steam_friends') {
                 <app-steam-friends-widget
+                  [limit]="$any(w.params['limit'] ?? 10)"
+                  [show]="$any(w.params['show'] ?? 'all')"
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"
@@ -68,6 +70,8 @@
               }
               @case ('steam_updates') {
                 <app-steam-updates-widget
+                  [count]="$any(w.params['count'] ?? 5)"
+                  [game]="$any(w.params['game'] ?? '')"
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"
@@ -77,6 +81,28 @@
               @case ('steam_playtime') {
                 <app-steam-playtime-widget
                   [count]="$any(w.params['count'] ?? 3)"
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
+                />
+              }
+              @case ('steam_achievements') {
+                <app-steam-achievements-widget
+                  [game]="$any(w.params['game'] ?? '')"
+                  [show]="$any(w.params['show'] ?? 'recent')"
+                  [count]="$any(w.params['count'] ?? 6)"
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                  (busy)="onBusy(w, $event)"
+                />
+              }
+              @case ('steam_deals') {
+                <app-steam-deals-widget
+                  [games]="$any(w.params['games'] ?? '')"
+                  [country]="$any(w.params['country'] ?? 'fr')"
+                  [count]="$any(w.params['count'] ?? 5)"
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"
@@ -95,6 +121,8 @@
               }
               @case ('github_notifications') {
                 <app-github-notifications-widget
+                  [count]="$any(w.params['count'] ?? 10)"
+                  [filter]="$any(w.params['filter'] ?? 'unread')"
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"
@@ -187,7 +215,7 @@
           <input class="input" type="text" name="repo" [(ngModel)]="newRepo" [placeholder]="'dialog.repo_placeholder' | t" autocomplete="off" spellcheck="false" />
           <span class="field-hint">{{ 'dialog.repo_hint' | t }}</span>
         </label>
-      } @else {
+      } @else if (!definition(selectedType()).noAccount) {
         <p class="hint">
           {{ 'dialog.uses_settings.before' | t }}
           <button type="button" class="link-btn" (click)="closeAddDialog(); settings()">{{ 'common.settings' | t }}</button>
@@ -195,10 +223,31 @@
         </p>
       }
 
+      @if (definition(selectedType()).text; as txt) {
+        <label class="field">
+          <span class="label">{{ txt.label | t }}</span>
+          <input class="input" type="text" name="text" [(ngModel)]="newText" [placeholder]="txt.placeholder | t"
+            [attr.maxlength]="txt.param === 'games' ? 300 : 100" [required]="!!txt.required" autocomplete="off" />
+          <span class="field-hint">{{ txt.hint | t }}</span>
+        </label>
+      }
+
+      @if (definition(selectedType()).choice; as ch) {
+        <label class="field">
+          <span class="label">{{ ch.label | t }}</span>
+          <select class="input" name="choice" [(ngModel)]="newChoice">
+            @for (o of ch.options; track o.value) {
+              <option [ngValue]="o.value">{{ o.label | t }}</option>
+            }
+          </select>
+        </label>
+      }
+
       @if (definition(selectedType()).count; as c) {
         <label class="field">
           <span class="label">{{ c.label | t }}</span>
           <input class="input" type="number" name="count" [(ngModel)]="newCount" [min]="c.min" [max]="c.max" step="1" />
+          <span class="field-hint">{{ 'dialog.count_hint' | t: { min: c.min, max: c.max } }}</span>
         </label>
       }
 
@@ -217,7 +266,7 @@
 
     <footer class="dialog-footer">
       <button type="button" class="btn-cancel" (click)="closeAddDialog()">{{ 'common.cancel' | t }}</button>
-      <button type="submit" class="btn btn-primary" [disabled]="(selectedType() === 'weather' && !newCity.trim()) || (selectedType() === 'github_commits' && !newRepo.trim())">
+      <button type="submit" class="btn btn-primary" [disabled]="missingRequired()">
         {{ (editingId() === null ? 'dialog.add.submit' : 'common.save') | t }}
       </button>
     </footer>

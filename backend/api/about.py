@@ -22,17 +22,41 @@ SERVICES = [
             {
                 "name": "friends_activity",
                 "description": "Friends currently in game, online, or last seen",
-                "params": [{"name": "limit", "type": "integer"}],
+                "params": [
+                    {"name": "limit", "type": "integer"},
+                    {"name": "show", "type": "string"},
+                ],
             },
             {
                 "name": "latest_updates",
-                "description": "Latest news for your recently played games",
-                "params": [{"name": "count", "type": "integer"}],
+                "description": "Latest news for your recently played games, or for one game",
+                "params": [
+                    {"name": "count", "type": "integer"},
+                    {"name": "game", "type": "string"},
+                ],
             },
             {
                 "name": "monthly_playtime",
                 "description": "Most played games this month",
                 "params": [{"name": "count", "type": "integer"}],
+            },
+            {
+                "name": "achievements",
+                "description": "Achievement progress for one game: last unlocked or still to get",
+                "params": [
+                    {"name": "game", "type": "string"},
+                    {"name": "show", "type": "string"},
+                    {"name": "count", "type": "integer"},
+                ],
+            },
+            {
+                "name": "deals",
+                "description": "Current Steam store specials, or the price and discount of chosen games",
+                "params": [
+                    {"name": "games", "type": "string"},
+                    {"name": "country", "type": "string"},
+                    {"name": "count", "type": "integer"},
+                ],
             },
         ],
     },
@@ -42,7 +66,10 @@ SERVICES = [
             {
                 "name": "notifications",
                 "description": "Your latest GitHub notifications",
-                "params": [{"name": "count", "type": "integer"}],
+                "params": [
+                    {"name": "count", "type": "integer"},
+                    {"name": "filter", "type": "string"},
+                ],
             },
             {
                 "name": "recent_commits",

@@ -5,8 +5,12 @@ import { WidgetService } from '../../../Service/Widget/widget.service';
 import { IIntegrations, IIntegrationsUpdate } from '../../../Interface/Widget/widget.interface';
 import { TranslatePipe } from '../../../I18n/translate.pipe';
 import { I18nService } from '../../../I18n/i18n.service';
+import { WIDGET_CATALOG } from '../../Dashboard/dashboard.component';
 
 type ServiceId = 'weather' | 'steam' | 'github';
+
+/** Nombre de widgets de chaque service, d'après le catalogue du dashboard. */
+const widgetCount = (id: ServiceId) => WIDGET_CATALOG.filter((d) => d.service === `service.${id}`).length;
 
 interface ServiceItem {
   id: ServiceId;
@@ -42,7 +46,7 @@ export class ServicesSection implements OnInit {
         id: 'weather',
         name: this.i18n.t('service.weather'),
         description: this.i18n.t('services.weather.desc'),
-        widgets: 1,
+        widgets: widgetCount('weather'),
         byDefault: true,
         configured: true,
         account: i?.weather_city ? this.i18n.t('services.weather.account', { city: i.weather_city }) : undefined,
@@ -51,7 +55,7 @@ export class ServicesSection implements OnInit {
         id: 'steam',
         name: 'Steam',
         description: this.i18n.t('services.steam.desc'),
-        widgets: 2,
+        widgets: widgetCount('steam'),
         byDefault: false,
         configured: steamOk,
         account: i?.steam_id ? `Steam ID ${i.steam_id}` : undefined,
@@ -60,7 +64,7 @@ export class ServicesSection implements OnInit {
         id: 'github',
         name: 'GitHub',
         description: this.i18n.t('services.github.desc'),
-        widgets: 1,
+        widgets: widgetCount('github'),
         byDefault: false,
         configured: !!i?.has_github_token,
         account: i?.has_github_token ? this.i18n.t('services.github.account') : undefined,

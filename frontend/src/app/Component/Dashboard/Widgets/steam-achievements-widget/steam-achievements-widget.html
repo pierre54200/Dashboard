@@ -1,0 +1,53 @@
+@if (data(); as d) {
+  <div class="progress-head">
+    <img class="cover" [src]="d.header_image" alt="" width="92" height="43" loading="lazy" (error)="hideImage($event)" />
+    <div class="row-main">
+      <p class="row-title">{{ d.game }}</p>
+      <p class="row-sub">{{ 'achievements.progress' | t: { unlocked: d.unlocked, total: d.total, percent: percent() } }}</p>
+      <div class="bar" role="progressbar" [attr.aria-valuenow]="percent()" aria-valuemin="0" aria-valuemax="100"
+        [attr.aria-label]="'achievements.progress_label' | t">
+        <span class="fill" [class.complete]="percent() === 100" [style.width.%]="percent()"></span>
+      </div>
+    </div>
+  </div>
+
+  <p class="section-label">{{ (show() === 'locked' ? 'achievements.title.locked' : 'achievements.title.recent') | t }}</p>
+
+  @if (d.achievements.length) {
+    <ul class="list">
+      @for (a of d.achievements; track a.api_name) {
+        <li>
+          <a class="item" [href]="statsUrl(d)" target="_blank" rel="noopener noreferrer" [title]="describe(a)">
+            @if (a.icon) {
+              <img class="icon" [class.locked]="!a.unlocked" [src]="a.icon" alt="" width="32" height="32" loading="lazy" />
+            } @else {
+              <span class="icon placeholder" aria-hidden="true"></span>
+            }
+            <span class="row-main">
+              <span class="row-title" [class.locked]="!a.unlocked">{{ a.name }}</span>
+              @if (a.unlocked && a.unlock_time) {
+                <span class="row-sub unlocked">{{ 'achievements.unlocked_when' | t: { when: (a.unlock_time | relativeTime) } }}</span>
+              } @else {
+                <span class="row-sub">{{ describe(a) }}</span>
+              }
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="state">
+      {{ (show() === 'locked' ? 'achievements.empty.locked' : 'achievements.empty.recent') | t }}
+    </div>
+  }
+} @else if (error()) {
+  <div class="state error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="retry" (click)="load(true)">{{ 'common.retry' | t }}</button>
+  </div>
+} @else {
+  <div class="state" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>{{ 'achievements.loading' | t }}</span>
+  </div>
+}

@@ -1,7 +1,7 @@
 @if (data(); as news) {
   @if (news.length) {
     <ul class="list">
-      @for (n of news; track n.app_id) {
+      @for (n of news; track n.id) {
         <li>
           <a class="item news" [href]="n.url" target="_blank" rel="noopener noreferrer">
             <img class="thumb" [src]="n.header_image" alt="" width="92" height="43" loading="lazy" (error)="hideImage($event)" />
@@ -16,7 +16,7 @@
       }
     </ul>
   } @else {
-    <div class="state">{{ 'updates.empty' | t }}</div>
+    <div class="state">{{ (game() ? 'updates.empty_game' : 'updates.empty') | t }}</div>
   }
 } @else if (error()) {
   <div class="state error" role="alert">

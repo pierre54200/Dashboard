@@ -48,6 +48,8 @@ export interface ISteamFriend {
 }
 
 export interface ISteamUpdate {
+  /** Identifiant unique de l'annonce (plusieurs annonces peuvent venir du même jeu) */
+  id: string;
   app_id: number;
   game: string;
   header_image: string;
@@ -90,6 +92,46 @@ export interface ISteamMonthlyPlaytime {
   month: string;
   tracked_since: string;
   games: ISteamMonthlyGame[];
+}
+
+/** GET /api/widgets/steam/achievements */
+export interface ISteamAchievement {
+  api_name: string;
+  name: string;
+  description: string;
+  /** Icône en couleur si débloqué, grisée sinon */
+  icon: string | null;
+  unlocked: boolean;
+  /** Timestamp Unix */
+  unlock_time: number | null;
+  /** Succès secret : la description peut être vide */
+  hidden: boolean;
+}
+
+export interface ISteamAchievements {
+  app_id: number;
+  game: string;
+  header_image: string;
+  /** Sur tout le jeu, quel que soit le filtre */
+  total: number;
+  unlocked: number;
+  achievements: ISteamAchievement[];
+}
+
+/** GET /api/widgets/steam/deals */
+export interface ISteamDeal {
+  app_id: number;
+  name: string;
+  image: string;
+  url: string;
+  currency: string | null;
+  /** En centimes, null pour un jeu gratuit */
+  original_price: number | null;
+  final_price: number | null;
+  discount_percent: number;
+  /** Timestamp Unix de fin de promo (promos du moment uniquement) */
+  discount_expiration: number | null;
+  is_free: boolean;
 }
 
 export interface IAvatars {

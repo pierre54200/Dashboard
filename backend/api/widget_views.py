@@ -6,13 +6,15 @@ from rest_framework.response import Response
 
 from . import integrations
 from .integrations import IntegrationError
-from .models import UserApiInfo
+from .models import UserApiInfo, UserProfile
 from .serializer import (
     AvatarsSerializer,
     ErrorSerializer,
     GithubCommitSerializer,
     GithubNotificationSerializer,
     SteamFriendSerializer,
+    SteamAchievementsSerializer,
+    SteamDealSerializer,
     SteamMonthlyPlaytimeSerializer,
     SteamUpdateSerializer,
     WeatherResponseSerializer,
@@ -33,6 +35,31 @@ def _errors(not_configured):
 def _info(request):
     info, _ = UserApiInfo.objects.get_or_create(user=request.user)
     return info
+
+
+def _int_param(request, name, default, lo, hi):
+    raw = request.query_params.get(name)
+    if raw in (None, ""):
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        raise IntegrationError(f"'{name}' must be an integer.", 400)
+    if not lo <= value <= hi:
+        raise IntegrationError(f"'{name}' must be between {lo} and {hi}.", 400)
+    return value
+
+
+def _choice_param(request, name, choices):
+    """First choice is the default."""
+    value = request.query_params.get(name) or choices[0]
+    if value not in choices:
+        raise IntegrationError(f"'{name}' must be one of: {', '.join(choices)}.", 400)
+    return value
+
+
+def _text_param(request, name, max_length=100):
+    return (request.query_params.get(name) or "").strip()[:max_length]
 
 
 def _run(request, fn):
@@ -95,7 +122,12 @@ def widget_weather(request):
 @extend_schema(
     tags=WIDGETS,
     summary="Steam friends activity",
-    description="Friends sorted: in game, online, then last seen. Needs a public friends list. Cached 1 min.",
+    description="Params: `limit` (1-50, default 10), `show` (`all`, `online` or `in_game`, default `all`). "
+                "Friends sorted: in game, online, then last seen. Needs a public friends list. Cached 1 min.",
+    parameters=[
+        OpenApiParameter("limit", int, required=False, description="1-50, default 10"),
+        OpenApiParameter("show", str, required=False, enum=["all", "online", "in_game"], description="default all"),
+    ],
     responses={200: SteamFriendSerializer(many=True), 400: ErrorSerializer, 502: ErrorSerializer},
     examples=[
         OpenApiExample(
@@ -131,20 +163,31 @@ def widget_weather(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def widget_steam_friends(request):
-    return _run(request, lambda: integrations.get_steam_friends(_info(request)))
+    def run():
+        limit = _int_param(request, "limit", 10, 1, 50)
+        show = _choice_param(request, "show", integrations.FRIEND_FILTERS)
+        return integrations.get_steam_friends(_info(request), limit, show)
+    return _run(request, run)
 
 
 @login_not_required
 @extend_schema(
     tags=WIDGETS,
     summary="Latest news/updates for recently played library games",
-    description="Newest announcement across the user's most recently played games. Cached 15 min.",
+    description="Params: `count` (1-10, default 5), `game` (optional, name or part of the name of a game in "
+                "the library). Without `game`: newest announcement of each recently played game. With `game`: "
+                "the latest announcements of that game. Cached 15 min.",
+    parameters=[
+        OpenApiParameter("count", int, required=False, description="1-10, default 5"),
+        OpenApiParameter("game", str, required=False, description="e.g. Counter-Strike 2"),
+    ],
     responses={200: SteamUpdateSerializer(many=True), 400: ErrorSerializer, 502: ErrorSerializer},
     examples=[
         OpenApiExample(
             "Success",
             value=[
                 {
+                    "id": "5123456789012345678",
                     "app_id": 730,
                     "game": "Counter-Strike 2",
                     "header_image": "https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg",
@@ -163,14 +206,23 @@ def widget_steam_friends(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def widget_steam_updates(request):
-    return _run(request, lambda: integrations.get_steam_updates(_info(request)))
+    def run():
+        count = _int_param(request, "count", 5, 1, 10)
+        return integrations.get_steam_updates(_info(request), count, _text_param(request, "game"))
+    return _run(request, run)
 
 
 @login_not_required
 @extend_schema(
     tags=WIDGETS,
     summary="GitHub notifications",
-    description="Unread notifications for the saved token. Cached 1 min.",
+    description="Params: `count` (1-50, default 10), `filter` (`unread`, `all` or `participating`, "
+                "default `unread`). Uses the saved token (or the one from the GitHub login). Cached 1 min.",
+    parameters=[
+        OpenApiParameter("count", int, required=False, description="1-50, default 10"),
+        OpenApiParameter("filter", str, required=False, enum=["unread", "all", "participating"],
+                         description="default unread"),
+    ],
     responses={200: GithubNotificationSerializer(many=True), 400: ErrorSerializer, 502: ErrorSerializer},
     examples=[
         OpenApiExample(
@@ -196,20 +248,11 @@ def widget_steam_updates(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def widget_github_notifications(request):
-    return _run(request, lambda: integrations.get_github_notifications(_info(request).github_token))
-
-
-def _int_param(request, name, default, lo, hi):
-    raw = request.query_params.get(name)
-    if raw in (None, ""):
-        return default
-    try:
-        value = int(raw)
-    except ValueError:
-        raise IntegrationError(f"'{name}' must be an integer.", 400)
-    if not lo <= value <= hi:
-        raise IntegrationError(f"'{name}' must be between {lo} and {hi}.", 400)
-    return value
+    def run():
+        count = _int_param(request, "count", 10, 1, 50)
+        flt = _choice_param(request, "filter", integrations.NOTIFICATION_FILTERS)
+        return integrations.get_github_notifications(_info(request).github_token, count, flt)
+    return _run(request, run)
 
 
 @login_not_required
@@ -250,6 +293,100 @@ def widget_steam_monthly_playtime(request):
         return integrations.get_steam_monthly_playtime(_info(request), count)
     return _run(request, run)
 
+
+
+@login_not_required
+@extend_schema(
+    tags=WIDGETS,
+    summary="Achievements of one game",
+    description="Params: `game` (required, name or part of the name of a game in the library), "
+                "`show` (`recent`: last unlocked, or `locked`: still to get; default `recent`), "
+                "`count` (1-20, default 6). `total` and `unlocked` always cover the whole game. "
+                "Names are in the user's language when available. Needs public game details. Cached 10 min.",
+    parameters=[
+        OpenApiParameter("game", str, required=True, description="e.g. Hollow Knight"),
+        OpenApiParameter("show", str, required=False, enum=["recent", "locked"], description="default recent"),
+        OpenApiParameter("count", int, required=False, description="1-20, default 6"),
+    ],
+    responses={200: SteamAchievementsSerializer, 400: ErrorSerializer, 502: ErrorSerializer},
+    examples=[
+        OpenApiExample(
+            "Success",
+            value={
+                "app_id": 367520, "game": "Hollow Knight",
+                "header_image": "https://cdn.cloudflare.steamstatic.com/steam/apps/367520/header.jpg",
+                "total": 63, "unlocked": 21,
+                "achievements": [{
+                    "api_name": "FALSE_KNIGHT", "name": "Test of Resolve", "description": "Defeat the False Knight",
+                    "icon": "https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/367520/x.jpg",
+                    "unlocked": True, "unlock_time": 1759800000, "hidden": False,
+                }],
+            },
+            response_only=True, status_codes=["200"],
+        ),
+        OpenApiExample("No achievements", value={"error": "This game has no achievements."},
+                       response_only=True, status_codes=["400"]),
+        *_errors("Steam ID is not configured."),
+    ],
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def widget_steam_achievements(request):
+    def run():
+        show = _choice_param(request, "show", integrations.ACHIEVEMENT_FILTERS)
+        count = _int_param(request, "count", 6, 1, 20)
+        profile = UserProfile.objects.filter(user=request.user).first()
+        data = integrations.get_steam_achievements(
+            _info(request), _text_param(request, "game"), profile.language if profile else "fr",
+        )
+        items = data["achievements"]
+        if show == "recent":
+            items = sorted((a for a in items if a["unlocked"]), key=lambda a: a["unlock_time"] or 0, reverse=True)
+        else:
+            items = [a for a in items if not a["unlocked"]]
+        return {**data, "achievements": items[:count]}
+    return _run(request, run)
+
+
+@login_not_required
+@extend_schema(
+    tags=WIDGETS,
+    summary="Steam store specials, or the price of chosen games",
+    description="Params: `games` (optional, up to 5 names separated by commas), `country` (`fr`, `us`, `gb`, "
+                "`ch`, `ca` or `jp`, default `fr`: sets the currency), `count` (1-10, default 5). Without "
+                "`games`: the biggest discounts of the moment. Prices are in cents (null for a free game). "
+                "Public store API, no Steam account needed. Cached 30 min.",
+    parameters=[
+        OpenApiParameter("games", str, required=False, description="e.g. Hollow Knight, Hades"),
+        OpenApiParameter("country", str, required=False, enum=list(integrations.STORE_COUNTRIES),
+                         description="default fr"),
+        OpenApiParameter("count", int, required=False, description="1-10, default 5"),
+    ],
+    responses={200: SteamDealSerializer(many=True), 400: ErrorSerializer, 502: ErrorSerializer},
+    examples=[
+        OpenApiExample(
+            "Success",
+            value=[{
+                "app_id": 1091500, "name": "Cyberpunk 2077",
+                "image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1091500/header.jpg",
+                "url": "https://store.steampowered.com/app/1091500/", "currency": "EUR",
+                "original_price": 5999, "final_price": 1799, "discount_percent": 70,
+                "discount_expiration": 1791478800, "is_free": False,
+            }],
+            response_only=True, status_codes=["200"],
+        ),
+        OpenApiExample("Unknown game", value={"error": "Game 'Hollow Knigt 3' not found on the Steam store."},
+                       response_only=True, status_codes=["400"]),
+    ],
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def widget_steam_deals(request):
+    def run():
+        country = _choice_param(request, "country", integrations.STORE_COUNTRIES)
+        count = _int_param(request, "count", 5, 1, 10)
+        return integrations.get_steam_deals(_text_param(request, "games", 300), country, count)
+    return _run(request, run)
 
 
 @login_not_required

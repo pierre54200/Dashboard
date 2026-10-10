@@ -8,6 +8,8 @@ import {
   IIntegrationsUpdate,
   IGithubCommit,
   IGithubNotification,
+  ISteamAchievements,
+  ISteamDeal,
   ISteamMonthlyPlaytime,
   ISteamFriend,
   ISteamUpdate,
@@ -39,16 +41,28 @@ export class WidgetService {
     return this.widget<IWeather>("weather", { city }, force);
   }
 
-  steamFriends(force = false): Observable<ISteamFriend[]> {
-    return this.widget<ISteamFriend[]>("steam/friends", {}, force);
+  /** `show` : all, online ou in_game. */
+  steamFriends(limit?: number, show?: string, force = false): Observable<ISteamFriend[]> {
+    return this.widget<ISteamFriend[]>("steam/friends", { limit, show }, force);
   }
 
-  steamUpdates(force = false): Observable<ISteamUpdate[]> {
-    return this.widget<ISteamUpdate[]>("steam/updates", {}, force);
+  /** `game` vide : la dernière annonce de chaque jeu joué récemment. */
+  steamUpdates(count?: number, game?: string, force = false): Observable<ISteamUpdate[]> {
+    return this.widget<ISteamUpdate[]>("steam/updates", { count, game }, force);
   }
 
   steamMonthlyPlaytime(count?: number, force = false): Observable<ISteamMonthlyPlaytime> {
     return this.widget<ISteamMonthlyPlaytime>("steam/monthly-playtime", { count }, force);
+  }
+
+  /** `show` : recent (derniers débloqués) ou locked (restants). */
+  steamAchievements(game: string, show?: string, count?: number, force = false): Observable<ISteamAchievements> {
+    return this.widget<ISteamAchievements>("steam/achievements", { game, show, count }, force);
+  }
+
+  /** `games` vide : les meilleures promos du moment. `country` fixe la devise. */
+  steamDeals(games?: string, country?: string, count?: number, force = false): Observable<ISteamDeal[]> {
+    return this.widget<ISteamDeal[]>("steam/deals", { games, country, count }, force);
   }
 
   /** Photos de profil Steam et GitHub pour l'en-tête des cartes. */
@@ -60,8 +74,9 @@ export class WidgetService {
     return this.widget<IGithubCommit[]>("github/commits", { repo, count }, force);
   }
 
-  githubNotifications(force = false): Observable<IGithubNotification[]> {
-    return this.widget<IGithubNotification[]>("github/notifications", {}, force);
+  /** `filter` : unread, all ou participating. */
+  githubNotifications(count?: number, filter?: string, force = false): Observable<IGithubNotification[]> {
+    return this.widget<IGithubNotification[]>("github/notifications", { count, filter }, force);
   }
 
 

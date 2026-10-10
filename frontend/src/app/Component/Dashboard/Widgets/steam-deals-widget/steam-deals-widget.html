@@ -1,0 +1,51 @@
+@if (data(); as deals) {
+  @if (deals.length) {
+    <p class="section-label">{{ (games().trim() ? 'deals.title.watch' : 'deals.title.specials') | t }}</p>
+    <ul class="list">
+      @for (d of deals; track d.app_id) {
+        <li>
+          <a class="item deal" [href]="d.url" target="_blank" rel="noopener noreferrer">
+            <img class="thumb" [src]="d.image" alt="" width="92" height="43" loading="lazy" (error)="hideImage($event)" />
+
+            <span class="row-main">
+              <span class="row-title">{{ d.name }}</span>
+              @if (d.discount_expiration) {
+                <span class="row-sub">{{ 'deals.ends' | t: { when: (d.discount_expiration | relativeTime) } }}</span>
+              } @else if (!d.is_free && !d.discount_percent) {
+                <span class="row-sub">{{ 'deals.no_discount' | t }}</span>
+              }
+            </span>
+
+            <span class="price">
+              @if (d.is_free) {
+                <span class="final">{{ 'deals.free' | t }}</span>
+              } @else {
+                @if (d.discount_percent) {
+                  <span class="discount">-{{ d.discount_percent }}%</span>
+                  <span class="prices">
+                    <span class="original">{{ price(d.original_price, d.currency) }}</span>
+                    <span class="final">{{ price(d.final_price, d.currency) }}</span>
+                  </span>
+                } @else {
+                  <span class="final">{{ price(d.final_price, d.currency) }}</span>
+                }
+              }
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="state">{{ 'deals.empty' | t }}</div>
+  }
+} @else if (error()) {
+  <div class="state error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="retry" (click)="load(true)">{{ 'common.retry' | t }}</button>
+  </div>
+} @else {
+  <div class="state" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>{{ 'deals.loading' | t }}</span>
+  </div>
+}

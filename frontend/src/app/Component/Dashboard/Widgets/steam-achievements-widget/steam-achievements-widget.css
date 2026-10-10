@@ -1,0 +1,74 @@
+:host {
+  display: block;
+}
+
+.progress-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cover {
+  flex-shrink: 0;
+  width: 92px;
+  height: 43px;
+  border-radius: 4px;
+  object-fit: cover;
+  background-color: var(--bg-input);
+}
+
+.bar {
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 3px;
+  background-color: var(--bg-input);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background-color: var(--blue);
+  transition: width 0.4s ease;
+}
+
+.fill.complete {
+  background-color: var(--green);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background-color: var(--bg-input);
+}
+
+.icon.locked {
+  opacity: 0.6;
+}
+
+.row-title.locked {
+  color: var(--text-muted);
+}
+
+.row-sub.unlocked {
+  color: var(--green);
+}
+
+@container (max-width: 240px) {
+  .cover { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill { transition: none; }
+}
+
+/* Titre et sous-titre l'un sous l'autre */
+.row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
