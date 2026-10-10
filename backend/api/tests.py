@@ -241,3 +241,56 @@ class OAuthTests(TestCase):
 
     def test_unknown_provider_is_404(self):
         self.assertEqual(self.client.get("/api/auth/facebook/login").status_code, 404)
+
+
+class PasswordChangeTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user("carol", "carol@example.com", "Ancien-Mdp42")
+        self.client = APIClient(SERVER_NAME="localhost")
+        self.client.force_login(self.user)
+
+    def post(self, **data):
+        return self.client.post("/api/users/me/password", data, format="json")
+
+    def test_change_keeps_session_and_logs_out_other_devices(self):
+        other = APIClient(SERVER_NAME="localhost")
+        other.force_login(self.user)
+        r = self.post(current_password="Ancien-Mdp42", new_password="Nouveau-Mdp42!")
+        self.assertEqual(r.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("Nouveau-Mdp42!"))
+        self.assertEqual(self.client.get("/api/users/me").status_code, 200)
+        self.assertNotEqual(other.get("/api/users/me").status_code, 200)
+
+    def test_wrong_or_missing_current_password(self):
+        self.assertIn("current_password", self.post(new_password="Nouveau-Mdp42!").data)
+        r = self.post(current_password="faux", new_password="Nouveau-Mdp42!")
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.data["current_password"][0], "Current password is incorrect.")
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("Ancien-Mdp42"))
+
+    def test_weak_password_is_refused(self):
+        for weak in ("123", "12345678", "password", "carol123"):
+            r = self.post(current_password="Ancien-Mdp42", new_password=weak)
+            self.assertEqual(r.status_code, 400, weak)
+            self.assertIn("new_password", r.data)
+
+    def test_too_many_wrong_attempts(self):
+        for _ in range(5):
+            self.post(current_password="faux", new_password="Nouveau-Mdp42!")
+        r = self.post(current_password="Ancien-Mdp42", new_password="Nouveau-Mdp42!")
+        self.assertEqual(r.status_code, 429)
+
+    def test_oauth_account_can_set_a_first_password(self):
+        oauth_user = User.objects.create_user("octo", "octo@example.com", None)
+        client = APIClient(SERVER_NAME="localhost")
+        client.force_login(oauth_user)
+        self.assertFalse(client.get("/api/users/me/profile").data["info"]["has_password"])
+        r = client.post("/api/users/me/password", {"new_password": "Premier-Mdp42!"}, format="json")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(client.get("/api/users/me/profile").data["info"]["has_password"])
+        r = APIClient(SERVER_NAME="localhost").post(
+            "/api/users/login", {"username": "octo@example.com", "password": "Premier-Mdp42!"}, format="json")
+        self.assertEqual(r.status_code, 202)

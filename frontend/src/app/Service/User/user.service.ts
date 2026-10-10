@@ -18,6 +18,14 @@ export class UserService {
     return this.http.get<IUser>(this.apiUrl + "me");
   }
 
+  /** `currentPassword` est inutile pour un compte Google/GitHub qui n'a pas encore de mot de passe. */
+  changePassword(newPassword: string, currentPassword?: string): Observable<{ has_password: boolean }> {
+    return this.http.post<{ has_password: boolean }>(this.apiUrl + "me/password", {
+      new_password: newPassword,
+      ...(currentPassword ? { current_password: currentPassword } : {}),
+    });
+  }
+
   deleteUser(): void {
     this.http.delete(this.apiUrl + "me").subscribe({
       next: (data) => {

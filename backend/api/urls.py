@@ -5,6 +5,7 @@ from .views import (
     oauth_providers,
     users_me_connection_delete,
     users_me_connections,
+    users_me_password,
     confirm_email,
     resend_confirmation,
     get_user,
@@ -38,6 +39,7 @@ urlpatterns = [
     path('users/login', login_user, name='login_user'),
     path('users/logout', logout_user, name='logout_user'),
     path('users/confirm', confirm_email, name='confirm_email'),
+    path('users/me/password', users_me_password, name='users_me_password'),
     path('users/me/connections', users_me_connections, name='users_me_connections'),
     path('users/me/connections/<str:provider>', users_me_connection_delete, name='users_me_connection_delete'),
 

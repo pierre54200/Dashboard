@@ -62,8 +62,11 @@ export class AccountSection {
 
   revealEmail = signal(false);
 
-  // Changement de mot de passe (pas encore de route côté Django)
+  // Changement de mot de passe (POST /api/users/me/password)
+  /** Compte créé avec Google/GitHub : il définit un premier mot de passe, sans l'ancien. */
+  hasPassword = computed(() => this.info()?.has_password ?? true);
   showPassword = signal(false);
+  passwordSaving = signal(false);
   currentPassword = "";
   newPassword = "";
   confirmPassword = "";
@@ -190,7 +193,53 @@ export class AccountSection {
     return "*".repeat(Math.max(name.length, 4)) + "@" + (domain ?? "");
   }
 
-  changePassword(): void {}
+  openPasswordForm(): void {
+    this.currentPassword = this.newPassword = this.confirmPassword = "";
+    this.passwordError.set(null);
+    this.passwordSuccess.set(false);
+    this.showPassword.set(true);
+  }
+
+  closePasswordForm(): void {
+    this.currentPassword = this.newPassword = this.confirmPassword = "";
+    this.passwordError.set(null);
+    this.showPassword.set(false);
+  }
+
+  changePassword(): void {
+    if (this.passwordSaving()) return;
+    // Vérifications rapides ; Django refait tout (longueur, mot de passe trop courant...)
+    if (this.hasPassword() && !this.currentPassword) {
+      this.passwordError.set(this.i18n.t("account.password.current_required"));
+      return;
+    }
+    if (this.newPassword.length < 8) {
+      this.passwordError.set(this.i18n.t("register.error.minlength", { n: 8 }));
+      return;
+    }
+    if (this.newPassword !== this.confirmPassword) {
+      this.passwordError.set(this.i18n.t("register.mismatch"));
+      return;
+    }
+
+    this.passwordSaving.set(true);
+    this.passwordError.set(null);
+    this.userService
+      .changePassword(this.newPassword, this.hasPassword() ? this.currentPassword : undefined)
+      .subscribe({
+        next: () => {
+          this.passwordSaving.set(false);
+          this.closePasswordForm();
+          this.passwordSuccess.set(true);
+          // Le compte a désormais un mot de passe : le bouton devient « Changer le mot de passe »
+          this.profile.update((p) => (p ? { ...p, info: { ...p.info, has_password: true } } : p));
+        },
+        error: (err: HttpErrorResponse) => {
+          this.passwordSaving.set(false);
+          this.passwordError.set(this.apiMessage(err));
+        },
+      });
+  }
 
   deleteAccount(): void {
     this.userService.deleteUser();

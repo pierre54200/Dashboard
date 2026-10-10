@@ -244,6 +244,7 @@ Pour GitHub, le scope `notifications` est demandé : le token obtenu est réutil
 | Vol de mot de passe | Hachage par Django (PBKDF2), jamais stocké ni renvoyé en clair |
 | Inscription avec l'adresse d'un autre | Compte inactif tant que le lien envoyé à l'adresse n'a pas été ouvert |
 | Énumération des comptes | Mêmes réponses et même temps de réponse que l'adresse existe ou non (connexion et renvoi du lien) |
+| Mot de passe deviné depuis une session ouverte | Changement de mot de passe soumis au mot de passe actuel, bloqué 15 minutes après 5 erreurs ; validateurs de Django (longueur, mots de passe courants, proximité avec le pseudo) |
 | Usurpation par OAuth | Paramètre `state` vérifié, liaison automatique uniquement sur une adresse vérifiée par le fournisseur |
 | Vol de session par XSS | Cookie de session inaccessible au JavaScript, échappement automatique des templates Angular |
 | Falsification de requête (CSRF) | Jeton CSRF exigé pour toute requête qui modifie des données |

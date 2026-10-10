@@ -233,6 +233,9 @@ class ProfileInfoSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     sexe = serializers.CharField(max_length=20, required=False, allow_blank=True)
     age = serializers.IntegerField(min_value=1, max_value=120, required=False, allow_null=True)
+    has_password = serializers.BooleanField(
+        read_only=True, help_text="False for an account created with Google/GitHub that never set a password",
+    )
 
     def validate_username(self, value):
         user = self.context["request"].user
@@ -263,3 +266,31 @@ class ProfileSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     info = ProfileInfoSerializer(required=False)
     perso = ProfilePersoSerializer(required=False)
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """Change the password, or set a first one on an account created with Google/GitHub
+    (then `current_password` is not needed)."""
+
+    current_password = serializers.CharField(write_only=True, required=False, allow_blank=True,
+                                             trim_whitespace=False)
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        if user.has_usable_password():
+            current = attrs.get("current_password") or ""
+            if not current:
+                raise serializers.ValidationError({"current_password": ["This field is required."]})
+            if not user.check_password(current):
+                raise serializers.ValidationError({"current_password": ["Current password is incorrect."]})
+            if current == attrs["new_password"]:
+                raise serializers.ValidationError(
+                    {"new_password": ["The new password must be different from the current one."]}
+                )
+        try:
+            # user: also refuses a password too close to the username or the email
+            validate_password(attrs["new_password"], user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({"new_password": list(e.messages)})
+        return attrs

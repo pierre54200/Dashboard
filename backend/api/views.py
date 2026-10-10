@@ -1,4 +1,4 @@
-from django.contrib.auth import get_user_model, login, logout
+from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -20,6 +20,7 @@ from .models import SocialAccount, UserApiInfo, UserProfile, UserWidgetSettings
 from .oauth import PROVIDERS, enabled_providers
 from .emails import confirmation_token, send_confirmation_email, user_from_uid
 from .serializer import (
+    ChangePasswordSerializer,
     ConfirmEmailSerializer,
     EmailNotConfirmed,
     ResendConfirmationSerializer,
@@ -381,6 +382,7 @@ def _profile_data(user, profile):
             "email": user.email,
             "sexe": profile.sexe,
             "age": profile.age,
+            "has_password": user.has_usable_password(),
         },
         "perso": {
             "background": profile.background,
@@ -484,6 +486,53 @@ def users_me_profile(request):
 
     return Response(ProfileSerializer(_profile_data(user, profile), context=context).data)
 
+
+
+# Wrong current passwords allowed per user before a pause (protects against guessing)
+PASSWORD_ATTEMPTS = 5
+PASSWORD_LOCK_SECONDS = 15 * 60
+
+
+@login_not_required
+@extend_schema(
+    tags=SETTINGS,
+    summary="Change (or set) the current user's password",
+    description="`current_password` is required when the account already has a password. "
+                "An account created with Google/GitHub can set a first password without it. "
+                "The current session stays open; the user's other sessions are logged out.",
+    request=ChangePasswordSerializer,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 429: ErrorSerializer},
+    examples=[
+        OpenApiExample("Change", value={"current_password": "old-Pass42", "new_password": "new-Pass42!"},
+                       request_only=True),
+        OpenApiExample("Success", value={"has_password": True}, response_only=True),
+        OpenApiExample("Wrong current password",
+                       value={"current_password": ["Current password is incorrect."]},
+                       response_only=True, status_codes=["400"]),
+    ],
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def users_me_password(request):
+    user = request.user
+    attempts_key = f"password-attempts:{user.pk}"
+    if cache.get(attempts_key, 0) >= PASSWORD_ATTEMPTS:
+        return Response({"error": "Too many attempts, try again later."},
+                        status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+    serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
+    if not serializer.is_valid():
+        if "current_password" in serializer.errors and request.data.get("current_password"):
+            cache.add(attempts_key, 0, PASSWORD_LOCK_SECONDS)
+            cache.incr(attempts_key)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(serializer.validated_data["new_password"])
+    user.save(update_fields=["password"])
+    # The session hash depends on the password: keep this session, other devices are logged out
+    update_session_auth_hash(request, user)
+    cache.delete(attempts_key)
+    return Response({"has_password": True})
 
 
 """

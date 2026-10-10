@@ -6,6 +6,8 @@ export interface IProfile {
     email: string;
     sexe: string;
     age: number | null;
+    /** false : compte créé avec Google/GitHub, sans mot de passe (lecture seule) */
+    has_password: boolean;
   };
   perso: {
     /** URL absolue de l'image, null si aucune */
@@ -25,7 +27,7 @@ export interface IProfile {
 
 /** Mise à jour partielle : n'envoyer que ce qui change. `null` retire une image. */
 export interface IProfileUpdate {
-  info?: Partial<IProfile["info"]>;
+  info?: Partial<Omit<IProfile["info"], "has_password">>;
   perso?: Partial<Omit<IProfile["perso"], "background" | "pfp">> & {
     background?: null;
     pfp?: null;

@@ -35,6 +35,7 @@ Un seul écran pour suivre ce qui vous intéresse, au lieu d'ouvrir dix onglets.
 - Connexion et inscription en un clic avec **Google** ou **GitHub** (OAuth 2.0). Un compte existant avec la même adresse vérifiée est retrouvé, pas dupliqué.
 - Liaison et dissociation des comptes Google et GitHub dans **Paramètres > Connexions**. La connexion GitHub sert aussi de token pour les widgets GitHub.
 - Profil modifiable : pseudo, e-mail, sexe, âge, photo de profil.
+- Changement du mot de passe (les autres appareils sont déconnectés). Un compte créé avec Google ou GitHub peut se définir un mot de passe pour se connecter aussi par e-mail.
 - Export de ses données au format JSON et suppression du compte (RGPD).
 - Section d'administration Django pour gérer les utilisateurs.
 
@@ -250,6 +251,7 @@ La documentation complète et interactive est sur http://localhost:8080/api/docs
 | `GET /api/auth/providers` | Fournisseurs OAuth configurés |
 | `GET /api/auth/<google\|github>/login`, `/callback` | Connexion avec Google ou GitHub (navigation complète, pas d'appel AJAX) |
 | `GET /api/users/me/connections`, `DELETE /api/users/me/connections/<fournisseur>` | Comptes Google et GitHub liés |
+| `POST /api/users/me/password` | Changer son mot de passe, ou en définir un premier pour un compte créé avec Google ou GitHub |
 | `GET`, `PATCH /api/users/me/profile` | Profil et préférences (JSON, ou multipart pour les images) |
 | `GET`, `PATCH /api/users/me/integrations` | Identifiants des services (les secrets sont en écriture seule) |
 | `GET`, `POST /api/users/me/widgets` | Disposition du dashboard |

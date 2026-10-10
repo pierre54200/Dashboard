@@ -29,6 +29,14 @@ const API_ERRORS: [RegExp, TranslationKey][] = [
   [/^Enter a valid email address\.$/, "api.email_invalid"],
   [/^Image must be 5 MB or less\.$/, "api.image_size"],
   [/^Must be a 17-digit SteamID64\.$/, "api.steam_id"],
+  // Mots de passe (validateurs de Django)
+  [/^This password is too short\. It must contain at least (\d+) characters?\.$/, "api.password_short"],
+  [/^This password is too common\.$/, "api.password_common"],
+  [/^This password is entirely numeric\.$/, "api.password_numeric"],
+  [/^The password is too similar to the .+\.$/, "api.password_similar"],
+  [/^Current password is incorrect\.$/, "api.password_wrong"],
+  [/^The new password must be different from the current one\.$/, "api.password_same"],
+  [/^Too many attempts, try again later\.$/, "api.too_many_attempts"],
 ];
 
 /**

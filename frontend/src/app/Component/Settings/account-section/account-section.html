@@ -87,24 +87,30 @@
 
     <div class="field-row stacked">
       <h2 class="block-title">{{ 'auth.password' | t }}</h2>
+      @if (!hasPassword()) {
+      <p class="block-text">{{ 'account.password.none' | t }}</p>
+      }
       @if (!showPassword()) {
-      <button type="button" class="btn btn-primary btn-sm" (click)="showPassword.set(true); passwordSuccess.set(false)">
-        {{ 'account.password.change' | t }}
+      <button type="button" class="btn btn-primary btn-sm" (click)="openPasswordForm()">
+        {{ (hasPassword() ? 'account.password.change' : 'account.password.set') | t }}
       </button>
       @if (passwordSuccess()) {
-      <p class="success">{{ 'account.password.updated' | t }}</p>
+      <p class="success" role="status">{{ 'account.password.updated' | t }}</p>
       }
       } @else {
       <form class="password-form" (ngSubmit)="changePassword()" novalidate>
+        @if (hasPassword()) {
         <div class="field">
           <label class="label" for="pwd-current">{{ 'account.password.current' | t }}</label>
           <input id="pwd-current" class="input" type="password" name="current" autocomplete="current-password"
             [(ngModel)]="currentPassword" />
         </div>
+        }
         <div class="field">
           <label class="label" for="pwd-new">{{ 'account.password.new' | t }}</label>
           <input id="pwd-new" class="input" type="password" name="new" autocomplete="new-password"
-            [(ngModel)]="newPassword" />
+            aria-describedby="pwd-hint" [(ngModel)]="newPassword" />
+          <p id="pwd-hint" class="hint">{{ 'account.password.rules' | t }}</p>
         </div>
         <div class="field">
           <label class="label" for="pwd-confirm">{{ 'account.password.confirm' | t }}</label>
@@ -115,10 +121,14 @@
         <p class="error" role="alert">{{ passwordError() }}</p>
         }
         <div class="actions">
-          <button type="button" class="btn-link"
-            (click)="showPassword.set(false); passwordError.set(null)">{{ 'common.cancel' | t }}</button>
-          <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+          <button type="button" class="btn-link" (click)="closePasswordForm()">{{ 'common.cancel' | t }}</button>
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="passwordSaving()">
+            {{ (passwordSaving() ? 'common.saving' : 'common.save') | t }}
+          </button>
         </div>
+        @if (hasPassword()) {
+        <p class="hint">{{ 'account.password.other_sessions' | t }}</p>
+        }
       </form>
       }
     </div>
