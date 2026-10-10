@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { CdkDragHandle } from '@angular/cdk/drag-drop';
 
 @Component({
@@ -13,6 +13,14 @@ export class WidgetCard {
   subtitle = input('');
   refreshRate = input(60);
   lastUpdate = input<Date | null>(null);
+  iconUrl = input<string | null>(null);
+  weather = input<string | null>(null);
+
+  iconFailed = signal(false);
+  private resetFailure = effect(() => {
+    this.iconUrl();
+    this.iconFailed.set(false);
+  });
 
   refreshLabel = computed(() => {
     const s = this.refreshRate();

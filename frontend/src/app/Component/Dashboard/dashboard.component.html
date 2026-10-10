@@ -34,6 +34,8 @@
             [subtitle]="subtitleOf(w)"
             [refreshRate]="w.refreshRate"
             [lastUpdate]="lastUpdates()[w.id] ?? null"
+            [iconUrl]="iconOf(w)"
+            [weather]="w.type === 'weather' ? (weatherScenes()[w.id] ?? null) : null"
             (refresh)="refresh(w)"
             (configure)="openEditDialog(w)"
             (remove)="remove(w)"
@@ -42,6 +44,7 @@
               @case ('weather') {
                 <app-weather-widget
                   [city]="$any(w.params['city'])"
+                  (scene)="onScene(w, $event)"
                   [refreshRate]="w.refreshRate"
                   [reloadKey]="reloadKeys()[w.id] ?? 0"
                   (loaded)="onLoaded(w, $event)"

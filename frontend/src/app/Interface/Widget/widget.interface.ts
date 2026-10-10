@@ -91,3 +91,10 @@ export interface ISteamMonthlyPlaytime {
   tracked_since: string;
   games: ISteamMonthlyGame[];
 }
+
+export interface IAvatars {
+  steam: string | null;
+  steam_name: string | null;
+  github: string | null;
+  github_login: string | null;
+}

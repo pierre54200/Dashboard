@@ -21,6 +21,7 @@ TTL_STEAM_UPDATES = 900
 TTL_GITHUB = 60
 TTL_GITHUB_COMMITS = 120
 TTL_STEAM_MONTHLY = 600
+TTL_AVATARS = 60 * 60
 
 STEAM_LIBRARY_GAMES_CHECKED = 15
 STEAM_UPDATES_RETURNED = 10
@@ -332,3 +333,38 @@ def get_github_commits(info, repo, count):
         return out
 
     return _cached(f"github_commits:{info.user_id}:{repo.lower()}:{count}", TTL_GITHUB_COMMITS, fetch)
+
+
+
+# ------------------------------------------------------------------
+def get_avatars(info):
+    """Profile pictures shown in the widget card headers. A service that is not
+    configured, or that fails, simply returns null: the card falls back to a letter."""
+    out = {"steam": None, "steam_name": None, "github": None, "github_login": None}
+
+    key = info.steam_friends_api_key or info.steam_updates_api_key
+    if key and info.steam_id:
+        def steam():
+            data = _get_json(f"{STEAM}/ISteamUser/GetPlayerSummaries/v2/", {
+                "key": key, "steamids": info.steam_id,
+            })
+            players = data.get("response", {}).get("players", [])
+            p = players[0] if players else {}
+            return {"avatar": p.get("avatarfull") or p.get("avatarmedium"), "name": p.get("personaname")}
+        try:
+            s = _cached(f"steam_avatar:{info.steam_id}", TTL_AVATARS, steam)
+            out["steam"], out["steam_name"] = s["avatar"], s["name"]
+        except IntegrationError:
+            pass
+
+    if info.github_token:
+        def github():
+            data = _get_json("https://api.github.com/user", headers=_github_headers(info.github_token))
+            return {"avatar": data.get("avatar_url"), "login": data.get("login")}
+        try:
+            g = _cached(f"github_user:{hash(info.github_token)}", TTL_AVATARS, github)
+            out["github"], out["github_login"] = g["avatar"], g["login"]
+        except IntegrationError:
+            pass
+
+    return out

@@ -172,3 +172,41 @@
   font-size: 0.6875rem;
   color: var(--text-muted);
 }
+/* ---------- Icône de la carte : photo de profil ou illustration météo ---------- */
+
+.service-icon.photo {
+  object-fit: cover;
+  background-color: var(--bg-input);
+}
+
+.service-icon[data-service="Steam"] { background-color: #1b2838; }
+.service-icon[data-service="GitHub"] { background-color: #24292f; }
+
+.service-icon.weather {
+  overflow: hidden;
+  background: linear-gradient(160deg, #4aa3f0, #2b6fd6);
+}
+
+.service-icon.weather svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.service-icon.weather[data-scene$="night"] { background: linear-gradient(160deg, #2c3570, #121633); }
+.service-icon.weather[data-scene="cloudy"],
+.service-icon.weather[data-scene="fog"] { background: linear-gradient(160deg, #8d99ab, #5c6778); }
+.service-icon.weather[data-scene="rain"] { background: linear-gradient(160deg, #5f7c99, #34495e); }
+.service-icon.weather[data-scene="snow"] { background: linear-gradient(160deg, #b9d6ef, #7fa3c4); }
+.service-icon.weather[data-scene="storm"] { background: linear-gradient(160deg, #4b3f72, #1f1a33); }
+
+.weather .sun { fill: #ffd34d; stroke: #ffd34d; stroke-width: 2; stroke-linecap: round; }
+.weather .moon { fill: #f4f1d0; }
+.weather .star { fill: #f4f1d0; }
+.weather .cloud { fill: #ffffff; }
+.weather[data-scene="rain"] .cloud,
+.weather[data-scene="storm"] .cloud { fill: #e3e8ef; }
+.weather .lines { stroke: #ffffff; stroke-width: 2; stroke-linecap: round; opacity: 0.85; }
+.weather .drops { stroke: #9fd3ff; stroke-width: 2; stroke-linecap: round; }
+.weather .flake { fill: #ffffff; }
+.weather .bolt { fill: #ffd34d; }

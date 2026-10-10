@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from "@angular/common/http";
 import { Observable } from "rxjs";
 import { environment } from "../../Environments/environment";
 import {
+  IAvatars,
   IIntegrations,
   IIntegrationsUpdate,
   IGithubCommit,
@@ -43,6 +44,11 @@ export class WidgetService {
     let params = new HttpParams().set("repo", repo);
     if (count) params = params.set("count", count);
     return this.http.get<IGithubCommit[]>(this.widgetsUrl + "github/commits", { params });
+  }
+
+  /** Photos de profil Steam et GitHub pour l'en-tête des cartes. */
+  avatars(): Observable<IAvatars> {
+    return this.http.get<IAvatars>(this.widgetsUrl + "avatars");
   }
 
   githubNotifications(): Observable<IGithubNotification[]> {

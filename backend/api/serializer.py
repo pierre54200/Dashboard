@@ -172,6 +172,13 @@ class GithubCommitSerializer(serializers.Serializer):
     date = serializers.CharField()
 
 
+class AvatarsSerializer(serializers.Serializer):
+    steam = serializers.URLField(allow_null=True, help_text="Steam avatar, null if Steam is not configured")
+    steam_name = serializers.CharField(allow_null=True)
+    github = serializers.URLField(allow_null=True, help_text="GitHub avatar, null without a GitHub token")
+    github_login = serializers.CharField(allow_null=True)
+
+
 class SteamMonthlyGameSerializer(serializers.Serializer):
     app_id = serializers.IntegerField()
     name = serializers.CharField()

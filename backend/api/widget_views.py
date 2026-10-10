@@ -8,6 +8,7 @@ from . import integrations
 from .integrations import IntegrationError
 from .models import UserApiInfo
 from .serializer import (
+    AvatarsSerializer,
     ErrorSerializer,
     GithubCommitSerializer,
     GithubNotificationSerializer,
@@ -245,3 +246,18 @@ def widget_steam_monthly_playtime(request):
         count = _int_param(request, "count", 3, 1, 10)
         return integrations.get_steam_monthly_playtime(_info(request), count)
     return _run(run)
+
+
+
+@login_not_required
+@extend_schema(
+    tags=WIDGETS,
+    summary="Profile pictures for the widget headers",
+    description="Steam avatar (needs Steam ID + key) and GitHub avatar (needs a token). "
+                "Missing or failing services return null instead of an error. Cached 1 h.",
+    responses={200: AvatarsSerializer},
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def widget_avatars(request):
+    return Response(integrations.get_avatars(_info(request)))

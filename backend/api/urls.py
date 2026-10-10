@@ -12,6 +12,7 @@ from .views import (
     users_me_widgets,
 )
 from .widget_views import (
+    widget_avatars,
     widget_github_commits,
     widget_github_notifications,
     widget_steam_friends,
@@ -31,6 +32,7 @@ urlpatterns = [
     path('users/login', login_user, name='login_user'),
     path('users/logout', logout_user, name='logout_user'),
 
+    path('widgets/avatars', widget_avatars, name='widget_avatars'),
     path('widgets/weather', widget_weather, name='widget_weather'),
     path('widgets/steam/friends', widget_steam_friends, name='widget_steam_friends'),
     path('widgets/steam/updates', widget_steam_updates, name='widget_steam_updates'),

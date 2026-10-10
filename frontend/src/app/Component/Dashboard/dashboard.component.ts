@@ -24,6 +24,7 @@ import { GithubCommitsWidget } from "./Widgets/github-commits-widget/github-comm
 import { Router } from "@angular/router";
 import { IUser } from "../../Interface/Auth/auth.interface";
 import { WidgetService } from "../../Service/Widget/widget.service";
+import { IAvatars } from "../../Interface/Widget/widget.interface";
 import { TitleCasePipe } from "@angular/common";
 
 export type WidgetType =
@@ -177,7 +178,17 @@ export class DashboardComponent implements OnInit {
 
   private storedSettings: Record<string, unknown> = {};
 
+  /** Photos de profil Steam et GitHub. */
+  avatars = signal<IAvatars | null>(null);
+  /** Météo actuelle de chaque widget météo, pour l'illustration de la carte. */
+  weatherScenes = signal<Record<number, string>>({});
+
   ngOnInit(): void {
+    this.widgetService.avatars().subscribe({
+      next: (a) => this.avatars.set(a),
+      error: () => this.avatars.set(null),
+    });
+
     this.widgetService.loadSettings().subscribe({
       next: (settings) => {
         this.storedSettings = settings ?? {};
@@ -439,6 +450,29 @@ export class DashboardComponent implements OnInit {
 
   onLoaded(w: WidgetConfig, date: Date): void {
     this.lastUpdates.update((map) => ({ ...map, [w.id]: date }));
+  }
+
+  onScene(w: WidgetConfig, scene: string): void {
+    this.weatherScenes.update((map) => (map[w.id] === scene ? map : { ...map, [w.id]: scene }));
+  }
+
+  /** Image de l'en-tête : avatar Steam, photo GitHub, ou propriétaire du dépôt suivi. */
+  iconOf(w: WidgetConfig): string | null {
+    const a = this.avatars();
+    switch (w.type) {
+      case "steam_friends":
+      case "steam_updates":
+      case "steam_playtime":
+        return a?.steam ?? null;
+      case "github_notifications":
+        return a?.github ?? null;
+      case "github_commits": {
+        const owner = String(w.params["repo"] ?? "").split("/")[0];
+        return owner ? `https://github.com/${encodeURIComponent(owner)}.png?size=64` : (a?.github ?? null);
+      }
+      default:
+        return null;
+    }
   }
 
   serviceOf(w: WidgetConfig): string {
