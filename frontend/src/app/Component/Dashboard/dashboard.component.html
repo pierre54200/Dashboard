@@ -60,6 +60,23 @@
                   (loaded)="onLoaded(w, $event)"
                 />
               }
+              @case ('steam_playtime') {
+                <app-steam-playtime-widget
+                  [count]="$any(w.params['count'] ?? 3)"
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                />
+              }
+              @case ('github_commits') {
+                <app-github-commits-widget
+                  [repo]="$any(w.params['repo'])"
+                  [count]="$any(w.params['count'] ?? 5)"
+                  [refreshRate]="w.refreshRate"
+                  [reloadKey]="reloadKeys()[w.id] ?? 0"
+                  (loaded)="onLoaded(w, $event)"
+                />
+              }
               @case ('github_notifications') {
                 <app-github-notifications-widget
                   [refreshRate]="w.refreshRate"
@@ -135,12 +152,25 @@
           <span class="label">Ville</span>
           <input class="input" type="text" name="city" [(ngModel)]="newCity" placeholder="Ex : Nancy" required autocomplete="address-level2" />
         </label>
+      } @else if (selectedType() === 'github_commits') {
+        <label class="field">
+          <span class="label">Dépôt</span>
+          <input class="input" type="text" name="repo" [(ngModel)]="newRepo" placeholder="proprietaire/nom" autocomplete="off" spellcheck="false" />
+          <span class="field-hint">Un dépôt privé nécessite le token GitHub enregistré dans les Paramètres.</span>
+        </label>
       } @else {
         <p class="hint">
           Ce widget utilise les informations enregistrées dans
           <button type="button" class="link-btn" (click)="closeAddDialog(); settings()">Paramètres</button>
           (Steam ID, clé d'API ou token GitHub).
         </p>
+      }
+
+      @if (definition(selectedType()).count; as c) {
+        <label class="field">
+          <span class="label">{{ c.label }}</span>
+          <input class="input" type="number" name="count" [(ngModel)]="newCount" [min]="c.min" [max]="c.max" step="1" />
+        </label>
       }
 
       <label class="field">
@@ -151,11 +181,14 @@
           }
         </select>
       </label>
+      @if (addError()) {
+        <p class="form-error" role="alert">{{ addError() }}</p>
+      }
     </div>
 
     <footer class="dialog-footer">
       <button type="button" class="btn-cancel" (click)="closeAddDialog()">Annuler</button>
-      <button type="submit" class="btn btn-primary" [disabled]="selectedType() === 'weather' && !newCity.trim()">
+      <button type="submit" class="btn btn-primary" [disabled]="(selectedType() === 'weather' && !newCity.trim()) || (selectedType() === 'github_commits' && !newRepo.trim())">
         Ajouter au dashboard
       </button>
     </footer>

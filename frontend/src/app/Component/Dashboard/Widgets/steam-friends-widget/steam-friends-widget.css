@@ -16,13 +16,13 @@
   font-weight: 500;
 }
 
-
+/* Avatar avec pastille de statut, façon Discord */
 .avatar {
   --dot: #80848e;
   position: relative;
   flex-shrink: 0;
-  width: 80px;
-  height: 45px;
+  width: 32px;
+  height: 32px;
 }
 
 .avatar img {
@@ -37,10 +37,10 @@
 .avatar::after {
   content: "";
   position: absolute;
-  right: 10px;
+  right: -2px;
   bottom: -2px;
-  width: 20px;
-  height: 20px;
+  width: 12px;
+  height: 12px;
   border: 3px solid var(--bg-elevated);
   border-radius: 50%;
   box-sizing: border-box;

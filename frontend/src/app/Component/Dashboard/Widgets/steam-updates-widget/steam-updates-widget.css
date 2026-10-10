@@ -2,7 +2,7 @@
   display: block;
 }
 
-.row.news {
+.item.news {
   align-items: flex-start;
   padding: 8px;
 }
@@ -46,6 +46,7 @@
   -webkit-box-orient: vertical;
 }
 
+/* Widget étroit : on retire la vignette */
 @container (max-width: 260px) {
   .thumb { display: none; }
 }

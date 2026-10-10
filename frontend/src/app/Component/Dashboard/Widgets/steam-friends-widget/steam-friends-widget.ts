@@ -27,6 +27,7 @@ export class SteamFriendsWidget extends PollingWidget<ISteamFriend[]> {
     return this.api.steamFriends();
   }
 
+  /** Couleur de la pastille, comme les statuts Discord. */
   presence(f: ISteamFriend): string {
     if (f.game) return "in-game";
     switch (f.status) {

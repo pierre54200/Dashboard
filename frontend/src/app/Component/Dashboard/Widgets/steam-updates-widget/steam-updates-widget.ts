@@ -14,6 +14,7 @@ export class SteamUpdatesWidget extends PollingWidget<ISteamUpdate[]> {
     return this.api.steamUpdates();
   }
 
+  /** Les annonces Steam contiennent du BBCode et des liens bruts : on garde le texte. */
   clean(summary: string | null): string {
     return (summary ?? "")
       .replace(/\{STEAM_CLAN_IMAGE\}\S*/g, "")

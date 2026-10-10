@@ -2,11 +2,6 @@ import { Component } from "@angular/core";
 import { Title } from "@angular/platform-browser";
 import { RouterLink } from "@angular/router";
 
-/**
- * Informations légales à adapter avant la mise en ligne.
- * Changer TERMS_VERSION à chaque modification du texte : la version acceptée
- * est enregistrée avec chaque inscription.
- */
 export const TERMS_VERSION = "2026-09-30";
 
 export const LEGAL = {

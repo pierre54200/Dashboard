@@ -19,16 +19,14 @@ const BG_KEY = "background";
 const BG_DIM_KEY = "background_dim";
 const TEXT_SCALE_KEY = "text_scale";
 
-/** Tailles de texte proposées, en % de la taille par défaut du navigateur */
 export const TEXT_SCALES = [85, 100, 115, 130] as const;
 const VALID: ThemePreference[] = ["dark", "light", "system"];
 
-/** Seuls les data URL d'images encodées en base64 sont acceptés (évite toute injection CSS) */
 const DATA_URL_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
 
-const MAX_FILE_SIZE = 15 * 1024 * 1024; // fichier choisi : 15 Mo max
-const MAX_WIDTH = 1920; // l'image est redimensionnée à 1920 px de large max
-const MAX_DATA_URL = 1_500_000; // taille max du résultat compressé (~1,1 Mo)
+const MAX_FILE_SIZE = 15 * 1024 * 1024;
+const MAX_WIDTH = 1920;
+const MAX_DATA_URL = 1_500_000;
 
 @Injectable({ providedIn: "root" })
 export class ThemeService {
@@ -36,29 +34,22 @@ export class ThemeService {
   private readonly media = window.matchMedia("(prefers-color-scheme: dark)");
   private readonly systemIsDark = signal(this.media.matches);
 
-  /** Choix de l'utilisateur */
   readonly preference = signal<ThemePreference>(this.readStored());
 
-  /** Widgets transparents façon Liquid Glass, combinable avec sombre ou clair */
   readonly glass = signal<boolean>(this.read(GLASS_KEY) === "true");
 
-  /** Image d'arrière-plan (data URL) ou chaîne vide */
   readonly background = signal<string>(this.readBackground());
 
-  /** Assombrissement de l'image, de 0 à 80 % */
   readonly backgroundDim = signal<number>(this.readDim());
 
-  /** Taille du texte de tout le site, en % (100 = taille normale) */
   readonly textScale = signal<number>(this.readTextScale());
 
-  /** Thème réellement appliqué */
   readonly applied = computed<AppliedTheme>(() => {
     const pref = this.preference();
     if (pref === "system") return this.systemIsDark() ? "dark" : "light";
     return pref;
   });
 
-  /** Élément fixe qui affiche l'image derrière toute l'application */
   private wallpaperEl: HTMLDivElement | null = null;
   private wallpaperSource = "";
   private wallpaperUrl = "";
@@ -78,7 +69,6 @@ export class ThemeService {
     });
 
     effect(() => {
-      // Toutes les tailles de texte sont en rem : changer la taille de <html> les met à l'échelle
       document.documentElement.style.fontSize = `${this.textScale()}%`;
     });
 
@@ -100,23 +90,16 @@ export class ThemeService {
     });
   }
 
-  /** Change le thème et le sauvegarde côté Django */
   setPreference(pref: ThemePreference): void {
     this.preference.set(pref);
     this.save({ theme: pref });
   }
 
-  /** Active ou désactive l'effet verre */
   setGlass(enabled: boolean): void {
     this.glass.set(enabled);
     this.save({ glass: enabled });
   }
 
-  /**
-   * Prépare une image choisie par l'utilisateur : vérifie le type et la taille,
-   * la redimensionne et la compresse en JPEG, puis l'applique en arrière-plan.
-   * Renvoie un message d'erreur, ou null si tout s'est bien passé.
-   */
   async setBackgroundFromFile(file: File): Promise<string | null> {
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       return "Format non pris en charge. Utilise une image JPEG, PNG ou WebP.";
@@ -140,27 +123,23 @@ export class ThemeService {
     return null;
   }
 
-  /** Retire l'image d'arrière-plan */
   clearBackground(): void {
     this.background.set("");
     this.save({ background: "" });
   }
 
-  /** Met à jour l'assombrissement (save = false pendant que l'on fait glisser le curseur) */
   setBackgroundDim(value: number, save = true): void {
     const dim = Math.min(80, Math.max(0, Math.round(value)));
     this.backgroundDim.set(dim);
     if (save) this.save({ background_dim: dim });
   }
 
-  /** Change la taille du texte de tout le site */
   setTextScale(value: number): void {
     if (!(TEXT_SCALES as readonly number[]).includes(value)) return;
     this.textScale.set(value);
     this.save({ text_scale: value });
   }
 
-  /** Récupère les préférences enregistrées sur le compte (à appeler une fois connecté) */
   loadFromServer(): void {
     this.http.get<Preferences>(this.apiUrl).subscribe({
       next: (data) => {
@@ -171,7 +150,6 @@ export class ThemeService {
         if ((TEXT_SCALES as readonly number[]).includes(data.text_scale)) this.textScale.set(data.text_scale);
       },
       error: () => {
-        /* non connecté : on garde le choix local */
       },
     });
   }
@@ -182,7 +160,6 @@ export class ThemeService {
     });
   }
 
-  /** Redimensionne à 1920 px de large max et encode en JPEG, en baissant la qualité si besoin */
   private async compress(file: File): Promise<string> {
     const bitmap = await createImageBitmap(file);
     const scale = Math.min(1, MAX_WIDTH / bitmap.width);
@@ -201,11 +178,6 @@ export class ThemeService {
     return dataUrl;
   }
 
-  /**
-   * Dessine l'image de fond dans un élément dédié.
-   * L'image est convertie en URL blob (courte) : les très longues data URL
-   * dans les variables CSS ne sont pas fiables sur tous les navigateurs (Firefox).
-   */
   private renderWallpaper(dataUrl: string, dim: number, theme: AppliedTheme): void {
     const root = document.documentElement;
 
@@ -294,7 +266,6 @@ export class ThemeService {
     try {
       localStorage.setItem(key, value);
     } catch {
-      /* stockage plein ou indisponible : la valeur reste en mémoire et sur le serveur */
     }
   }
 
@@ -302,7 +273,6 @@ export class ThemeService {
     try {
       localStorage.removeItem(key);
     } catch {
-      /* ignore */
     }
   }
 }

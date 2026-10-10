@@ -61,7 +61,7 @@
   list-style: none;
 }
 
-.row {
+.item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -72,7 +72,7 @@
   text-decoration: none;
 }
 
-a.row:hover {
+a.item:hover {
   background-color: var(--bg-hover);
 }
 

@@ -1,0 +1,40 @@
+@if (data(); as d) {
+  <p class="section-label">Les plus joués · {{ monthLabel() }}</p>
+
+  @if (d.games.length) {
+    <ol class="ranking">
+      @for (g of d.games; track g.app_id; let i = $index) {
+        <li class="game">
+          <span class="rank" [class.first]="i === 0">{{ i + 1 }}</span>
+          <img class="thumb" [src]="g.header_image" alt="" width="64" height="30" loading="lazy" (error)="hideImage($event)" />
+
+          <div class="row-main">
+            <div class="game-head">
+              <span class="row-title">{{ g.name }}</span>
+              <span class="time">{{ duration(g.minutes_this_month) }}</span>
+            </div>
+            <div class="bar" aria-hidden="true">
+              <span class="fill" [style.width.%]="share(g)"></span>
+            </div>
+          </div>
+        </li>
+      }
+    </ol>
+  } @else {
+    <div class="state">Aucune partie enregistrée ce mois-ci.</div>
+  }
+
+  @if (partial()) {
+    <p class="note">Suivi depuis le {{ d.tracked_since.slice(8, 10) }} : le temps joué avant n'est pas compté.</p>
+  }
+} @else if (error()) {
+  <div class="state error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="retry" (click)="load()">Réessayer</button>
+  </div>
+} @else {
+  <div class="state" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>Calcul du temps de jeu...</span>
+  </div>
+}

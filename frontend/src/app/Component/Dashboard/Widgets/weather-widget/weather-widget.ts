@@ -3,7 +3,6 @@ import { DecimalPipe } from "@angular/common";
 import { PollingWidget } from "../polling-widget";
 import { IWeather } from "../../../../Interface/Widget/widget.interface";
 
-/** Codes météo WMO renvoyés par Open-Meteo. */
 const WMO: Record<number, string> = {
   0: "Ciel dégagé",
   1: "Plutôt dégagé",

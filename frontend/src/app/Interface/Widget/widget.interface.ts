@@ -67,3 +67,27 @@ export interface IGithubNotification {
   url: string;
   updated_at: string;
 }
+
+export interface IGithubCommit {
+  sha: string;
+  message: string;
+  author: string;
+  author_login: string | null;
+  avatar: string | null;
+  url: string;
+  date: string;
+}
+
+export interface ISteamMonthlyGame {
+  app_id: number;
+  name: string;
+  header_image: string;
+  minutes_this_month: number;
+  hours_this_month: number;
+}
+
+export interface ISteamMonthlyPlaytime {
+  month: string;
+  tracked_since: string;
+  games: ISteamMonthlyGame[];
+}

@@ -11,8 +11,10 @@ interface ServiceItem {
   name: string;
   description: string;
   widgets: number;
+  /** Disponible sans configuration (météo). */
   byDefault: boolean;
   configured: boolean;
+  /** Résumé affiché sous la description. */
   account?: string;
 }
 

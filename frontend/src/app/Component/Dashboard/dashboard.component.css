@@ -400,3 +400,15 @@
 .btn-cancel:hover {
   text-decoration: underline;
 }
+
+.field-hint {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.form-error {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--red);
+}

@@ -19,17 +19,26 @@ import { WeatherWidget } from "./Widgets/weather-widget/weather-widget";
 import { SteamFriendsWidget } from "./Widgets/steam-friends-widget/steam-friends-widget";
 import { SteamUpdatesWidget } from "./Widgets/steam-updates-widget/steam-updates-widget";
 import { GithubNotificationsWidget } from "./Widgets/github-notifications-widget/github-notifications-widget";
+import { SteamPlaytimeWidget } from "./Widgets/steam-playtime-widget/steam-playtime-widget";
+import { GithubCommitsWidget } from "./Widgets/github-commits-widget/github-commits-widget";
 import { Router } from "@angular/router";
 import { IUser } from "../../Interface/Auth/auth.interface";
 import { WidgetService } from "../../Service/Widget/widget.service";
 import { TitleCasePipe } from "@angular/common";
 
-export type WidgetType = "weather" | "steam_friends" | "steam_updates" | "github_notifications";
+export type WidgetType =
+  | "weather"
+  | "steam_friends"
+  | "steam_updates"
+  | "steam_playtime"
+  | "github_notifications"
+  | "github_commits";
 
 export interface WidgetConfig {
   id: number;
   type: WidgetType;
-  title: string
+  title: string;
+
   cols: number;
   rows: number;
   refreshRate: number;
@@ -45,6 +54,7 @@ interface WidgetDefinition {
   rows: number;
   refreshRate: number;
   params: Record<string, string | number>;
+  count?: { label: string; min: number; max: number };
 }
 
 export const WIDGET_CATALOG: WidgetDefinition[] = [
@@ -79,6 +89,17 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
     params: {},
   },
   {
+    type: "steam_playtime",
+    service: "Steam",
+    title: "Temps de jeu du mois",
+    description: "Vos jeux les plus joués depuis le début du mois.",
+    cols: 1,
+    rows: 2,
+    refreshRate: 600,
+    params: { count: 3 },
+    count: { label: "Nombre de jeux", min: 1, max: 10 },
+  },
+  {
     type: "github_notifications",
     service: "GitHub",
     title: "Notifications GitHub",
@@ -88,7 +109,20 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
     refreshRate: 120,
     params: {},
   },
+  {
+    type: "github_commits",
+    service: "GitHub",
+    title: "Commits récents",
+    description: "Derniers commits d'un dépôt (public, ou privé avec ton token).",
+    cols: 2,
+    rows: 2,
+    refreshRate: 120,
+    params: { repo: "", count: 5 },
+    count: { label: "Nombre de commits", min: 1, max: 20 },
+  },
 ];
+
+const REPO_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
 const DEFAULT_LAYOUT: WidgetConfig[] = [
   { id: 1, type: "weather", title: "Météo", cols: 1, rows: 1, refreshRate: 600, params: { city: "Nancy" } },
@@ -109,6 +143,8 @@ const VALID_TYPES = new Set<string>(WIDGET_CATALOG.map((d) => d.type));
     SteamFriendsWidget,
     SteamUpdatesWidget,
     GithubNotificationsWidget,
+    SteamPlaytimeWidget,
+    GithubCommitsWidget,
     TitleCasePipe,
   ],
   templateUrl: "./dashboard.component.html",
@@ -156,6 +192,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  /* Sauvegarde */
 
   private parseLayout(value: unknown): WidgetConfig[] | null {
     if (!Array.isArray(value)) return null;
@@ -180,14 +217,20 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  /* Ajout d'un widget */
+
   private addDialog = viewChild<ElementRef<HTMLDialogElement>>("addDialog");
   selectedType = signal<WidgetType>("weather");
   newCity = "";
+  newRepo = "";
+  newCount = 5;
   newRefresh = 600;
+  addError = signal<string | null>(null);
 
   openAddDialog(): void {
     this.selectType("weather");
     this.newCity = "";
+    this.newRepo = "";
     this.addDialog()?.nativeElement.showModal();
   }
 
@@ -200,8 +243,11 @@ export class DashboardComponent implements OnInit {
   }
 
   selectType(type: WidgetType): void {
+    const def = this.definition(type);
     this.selectedType.set(type);
-    this.newRefresh = this.definition(type).refreshRate;
+    this.newRefresh = def.refreshRate;
+    this.newCount = Number(def.params["count"] ?? 5);
+    this.addError.set(null);
   }
 
   definition(type: WidgetType): WidgetDefinition {
@@ -215,6 +261,22 @@ export class DashboardComponent implements OnInit {
       const city = this.newCity.trim();
       if (!city) return;
       params["city"] = city;
+    }
+    if (def.type === "github_commits") {
+      const repo = this.newRepo.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$|\/$/g, "");
+      if (!REPO_RE.test(repo)) {
+        this.addError.set("Le dépôt doit être au format propriétaire/nom, par exemple pierre54200/Dashboard.");
+        return;
+      }
+      params["repo"] = repo;
+    }
+    if (def.count) {
+      const n = Math.round(Number(this.newCount));
+      if (!(n >= def.count.min && n <= def.count.max)) {
+        this.addError.set(`${def.count.label} : entre ${def.count.min} et ${def.count.max}.`);
+        return;
+      }
+      params["count"] = n;
     }
 
     const id = Math.max(0, ...this.widgets().map((w) => w.id)) + 1;
@@ -234,6 +296,7 @@ export class DashboardComponent implements OnInit {
     this.closeAddDialog();
   }
 
+  /* Redimensionnement */
 
   readonly MAX_COLS = 4;
   readonly MAX_ROWS = 3;
@@ -308,6 +371,8 @@ export class DashboardComponent implements OnInit {
     );
   }
 
+  /* Actions des cartes */
+
   drop(event: CdkDragDrop<unknown>): void {
     if (event.previousIndex === event.currentIndex) return;
     this.widgets.update((list) => {
@@ -336,7 +401,7 @@ export class DashboardComponent implements OnInit {
   }
 
   subtitleOf(w: WidgetConfig): string {
-    return String(Object.values(w.params)[0] ?? "");
+    return String(w.params["city"] ?? w.params["repo"] ?? "");
   }
 
   settings(): void {

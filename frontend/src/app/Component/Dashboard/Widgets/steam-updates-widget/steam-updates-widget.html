@@ -3,7 +3,7 @@
     <ul class="list">
       @for (n of news; track n.app_id) {
         <li>
-          <a class="row news" [href]="n.url" target="_blank" rel="noopener noreferrer">
+          <a class="item news" [href]="n.url" target="_blank" rel="noopener noreferrer">
             <img class="thumb" [src]="n.header_image" alt="" width="92" height="43" loading="lazy" (error)="hideImage($event)" />
 
             <span class="row-main">

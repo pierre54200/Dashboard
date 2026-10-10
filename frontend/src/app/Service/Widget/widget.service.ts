@@ -5,7 +5,9 @@ import { environment } from "../../Environments/environment";
 import {
   IIntegrations,
   IIntegrationsUpdate,
+  IGithubCommit,
   IGithubNotification,
+  ISteamMonthlyPlaytime,
   ISteamFriend,
   ISteamUpdate,
   IWeather,
@@ -32,9 +34,21 @@ export class WidgetService {
     return this.http.get<ISteamUpdate[]>(this.widgetsUrl + "steam/updates");
   }
 
+  steamMonthlyPlaytime(count?: number): Observable<ISteamMonthlyPlaytime> {
+    const params = count ? new HttpParams().set("count", count) : undefined;
+    return this.http.get<ISteamMonthlyPlaytime>(this.widgetsUrl + "steam/monthly-playtime", { params });
+  }
+
+  githubCommits(repo: string, count?: number): Observable<IGithubCommit[]> {
+    let params = new HttpParams().set("repo", repo);
+    if (count) params = params.set("count", count);
+    return this.http.get<IGithubCommit[]>(this.widgetsUrl + "github/commits", { params });
+  }
+
   githubNotifications(): Observable<IGithubNotification[]> {
     return this.http.get<IGithubNotification[]>(this.widgetsUrl + "github/notifications");
   }
+
 
   getIntegrations(): Observable<IIntegrations> {
     return this.http.get<IIntegrations>(this.integrationsUrl);

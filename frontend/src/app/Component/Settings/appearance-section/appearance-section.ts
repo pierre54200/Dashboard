@@ -5,7 +5,6 @@ interface ThemeChoice {
   value: ThemePreference;
   label: string;
   description: string;
-  /** Couleurs de l'aperçu : barre latérale, fond, carte */
   preview: [string, string, string];
 }
 
@@ -28,7 +27,6 @@ export class AppearanceSection {
     { value: 130, label: 'Très grand' },
   ];
 
-  /** Message d'erreur de l'import d'image */
   bgError = signal<string | null>(null);
   bgLoading = signal(false);
 
@@ -41,7 +39,7 @@ export class AppearanceSection {
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    input.value = ''; // permet de re-choisir le même fichier
+    input.value = '';
     if (!file) return;
 
     this.bgError.set(null);
